@@ -1,0 +1,66 @@
+@using SalaoAdmin.Dtos.Categorias
+@using SalaoAdmin.Dtos.Servicos
+@using SalaoAdmin.Enums
+
+<MudGrid Spacing="3">
+    <MudItem xs="12" md="8">
+        <MudTextField @bind-Value="Modelo.Nome"
+                      Label="Nome do serviço"
+                      Variant="Variant.Outlined"
+                      Margin="Margin.Dense"
+                      Required="true"
+                      Error="@TemErro(nameof(Modelo.Nome))"
+                      ErrorText="@MsgErro(nameof(Modelo.Nome))" />
+    </MudItem>
+    <MudItem xs="12" md="4">
+        <MudNumericField @bind-Value="Modelo.DuracaoMinutos"
+                         Label="Duração (minutos)"
+                         Variant="Variant.Outlined"
+                         Margin="Margin.Dense"
+                         Min="1"
+                         Required="true"
+                         Error="@TemErro(nameof(Modelo.DuracaoMinutos))"
+                         ErrorText="@MsgErro(nameof(Modelo.DuracaoMinutos))" />
+    </MudItem>
+    <MudItem xs="12" md="4">
+        <CampoMoeda @bind-ValorNumerico="Modelo.PrecoMinimo"
+                    Rotulo="Preço mínimo"
+                    Obrigatorio="true"
+                    ComErro="@TemErro(nameof(Modelo.PrecoMinimo))"
+                    TextoErro="@MsgErro(nameof(Modelo.PrecoMinimo))" />
+    </MudItem>
+    <MudItem xs="12" md="4">
+        <MudSelect @bind-Value="Modelo.CategoriaId"
+                   Label="Categoria"
+                   Variant="Variant.Outlined"
+                   Margin="Margin.Dense"
+                   Required="true"
+                   Error="@TemErro(nameof(Modelo.CategoriaId))"
+                   ErrorText="@MsgErro(nameof(Modelo.CategoriaId))">
+            @foreach (var cat in Categorias)
+            {
+                <MudSelectItem Value="@cat.Id">@cat.Nome</MudSelectItem>
+            }
+        </MudSelect>
+    </MudItem>
+    <MudItem xs="12" md="4" Class="d-flex align-center">
+        <MudSwitch @bind-Value="_ativo" Label="Serviço ativo" Color="Color.Primary" />
+    </MudItem>
+</MudGrid>
+
+@code {
+    [Parameter, EditorRequired] public ServicoCadastroDto Modelo { get; set; } = new();
+    [Parameter] public IReadOnlyList<CategoriaDto> Categorias { get; set; } = [];
+    [Parameter] public Dictionary<string, string> Erros { get; set; } = new();
+
+    private bool _ativo = true;
+
+    protected override void OnParametersSet() =>
+        _ativo = Modelo.Status == StatusRegistro.Ativo;
+
+    protected override void OnAfterRender(bool firstRender) =>
+        Modelo.Status = _ativo ? StatusRegistro.Ativo : StatusRegistro.Inativo;
+
+    private bool TemErro(string campo) => Erros.ContainsKey(campo);
+    private string? MsgErro(string campo) => Erros.TryGetValue(campo, out var msg) ? msg : null;
+}

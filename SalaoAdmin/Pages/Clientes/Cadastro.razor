@@ -1,0 +1,50 @@
+@page "/clientes/cadastro"
+@layout AdminLayout
+@inject IClienteServico ClienteServico
+@inject IServicoValidacao Validacao
+@inject IServicoNotificacao Notificacoes
+@inject NavigationManager Navegacao
+
+<CabecalhoPagina Titulo="Novo cliente" Subtitulo="Cadastro de cliente" />
+
+<MudPaper Class="pa-4" Elevation="1" Style="position: relative;">
+    <OverlayCarregando Visivel="_salvando" />
+    <ClienteForm Modelo="_modelo" Erros="_erros" />
+    <MudStack Row="true" Justify="Justify.FlexEnd" Spacing="2" Class="mt-4">
+        <MudButton Variant="Variant.Text" OnClick="@(() => Navegacao.NavigateTo("/clientes"))">Cancelar</MudButton>
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="Salvar" Disabled="_salvando">Salvar</MudButton>
+    </MudStack>
+</MudPaper>
+
+@code {
+    private ClienteCadastroDto _modelo = new();
+    private Dictionary<string, string> _erros = new();
+    private bool _salvando;
+
+    private async Task Salvar()
+    {
+        var validacao = await Validacao.ValidarAsync(_modelo);
+        if (!validacao.IsValid)
+        {
+            _erros = Validacao.ParaErros(validacao);
+            return;
+        }
+
+        _salvando = true;
+        try
+        {
+            var resposta = await ClienteServico.CriarAsync(_modelo);
+            if (resposta.Sucesso)
+            {
+                Notificacoes.Sucesso(resposta.Mensagem ?? "Salvo.");
+                Navegacao.NavigateTo("/clientes");
+            }
+            else
+                Notificacoes.Erro(resposta.Mensagem ?? "Erro ao salvar.");
+        }
+        finally
+        {
+            _salvando = false;
+        }
+    }
+}

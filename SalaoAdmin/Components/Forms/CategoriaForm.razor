@@ -1,0 +1,45 @@
+@using SalaoAdmin.Dtos.Categorias
+@using SalaoAdmin.Dtos.Servicos
+
+<MudGrid Spacing="3">
+    <MudItem xs="12" md="6">
+        <MudTextField @bind-Value="Modelo.Nome"
+                      Label="Nome da categoria"
+                      Variant="Variant.Outlined"
+                      Margin="Margin.Dense"
+                      Required="true"
+                      Error="@TemErro(nameof(Modelo.Nome))"
+                      ErrorText="@MsgErro(nameof(Modelo.Nome))" />
+    </MudItem>
+    <MudItem xs="12">
+        <MudSelect T="Guid"
+                   Label="Serviços vinculados"
+                   Variant="Variant.Outlined"
+                   Margin="Margin.Dense"
+                   MultiSelection="true"
+                   SelectedValues="Modelo.ServicoIds"
+                   SelectedValuesChanged="AoAlterarServicos"
+                   ToStringFunc="@(id => ServicosDisponiveis.FirstOrDefault(s => s.Id == id)?.Nome ?? id.ToString())">
+            @foreach (var servico in ServicosDisponiveis)
+            {
+                <MudSelectItem T="Guid" Value="@servico.Id">@servico.Nome</MudSelectItem>
+            }
+        </MudSelect>
+        @if (TemErro(nameof(Modelo.ServicoIds)))
+        {
+            <MudText Typo="Typo.caption" Color="Color.Error">@MsgErro(nameof(Modelo.ServicoIds))</MudText>
+        }
+    </MudItem>
+</MudGrid>
+
+@code {
+    [Parameter, EditorRequired] public CategoriaCadastroDto Modelo { get; set; } = new();
+    [Parameter] public IReadOnlyList<ServicoDto> ServicosDisponiveis { get; set; } = [];
+    [Parameter] public Dictionary<string, string> Erros { get; set; } = new();
+
+    private void AoAlterarServicos(IEnumerable<Guid> ids) =>
+        Modelo.ServicoIds = ids.ToList();
+
+    private bool TemErro(string campo) => Erros.ContainsKey(campo);
+    private string? MsgErro(string campo) => Erros.TryGetValue(campo, out var msg) ? msg : null;
+}

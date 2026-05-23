@@ -1,0 +1,91 @@
+@using SalaoAdmin.Dtos.Funcionarios
+@using SalaoAdmin.Enums
+
+<MudGrid Spacing="3">
+    <MudItem xs="12" md="8">
+        <MudTextField @bind-Value="Modelo.NomeCompleto"
+                      Label="Nome completo"
+                      Variant="Variant.Outlined"
+                      Margin="Margin.Dense"
+                      Required="true"
+                      Error="@TemErro(nameof(Modelo.NomeCompleto))"
+                      ErrorText="@MsgErro(nameof(Modelo.NomeCompleto))" />
+    </MudItem>
+    <MudItem xs="12" md="4">
+        <MudSelect @bind-Value="Modelo.NivelPermissao"
+                   Label="Função de acesso"
+                   Variant="Variant.Outlined"
+                   Margin="Margin.Dense"
+                   Required="true">
+            @foreach (NivelPermissao nivel in Enum.GetValues<NivelPermissao>())
+            {
+                <MudSelectItem Value="@nivel">@nivel.Descricao()</MudSelectItem>
+            }
+        </MudSelect>
+    </MudItem>
+    <MudItem xs="12" md="6">
+        <MudTextField @bind-Value="Modelo.Email"
+                      Label="E-mail"
+                      Variant="Variant.Outlined"
+                      Margin="Margin.Dense"
+                      InputType="InputType.Email"
+                      Required="true"
+                      Error="@TemErro(nameof(Modelo.Email))"
+                      ErrorText="@MsgErro(nameof(Modelo.Email))" />
+    </MudItem>
+    <MudItem xs="12" md="6">
+        <CampoTelefone @bind-Valor="Modelo.Telefone"
+                       Rotulo="Telefone / WhatsApp"
+                       Obrigatorio="true"
+                       ComErro="@TemErro(nameof(Modelo.Telefone))"
+                       TextoErro="@MsgErro(nameof(Modelo.Telefone))" />
+    </MudItem>
+    <MudItem xs="12" md="6">
+        <MudTextField @bind-Value="Modelo.ProfissaoCargo"
+                      Label="Profissão / Cargo"
+                      Variant="Variant.Outlined"
+                      Margin="Margin.Dense"
+                      Required="true"
+                      Error="@TemErro(nameof(Modelo.ProfissaoCargo))"
+                      ErrorText="@MsgErro(nameof(Modelo.ProfissaoCargo))" />
+    </MudItem>
+    <MudItem xs="12" md="6">
+        <MudDatePicker @bind-Date="Modelo.DataNascimento"
+                       Label="Data de nascimento"
+                       Variant="Variant.Outlined"
+                       Margin="Margin.Dense"
+                       DateFormat="dd/MM/yyyy"
+                       Editable="true"
+                       Clearable="true" />
+    </MudItem>
+    <MudItem xs="12">
+        <MudTextField @bind-Value="Modelo.Endereco"
+                      Label="Endereço"
+                      Variant="Variant.Outlined"
+                      Margin="Margin.Dense"
+                      Lines="2"
+                      Required="true"
+                      Error="@TemErro(nameof(Modelo.Endereco))"
+                      ErrorText="@MsgErro(nameof(Modelo.Endereco))" />
+    </MudItem>
+    <MudItem xs="12">
+        <MudSwitch @bind-Value="_ativo" Label="Funcionário ativo" Color="Color.Primary" />
+    </MudItem>
+</MudGrid>
+
+@code {
+    [Parameter, EditorRequired] public FuncionarioCadastroDto Modelo { get; set; } = new();
+    [Parameter] public Dictionary<string, string> Erros { get; set; } = new();
+
+    private bool _ativo = true;
+
+    protected override void OnParametersSet() =>
+        _ativo = Modelo.Status == StatusRegistro.Ativo;
+
+    protected override void OnAfterRender(bool firstRender) =>
+        Modelo.Status = _ativo ? StatusRegistro.Ativo : StatusRegistro.Inativo;
+
+    private bool TemErro(string campo) => Erros.ContainsKey(campo);
+    private string? MsgErro(string campo) => Erros.TryGetValue(campo, out var msg) ? msg : null;
+}
+

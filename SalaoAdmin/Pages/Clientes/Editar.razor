@@ -1,0 +1,84 @@
+@page "/clientes/editar/{Id:guid}"
+@layout AdminLayout
+@inject IClienteServico ClienteServico
+@inject IServicoValidacao Validacao
+@inject IServicoNotificacao Notificacoes
+@inject NavigationManager Navegacao
+
+<CabecalhoPagina Titulo="Editar cliente" />
+
+@if (_carregando)
+{
+    <MudProgressLinear Indeterminate="true" Color="Color.Primary" />
+}
+else if (_modelo is null)
+{
+    <MudAlert Severity="Severity.Warning">Cliente não encontrado.</MudAlert>
+}
+else
+{
+    <MudPaper Class="pa-4" Elevation="1" Style="position: relative;">
+        <OverlayCarregando Visivel="_salvando" />
+        <ClienteForm Modelo="_modelo" Erros="_erros" />
+        <MudStack Row="true" Justify="Justify.FlexEnd" Spacing="2" Class="mt-4">
+            <MudButton Variant="Variant.Text" OnClick="@(() => Navegacao.NavigateTo("/clientes"))">Cancelar</MudButton>
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="Salvar" Disabled="_salvando">Atualizar</MudButton>
+        </MudStack>
+    </MudPaper>
+}
+
+@code {
+    [Parameter] public Guid Id { get; set; }
+
+    private ClienteEdicaoDto? _modelo;
+    private Dictionary<string, string> _erros = new();
+    private bool _carregando = true;
+    private bool _salvando;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var resposta = await ClienteServico.ObterPorIdAsync(Id);
+        if (resposta.Sucesso && resposta.Dados is not null)
+        {
+            var c = resposta.Dados;
+            _modelo = new ClienteEdicaoDto
+            {
+                Id = c.Id,
+                NomeCompleto = c.NomeCompleto,
+                WhatsApp = c.WhatsApp,
+                DataNascimento = c.DataNascimento,
+                Endereco = c.Endereco
+            };
+        }
+        _carregando = false;
+    }
+
+    private async Task Salvar()
+    {
+        if (_modelo is null) return;
+
+        var validacao = await Validacao.ValidarAsync(_modelo);
+        if (!validacao.IsValid)
+        {
+            _erros = Validacao.ParaErros(validacao);
+            return;
+        }
+
+        _salvando = true;
+        try
+        {
+            var resposta = await ClienteServico.AtualizarAsync(_modelo);
+            if (resposta.Sucesso)
+            {
+                Notificacoes.Sucesso(resposta.Mensagem ?? "Atualizado.");
+                Navegacao.NavigateTo("/clientes");
+            }
+            else
+                Notificacoes.Erro(resposta.Mensagem ?? "Erro ao atualizar.");
+        }
+        finally
+        {
+            _salvando = false;
+        }
+    }
+}

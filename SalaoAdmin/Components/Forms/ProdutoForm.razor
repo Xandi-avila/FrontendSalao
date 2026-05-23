@@ -1,0 +1,80 @@
+@using SalaoAdmin.Dtos.Produtos
+@using SalaoAdmin.Enums
+
+<MudGrid Spacing="3">
+    <MudItem xs="12" md="8">
+        <MudTextField @bind-Value="Modelo.Nome"
+                      Label="Nome do produto"
+                      Variant="Variant.Outlined"
+                      Margin="Margin.Dense"
+                      Required="true"
+                      Error="@TemErro(nameof(Modelo.Nome))"
+                      ErrorText="@MsgErro(nameof(Modelo.Nome))" />
+    </MudItem>
+    <MudItem xs="12" md="4">
+        <CampoMoeda @bind-ValorNumerico="Modelo.Valor"
+                    Rotulo="Valor"
+                    Obrigatorio="true"
+                    ComErro="@TemErro(nameof(Modelo.Valor))"
+                    TextoErro="@MsgErro(nameof(Modelo.Valor))" />
+    </MudItem>
+    <MudItem xs="12" md="6">
+        <MudButton HtmlTag="label"
+                   Variant="Variant.Outlined"
+                   Color="Color.Primary"
+                   StartIcon="@Icons.Material.Filled.CloudUpload"
+                   for="produto-foto-input">
+            Enviar foto (mock)
+        </MudButton>
+        <InputFile id="produto-foto-input" OnChange="AoSelecionarImagem" accept="image/*" class="d-none" />
+        <MudText Typo="Typo.caption" Color="Color.Secondary" Class="mt-1">
+            Upload simulado — arquivo não é enviado ao servidor.
+        </MudText>
+    </MudItem>
+    <MudItem xs="12" md="6">
+        @if (!string.IsNullOrWhiteSpace(_previewUrl))
+        {
+            <MudPaper Class="pa-2" Outlined="true">
+                <MudText Typo="Typo.caption" Class="mb-2">Pré-visualização</MudText>
+                <MudImage Src="@_previewUrl" Alt="Preview" Height="120" ObjectFit="ObjectFit.Contain" />
+            </MudPaper>
+        }
+    </MudItem>
+    <MudItem xs="12">
+        <MudSwitch @bind-Value="_ativo" Label="Produto ativo" Color="Color.Primary" />
+    </MudItem>
+</MudGrid>
+
+@code {
+    [Parameter, EditorRequired] public ProdutoCadastroDto Modelo { get; set; } = new();
+    [Parameter] public Dictionary<string, string> Erros { get; set; } = new();
+
+    private bool _ativo = true;
+    private string? _previewUrl;
+
+    protected override void OnParametersSet()
+    {
+        _ativo = Modelo.Status == StatusRegistro.Ativo;
+        _previewUrl = string.IsNullOrWhiteSpace(Modelo.CaminhoImagem)
+            ? null
+            : Modelo.CaminhoImagem;
+    }
+
+    protected override void OnAfterRender(bool firstRender) =>
+        Modelo.Status = _ativo ? StatusRegistro.Ativo : StatusRegistro.Inativo;
+
+    private async Task AoSelecionarImagem(InputFileChangeEventArgs e)
+    {
+        var file = e.File;
+        if (file is null) return;
+        using var stream = file.OpenReadStream(maxAllowedSize: 5 * 1024 * 1024);
+        using var ms = new MemoryStream();
+        await stream.CopyToAsync(ms);
+        var base64 = Convert.ToBase64String(ms.ToArray());
+        _previewUrl = $"data:{file.ContentType};base64,{base64}";
+        Modelo.CaminhoImagem = _previewUrl;
+    }
+
+    private bool TemErro(string campo) => Erros.ContainsKey(campo);
+    private string? MsgErro(string campo) => Erros.TryGetValue(campo, out var msg) ? msg : null;
+}

@@ -1,0 +1,64 @@
+@page "/servicos/cadastro"
+@layout AdminLayout
+@inject IServicoCatalogoServico ServicoCatalogoServico
+@inject ICategoriaServico CategoriaServico
+@inject IServicoValidacao Validacao
+@inject IServicoNotificacao Notificacoes
+@inject NavigationManager Navegacao
+
+<CabecalhoPagina Titulo="Novo serviço" />
+
+<MudPaper Class="pa-4" Elevation="1" Style="position: relative;">
+    <OverlayCarregando Visivel="_salvando || _carregando" />
+    @if (!_carregando)
+    {
+        <ServicoForm Modelo="_modelo" Categorias="_categorias" Erros="_erros" />
+        <MudStack Row="true" Justify="Justify.FlexEnd" Spacing="2" Class="mt-4">
+            <MudButton Variant="Variant.Text" OnClick="@(() => Navegacao.NavigateTo("/servicos"))">Cancelar</MudButton>
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="Salvar" Disabled="_salvando">Salvar</MudButton>
+        </MudStack>
+    }
+</MudPaper>
+
+@code {
+    private ServicoCadastroDto _modelo = new();
+    private List<CategoriaDto> _categorias = [];
+    private Dictionary<string, string> _erros = new();
+    private bool _salvando;
+    private bool _carregando = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var resposta = await CategoriaServico.ListarAsync(new FiltroPaginacao { Pagina = 1, ItensPorPagina = 100 });
+        if (resposta.Sucesso && resposta.Dados is not null)
+            _categorias = resposta.Dados.Itens.ToList();
+        _carregando = false;
+    }
+
+    private async Task Salvar()
+    {
+        var validacao = await Validacao.ValidarAsync(_modelo);
+        if (!validacao.IsValid)
+        {
+            _erros = Validacao.ParaErros(validacao);
+            return;
+        }
+
+        _salvando = true;
+        try
+        {
+            var resposta = await ServicoCatalogoServico.CriarAsync(_modelo);
+            if (resposta.Sucesso)
+            {
+                Notificacoes.Sucesso(resposta.Mensagem ?? "Salvo.");
+                Navegacao.NavigateTo("/servicos");
+            }
+            else
+                Notificacoes.Erro(resposta.Mensagem ?? "Erro ao salvar.");
+        }
+        finally
+        {
+            _salvando = false;
+        }
+    }
+}

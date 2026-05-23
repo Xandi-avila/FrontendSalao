@@ -1,0 +1,33 @@
+<MudTextField Value="_texto"
+              ValueChanged="@(async (string? v) => await AoDigitar(v))"
+              Label="@Rotulo"
+              Variant="Variant.Outlined"
+              Margin="Margin.Dense"
+              Required="@Obrigatorio"
+              Error="@ComErro"
+              ErrorText="@TextoErro"
+              Adornment="Adornment.Start"
+              AdornmentText="R$"
+              Immediate="true" />
+
+@code {
+    [Parameter] public string Rotulo { get; set; } = "Valor";
+    [Parameter] public decimal ValorNumerico { get; set; }
+    [Parameter] public EventCallback<decimal> ValorNumericoChanged { get; set; }
+    [Parameter] public bool Obrigatorio { get; set; }
+    [Parameter] public bool ComErro { get; set; }
+    [Parameter] public string? TextoErro { get; set; }
+
+    private string _texto = "0,00";
+
+    protected override void OnParametersSet() =>
+        _texto = FormatacaoCampos.MoedaParaCampo(ValorNumerico);
+
+    private async Task AoDigitar(string? texto)
+    {
+        _texto = texto ?? string.Empty;
+        var numero = FormatacaoCampos.MoedaDeTexto(_texto) ?? 0;
+        await ValorNumericoChanged.InvokeAsync(numero);
+    }
+}
+

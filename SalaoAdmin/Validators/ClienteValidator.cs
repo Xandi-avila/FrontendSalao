@@ -1,0 +1,31 @@
+using FluentValidation;
+using SalaoAdmin.Dtos.Clientes;
+
+namespace SalaoAdmin.Validadores;
+
+public class ValidadorClienteCadastro : AbstractValidator<ClienteCadastroDto>
+{
+    public ValidadorClienteCadastro()
+    {
+        RuleFor(x => x.NomeCompleto)
+            .NotEmpty().WithMessage("Nome completo é obrigatório.")
+            .MaximumLength(200);
+
+        RuleFor(x => x.WhatsApp)
+            .NotEmpty().WithMessage("WhatsApp é obrigatório.")
+            .MinimumLength(14).WithMessage("WhatsApp inválido.");
+
+        RuleFor(x => x.Endereco)
+            .NotEmpty().WithMessage("Endereço é obrigatório.");
+    }
+}
+
+public class ValidadorClienteEdicao : AbstractValidator<ClienteEdicaoDto>
+{
+    public ValidadorClienteEdicao()
+    {
+        RuleFor(x => x.Id).NotEmpty();
+        RuleFor(x => x).SetValidator(new ValidadorClienteCadastro());
+    }
+}
+

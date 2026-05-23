@@ -1,0 +1,47 @@
+@using SalaoAdmin.Dtos.Clientes
+
+<MudGrid Spacing="3">
+    <MudItem xs="12" md="8">
+        <MudTextField @bind-Value="Modelo.NomeCompleto"
+                      Label="Nome completo"
+                      Variant="Variant.Outlined"
+                      Margin="Margin.Dense"
+                      Required="true"
+                      Error="@TemErro(nameof(Modelo.NomeCompleto))"
+                      ErrorText="@MsgErro(nameof(Modelo.NomeCompleto))" />
+    </MudItem>
+    <MudItem xs="12" md="4">
+        <CampoTelefone @bind-Valor="Modelo.WhatsApp"
+                       Rotulo="WhatsApp"
+                       Obrigatorio="true"
+                       ComErro="@TemErro(nameof(Modelo.WhatsApp))"
+                       TextoErro="@MsgErro(nameof(Modelo.WhatsApp))" />
+    </MudItem>
+    <MudItem xs="12" md="4">
+        <MudDatePicker @bind-Date="Modelo.DataNascimento"
+                       Label="Data de nascimento"
+                       Variant="Variant.Outlined"
+                       Margin="Margin.Dense"
+                       DateFormat="dd/MM/yyyy"
+                       Editable="true"
+                       Clearable="true" />
+    </MudItem>
+    <MudItem xs="12">
+        <MudTextField @bind-Value="Modelo.Endereco"
+                      Label="Endereço"
+                      Variant="Variant.Outlined"
+                      Margin="Margin.Dense"
+                      Lines="2"
+                      Required="true"
+                      Error="@TemErro(nameof(Modelo.Endereco))"
+                      ErrorText="@MsgErro(nameof(Modelo.Endereco))" />
+    </MudItem>
+</MudGrid>
+
+@code {
+    [Parameter, EditorRequired] public ClienteCadastroDto Modelo { get; set; } = new();
+    [Parameter] public Dictionary<string, string> Erros { get; set; } = new();
+
+    private bool TemErro(string campo) => Erros.ContainsKey(campo);
+    private string? MsgErro(string campo) => Erros.TryGetValue(campo, out var msg) ? msg : null;
+}

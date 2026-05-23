@@ -1,0 +1,64 @@
+@page "/categorias/cadastro"
+@layout AdminLayout
+@inject ICategoriaServico CategoriaServico
+@inject IServicoCatalogoServico ServicoCatalogoServico
+@inject IServicoValidacao Validacao
+@inject IServicoNotificacao Notificacoes
+@inject NavigationManager Navegacao
+
+<CabecalhoPagina Titulo="Nova categoria" />
+
+<MudPaper Class="pa-4" Elevation="1" Style="position: relative;">
+    <OverlayCarregando Visivel="_salvando || _carregandoServicos" />
+    @if (!_carregandoServicos)
+    {
+        <CategoriaForm Modelo="_modelo" ServicosDisponiveis="_servicos" Erros="_erros" />
+        <MudStack Row="true" Justify="Justify.FlexEnd" Spacing="2" Class="mt-4">
+            <MudButton Variant="Variant.Text" OnClick="@(() => Navegacao.NavigateTo("/categorias"))">Cancelar</MudButton>
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="Salvar" Disabled="_salvando">Salvar</MudButton>
+        </MudStack>
+    }
+</MudPaper>
+
+@code {
+    private CategoriaCadastroDto _modelo = new();
+    private List<ServicoDto> _servicos = [];
+    private Dictionary<string, string> _erros = new();
+    private bool _salvando;
+    private bool _carregandoServicos = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var resposta = await ServicoCatalogoServico.ListarAsync(new FiltroPaginacao { Pagina = 1, ItensPorPagina = 100 });
+        if (resposta.Sucesso && resposta.Dados is not null)
+            _servicos = resposta.Dados.Itens.ToList();
+        _carregandoServicos = false;
+    }
+
+    private async Task Salvar()
+    {
+        var validacao = await Validacao.ValidarAsync(_modelo);
+        if (!validacao.IsValid)
+        {
+            _erros = Validacao.ParaErros(validacao);
+            return;
+        }
+
+        _salvando = true;
+        try
+        {
+            var resposta = await CategoriaServico.CriarAsync(_modelo);
+            if (resposta.Sucesso)
+            {
+                Notificacoes.Sucesso(resposta.Mensagem ?? "Salvo.");
+                Navegacao.NavigateTo("/categorias");
+            }
+            else
+                Notificacoes.Erro(resposta.Mensagem ?? "Erro ao salvar.");
+        }
+        finally
+        {
+            _salvando = false;
+        }
+    }
+}
