@@ -1,0 +1,16 @@
+name: Proteger main
+
+on:
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  validar-origem:
+    runs-on: ubuntu-latest
+    steps:
+      - name: PR para main deve vir da develop
+        if: github.head_ref != 'develop'
+        run: |
+          echo "Pull requests para main so podem vir da branch develop."
+          exit 1
