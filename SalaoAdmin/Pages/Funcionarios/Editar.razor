@@ -19,7 +19,7 @@ else
 {
     <MudPaper Class="pa-4" Elevation="1" Style="position: relative;">
         <OverlayCarregando Visivel="_salvando" />
-        <FuncionarioForm Modelo="_modelo" Erros="_erros" />
+        <FuncionarioForm Modelo="_modelo" Erros="_erros" Edicao="true" />
         <MudStack Row="true" Justify="Justify.FlexEnd" Spacing="2" Class="mt-4">
             <MudButton Variant="Variant.Text" OnClick="@(() => Navegacao.NavigateTo("/funcionarios"))">Cancelar</MudButton>
             <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="Salvar" Disabled="_salvando">Atualizar</MudButton>

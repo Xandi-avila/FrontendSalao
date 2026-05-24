@@ -22,6 +22,7 @@ public class FuncionarioCadastroDto
     public string Telefone { get; set; } = string.Empty;
     public string ProfissaoCargo { get; set; } = string.Empty;
     public string Email { get; set; } = string.Empty;
+    public string? Senha { get; set; }
     public DateTime? DataNascimento { get; set; }
     public NivelPermissao NivelPermissao { get; set; } = NivelPermissao.Profissional;
     public StatusRegistro Status { get; set; } = StatusRegistro.Ativo;

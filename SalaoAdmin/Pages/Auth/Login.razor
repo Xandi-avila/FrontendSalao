@@ -1,0 +1,104 @@
+@page "/login"
+@attribute [AllowAnonymous]
+@layout AuthLayout
+@inject IAuthService AuthService
+@inject IServicoNotificacao Notificacoes
+@inject NavigationManager Navegacao
+@inject AuthenticationStateProvider AuthStateProvider
+
+<PageTitle>Entrar — Salão Admin</PageTitle>
+
+<MudPaper Class="login-card" Elevation="8">
+    <div class="login-header">
+        <div class="login-brand">
+            <MudIcon Icon="@Icons.Material.Filled.ContentCut" Size="Size.Large" />
+        </div>
+        <MudText Typo="Typo.h5" Color="Color.Primary"><b>Salão Admin</b></MudText>
+        <MudText Typo="Typo.body2" Color="Color.Secondary" Class="mt-1">
+            Entre com seu e-mail e senha para acessar o painel
+        </MudText>
+    </div>
+
+    <div class="login-form">
+        <EditForm Model="_request" OnValidSubmit="Entrar">
+            <MudStack Spacing="3">
+                <MudTextField @bind-Value="_request.Email"
+                              Label="E-mail"
+                              Variant="Variant.Outlined"
+                              InputType="InputType.Email"
+                              Adornment="Adornment.Start"
+                              AdornmentIcon="@Icons.Material.Filled.Email"
+                              Disabled="_carregando"
+                              Required="true" />
+
+                <MudTextField @bind-Value="_request.Senha"
+                              Label="Senha"
+                              Variant="Variant.Outlined"
+                              InputType="@(_mostrarSenha ? InputType.Text : InputType.Password)"
+                              Adornment="Adornment.End"
+                              AdornmentIcon="@(_mostrarSenha ? Icons.Material.Filled.VisibilityOff : Icons.Material.Filled.Visibility)"
+                              OnAdornmentClick="() => _mostrarSenha = !_mostrarSenha"
+                              Disabled="_carregando"
+                              Required="true" />
+
+                <MudButton ButtonType="ButtonType.Submit"
+                           Variant="Variant.Filled"
+                           Color="Color.Primary"
+                           FullWidth="true"
+                           Size="Size.Large"
+                           Disabled="_carregando"
+                           Class="mt-2">
+                    @if (_carregando)
+                    {
+                        <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2" />
+                        <span>Entrando...</span>
+                    }
+                    else
+                    {
+                        <span>Entrar</span>
+                    }
+                </MudButton>
+            </MudStack>
+        </EditForm>
+    </div>
+</MudPaper>
+
+@code {
+    private readonly LoginRequestDto _request = new();
+    private bool _carregando;
+    private bool _mostrarSenha;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var estado = await AuthStateProvider.GetAuthenticationStateAsync();
+        if (estado.User.Identity?.IsAuthenticated == true)
+            Navegacao.NavigateTo("/");
+    }
+
+    private async Task Entrar()
+    {
+        if (string.IsNullOrWhiteSpace(_request.Email) || string.IsNullOrWhiteSpace(_request.Senha))
+        {
+            Notificacoes.Erro("Informe e-mail e senha.");
+            return;
+        }
+
+        _carregando = true;
+        try
+        {
+            var resultado = await AuthService.LoginAsync(_request);
+            if (!resultado.Sucesso)
+            {
+                Notificacoes.Erro(resultado.Mensagem ?? "Falha no login.");
+                return;
+            }
+
+            Notificacoes.Sucesso("Login realizado.");
+            Navegacao.NavigateTo("/");
+        }
+        finally
+        {
+            _carregando = false;
+        }
+    }
+}

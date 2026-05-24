@@ -1,0 +1,137 @@
+<MudGrid Spacing="3" Class="mt-2">
+    <MudItem xs="12">
+        <MudText Typo="Typo.h6" Class="mb-1">Visão gerencial</MudText>
+        <MudText Typo="Typo.caption" Color="Color.Secondary">
+            Indicadores do período selecionado — @TextoPeriodo
+        </MudText>
+    </MudItem>
+
+    <MudItem xs="6" sm="4" md="3">
+        <MudPaper Class="pa-3" Outlined="true">
+            <MudText Typo="Typo.caption" Color="Color.Secondary">Total agendamentos</MudText>
+            <MudText Typo="Typo.h5">@Indicadores.TotalAgendamentos</MudText>
+        </MudPaper>
+    </MudItem>
+    <MudItem xs="6" sm="4" md="3">
+        <MudPaper Class="pa-3" Outlined="true">
+            <MudText Typo="Typo.caption" Color="Color.Secondary">Confirmados</MudText>
+            <MudText Typo="Typo.h5" Color="Color.Success">@Indicadores.Confirmados</MudText>
+        </MudPaper>
+    </MudItem>
+    <MudItem xs="6" sm="4" md="3">
+        <MudPaper Class="pa-3" Outlined="true">
+            <MudText Typo="Typo.caption" Color="Color.Secondary">Cancelados</MudText>
+            <MudText Typo="Typo.h5" Color="Color.Error">@Indicadores.Cancelados</MudText>
+        </MudPaper>
+    </MudItem>
+    <MudItem xs="6" sm="4" md="3">
+        <MudPaper Class="pa-3" Outlined="true">
+            <MudText Typo="Typo.caption" Color="Color.Secondary">Taxa de ocupação</MudText>
+            <MudText Typo="Typo.h5">@($"{Indicadores.TaxaOcupacao:0.#}%")</MudText>
+        </MudPaper>
+    </MudItem>
+
+    <MudItem xs="12" md="6">
+        <MudPaper Class="pa-4" Outlined="true">
+            <MudText Typo="Typo.subtitle1" Class="mb-3">Atendimentos por profissional</MudText>
+            @if (Indicadores.PorFuncionario.Count == 0)
+            {
+                <MudText Typo="Typo.body2" Color="Color.Secondary">Sem dados no período.</MudText>
+            }
+            @foreach (var item in Indicadores.PorFuncionario)
+            {
+                <div class="agenda-barra-linha">
+                    <span class="agenda-barra-label">@item.Nome</span>
+                    <div class="agenda-barra-track">
+                        <div class="agenda-barra-fill agenda-barra-primaria" style="width:@($"{item.Percentual:0.#}")%"></div>
+                    </div>
+                    <span class="agenda-barra-valor">@item.Quantidade</span>
+                </div>
+            }
+        </MudPaper>
+    </MudItem>
+
+    <MudItem xs="12" md="6">
+        <MudPaper Class="pa-4" Outlined="true">
+            <MudText Typo="Typo.subtitle1" Class="mb-3">Serviços mais realizados</MudText>
+            @if (Indicadores.PorServico.Count == 0)
+            {
+                <MudText Typo="Typo.body2" Color="Color.Secondary">Sem dados no período.</MudText>
+            }
+            @foreach (var item in Indicadores.PorServico)
+            {
+                <div class="agenda-barra-linha">
+                    <span class="agenda-barra-label">@item.Nome</span>
+                    <div class="agenda-barra-track">
+                        <div class="agenda-barra-fill agenda-barra-info" style="width:@($"{item.Percentual:0.#}")%"></div>
+                    </div>
+                    <span class="agenda-barra-valor">@item.Quantidade</span>
+                </div>
+            }
+        </MudPaper>
+    </MudItem>
+
+    <MudItem xs="12" md="6">
+        <MudPaper Class="pa-4" Outlined="true">
+            <MudText Typo="Typo.subtitle1" Class="mb-3">Horários mais movimentados</MudText>
+            @if (Indicadores.PorHorario.Count == 0)
+            {
+                <MudText Typo="Typo.body2" Color="Color.Secondary">Sem dados no período.</MudText>
+            }
+            @foreach (var item in Indicadores.PorHorario)
+            {
+                <div class="agenda-barra-linha">
+                    <span class="agenda-barra-label">@item.Nome</span>
+                    <div class="agenda-barra-track">
+                        <div class="agenda-barra-fill agenda-barra-secundaria" style="width:@($"{item.Percentual:0.#}")%"></div>
+                    </div>
+                    <span class="agenda-barra-valor">@item.Quantidade</span>
+                </div>
+            }
+        </MudPaper>
+    </MudItem>
+
+    <MudItem xs="12" md="6">
+        <MudPaper Class="pa-4" Outlined="true">
+            <MudText Typo="Typo.subtitle1" Class="mb-3">Cancelamentos por profissional</MudText>
+            @if (Indicadores.CancelamentosPorFuncionario.Count == 0)
+            {
+                <MudText Typo="Typo.body2" Color="Color.Secondary">Nenhum cancelamento no período.</MudText>
+            }
+            @foreach (var item in Indicadores.CancelamentosPorFuncionario)
+            {
+                <div class="agenda-barra-linha">
+                    <span class="agenda-barra-label">@item.Nome</span>
+                    <div class="agenda-barra-track">
+                        <div class="agenda-barra-fill agenda-barra-erro" style="width:@($"{item.Percentual:0.#}")%"></div>
+                    </div>
+                    <span class="agenda-barra-valor">@item.Quantidade</span>
+                </div>
+            }
+        </MudPaper>
+    </MudItem>
+</MudGrid>
+
+@code {
+    public sealed class ItemBarra
+    {
+        public string Nome { get; init; } = string.Empty;
+        public int Quantidade { get; init; }
+        public double Percentual { get; init; }
+    }
+
+    public sealed class IndicadoresGerenciais
+    {
+        public int TotalAgendamentos { get; init; }
+        public int Confirmados { get; init; }
+        public int Cancelados { get; init; }
+        public double TaxaOcupacao { get; init; }
+        public List<ItemBarra> PorFuncionario { get; init; } = [];
+        public List<ItemBarra> PorServico { get; init; } = [];
+        public List<ItemBarra> PorHorario { get; init; } = [];
+        public List<ItemBarra> CancelamentosPorFuncionario { get; init; } = [];
+    }
+
+    [Parameter] public string TextoPeriodo { get; set; } = string.Empty;
+    [Parameter] public IndicadoresGerenciais Indicadores { get; set; } = new();
+}

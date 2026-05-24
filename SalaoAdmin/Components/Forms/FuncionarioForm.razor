@@ -34,6 +34,16 @@
                       ErrorText="@MsgErro(nameof(Modelo.Email))" />
     </MudItem>
     <MudItem xs="12" md="6">
+        <MudTextField @bind-Value="Modelo.Senha"
+                      Label="@(Edicao ? "Nova senha (opcional)" : "Senha")"
+                      Variant="Variant.Outlined"
+                      Margin="Margin.Dense"
+                      InputType="InputType.Password"
+                      Required="@(!Edicao)"
+                      Error="@TemErro(nameof(Modelo.Senha))"
+                      ErrorText="@MsgErro(nameof(Modelo.Senha))" />
+    </MudItem>
+    <MudItem xs="12" md="6">
         <CampoTelefone @bind-Valor="Modelo.Telefone"
                        Rotulo="Telefone / WhatsApp"
                        Obrigatorio="true"
@@ -76,6 +86,7 @@
 @code {
     [Parameter, EditorRequired] public FuncionarioCadastroDto Modelo { get; set; } = new();
     [Parameter] public Dictionary<string, string> Erros { get; set; } = new();
+    [Parameter] public bool Edicao { get; set; }
 
     private bool _ativo = true;
 

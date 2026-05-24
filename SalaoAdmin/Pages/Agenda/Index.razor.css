@@ -1,0 +1,8 @@
+.agenda-card-op {
+    min-height: 72px;
+}
+
+.agenda-card-alerta {
+    border-color: #ff5722 !important;
+    background: rgba(255, 87, 34, 0.06);
+}
