@@ -1,0 +1,40 @@
+.auth-shell {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1.5rem;
+    background: linear-gradient(135deg, #f5f3f7 0%, #e8d5f0 45%, #f5e8ef 100%);
+}
+
+.auth-container {
+    width: 100%;
+}
+
+.login-card {
+    border-radius: 16px !important;
+    overflow: hidden;
+}
+
+.login-header {
+    text-align: center;
+    padding: 2rem 2rem 1rem;
+    background: linear-gradient(180deg, rgba(123, 75, 148, 0.08) 0%, transparent 100%);
+}
+
+.login-form {
+    padding: 0 2rem 2rem;
+}
+
+.login-brand {
+    width: 72px;
+    height: 72px;
+    margin: 0 auto 1rem;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, #7B4B94, #B88FD4);
+    color: white;
+    box-shadow: 0 8px 24px rgba(123, 75, 148, 0.25);
+}
