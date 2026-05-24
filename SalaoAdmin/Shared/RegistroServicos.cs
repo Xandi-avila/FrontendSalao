@@ -1,4 +1,7 @@
 using FluentValidation;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Components.Authorization;
+using Microsoft.Extensions.DependencyInjection;
 using SalaoAdmin.Configuracao;
 using SalaoAdmin.Contratos;
 using SalaoAdmin.DadosMock;
@@ -16,16 +19,35 @@ public static class RegistroServicos
         servicos.AddSingleton(config);
         servicos.AddSingleton<ArmazenamentoLocal>();
 
-        servicos.AddScoped(_ =>
+        servicos.AddAuthorizationCore(options =>
         {
-            var http = new HttpClient
+            if (config.ExigirAutenticacao)
             {
-                BaseAddress = new Uri(config.UrlBaseApi),
-                Timeout = TimeSpan.FromSeconds(config.TimeoutSegundos)
-            };
-            return http;
+                options.FallbackPolicy = new AuthorizationPolicyBuilder()
+                    .RequireAuthenticatedUser()
+                    .Build();
+            }
         });
-        servicos.AddScoped<ClienteHttpApi>();
+        servicos.AddScoped<JwtAuthenticationStateProvider>();
+        servicos.AddScoped<AuthenticationStateProvider>(sp => sp.GetRequiredService<JwtAuthenticationStateProvider>());
+        servicos.AddScoped<TokenStorageService>();
+        servicos.AddScoped<AuthHttpMessageHandler>();
+        servicos.AddScoped<ErrorHandlerService>();
+
+        servicos.AddHttpClient<AuthApiService>(client =>
+        {
+            client.BaseAddress = new Uri(config.UrlBaseApi);
+            client.Timeout = TimeSpan.FromSeconds(config.TimeoutSegundos);
+        });
+
+        servicos.AddHttpClient("ApiAutenticada", client =>
+            {
+                client.BaseAddress = new Uri(config.UrlBaseApi);
+                client.Timeout = TimeSpan.FromSeconds(config.TimeoutSegundos);
+            })
+            .AddHttpMessageHandler<AuthHttpMessageHandler>();
+
+        servicos.AddScoped(sp => sp.GetRequiredService<IHttpClientFactory>().CreateClient("ApiAutenticada"));
 
         servicos.AddValidatorsFromAssemblyContaining<Program>();
 
@@ -34,6 +56,11 @@ public static class RegistroServicos
         servicos.AddScoped<ITratadorErros, TratadorErros>();
         servicos.AddScoped<IPreferenciaTemaServico, PreferenciaTemaServico>();
 
+        servicos.AddScoped<IAuthService, AuthService>();
+        servicos.AddScoped<IAgendaServico, AgendaApiService>();
+        servicos.AddScoped<IAgendamentoServico, AgendamentoApiService>();
+        servicos.AddScoped<IAnaliseServico, AnaliseApiService>();
+
         if (config.UsarMocks)
         {
             servicos.AddScoped<IFuncionarioServico, FuncionarioServicoMock>();
@@ -41,10 +68,17 @@ public static class RegistroServicos
             servicos.AddScoped<IProdutoServico, ProdutoServicoMock>();
             servicos.AddScoped<ICategoriaServico, CategoriaServicoMock>();
             servicos.AddScoped<IServicoCatalogoServico, ServicoCatalogoServicoMock>();
+            servicos.AddScoped<IAgendaServico, AgendaServicoMock>();
+            servicos.AddScoped<IAgendamentoServico, AgendamentoServicoMock>();
+            servicos.AddScoped<IAnaliseServico, AnaliseServicoMock>();
         }
         else
         {
-            servicos.AddScoped<IFuncionarioServico, FuncionarioServicoApi>();
+            servicos.AddScoped<IFuncionarioServico, FuncionarioApiService>();
+            servicos.AddScoped<IClienteServico, ClienteApiService>();
+            servicos.AddScoped<IProdutoServico, ProdutoApiService>();
+            servicos.AddScoped<ICategoriaServico, CategoriaApiService>();
+            servicos.AddScoped<IServicoCatalogoServico, ServicoApiService>();
         }
 
         return servicos;
