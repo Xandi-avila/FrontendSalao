@@ -1,17 +1,23 @@
-<LimiteErros>
-    <Router AppAssembly="@typeof(App).Assembly">
-        <Found Context="routeData">
-            <RouteView RouteData="@routeData" DefaultLayout="@typeof(AdminLayout)" />
-            <FocusOnNavigate RouteData="@routeData" Selector="h1" />
-        </Found>
-        <NotFound>
-            <PageTitle>Página não encontrada</PageTitle>
-            <LayoutView Layout="@typeof(AdminLayout)">
-                <MudAlert Severity="Severity.Warning" Class="ma-4">
-                    Essa rota não existe.
-                </MudAlert>
-            </LayoutView>
-        </NotFound>
-    </Router>
-</LimiteErros>
+<CascadingAuthenticationState>
+    <LimiteErros>
+        <Router AppAssembly="@typeof(App).Assembly">
+            <Found Context="routeData">
+                <AuthorizeRouteView RouteData="@routeData" DefaultLayout="@typeof(AdminLayout)">
+                    <NotAuthorized>
+                        <RedirectToLogin />
+                    </NotAuthorized>
+                </AuthorizeRouteView>
+                <FocusOnNavigate RouteData="@routeData" Selector="h1" />
+            </Found>
+            <NotFound>
+                <PageTitle>Página não encontrada</PageTitle>
+                <LayoutView Layout="@typeof(AdminLayout)">
+                    <MudAlert Severity="Severity.Warning" Class="ma-4">
+                        Essa rota não existe.
+                    </MudAlert>
+                </LayoutView>
+            </NotFound>
+        </Router>
+    </LimiteErros>
+</CascadingAuthenticationState>
 

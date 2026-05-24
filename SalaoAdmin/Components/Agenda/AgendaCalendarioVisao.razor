@@ -1,0 +1,361 @@
+@using SalaoAdmin.Utilitarios
+@using Microsoft.AspNetCore.Components.Web
+
+<MudPaper Class="pa-3 mb-4 agenda-calendario" Outlined="true">
+    <MudStack Row="true" Wrap="Wrap.Wrap" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center" Class="mb-3">
+        <div>
+            <MudText Typo="Typo.h6">@TituloCalendario()</MudText>
+            <MudText Typo="Typo.caption" Color="Color.Secondary">@SubtituloCalendario()</MudText>
+        </div>
+        <MudStack Row="true" Spacing="1" AlignItems="AlignItems.Center" Wrap="Wrap.Wrap">
+            <MudIconButton Icon="@Icons.Material.Filled.ChevronLeft" OnClick="Retroceder" />
+            <MudButton Variant="Variant.Text" Size="Size.Small" OnClick="IrParaHoje">Hoje</MudButton>
+            <MudIconButton Icon="@Icons.Material.Filled.ChevronRight" OnClick="Avancar" />
+            <MudButtonGroup Variant="Variant.Outlined" Class="ml-sm-2">
+                <MudButton OnClick="@(() => AlterarModo(ModoCalendario.Dia))"
+                           Color="@(Modo == ModoCalendario.Dia ? Color.Primary : Color.Default)">Dia</MudButton>
+                <MudButton OnClick="@(() => AlterarModo(ModoCalendario.Semana))"
+                           Color="@(Modo == ModoCalendario.Semana ? Color.Primary : Color.Default)">Semana</MudButton>
+                <MudButton OnClick="@(() => AlterarModo(ModoCalendario.Mes))"
+                           Color="@(Modo == ModoCalendario.Mes ? Color.Primary : Color.Default)">Mês</MudButton>
+            </MudButtonGroup>
+        </MudStack>
+    </MudStack>
+
+    <MudStack Row="true" Spacing="2" Wrap="Wrap.Wrap" Class="mb-3 agenda-legenda">
+        <span class="agenda-legenda-item agenda-ev-confirmado">Confirmado</span>
+        <span class="agenda-legenda-item agenda-ev-concluido">Finalizado</span>
+        <span class="agenda-legenda-item agenda-ev-cancelado">Cancelado</span>
+        <span class="agenda-legenda-item agenda-ev-conflito">Conflito</span>
+    </MudStack>
+
+    @if (_arrastando is not null)
+    {
+        <MudAlert Severity="Severity.Info" Dense="true" Class="mb-2">
+            Arrastando: <strong>@_arrastando.ClienteNome</strong> — solte em outra célula para reagendar.
+        </MudAlert>
+    }
+
+    @if (Modo == ModoCalendario.Mes)
+    {
+        <div class="agenda-mes-grade">
+            @foreach (var rotulo in RotulosDiasSemana)
+            {
+                <div class="agenda-mes-cab">@rotulo</div>
+            }
+            @foreach (var dia in AgendaCalculoHelper.DiasGradeMes(DataReferencia))
+            {
+                var foraMes = dia.Month != DataReferencia.Month;
+                var eventosDia = EventosDoDia(dia).ToList();
+                <div class="agenda-mes-celula @(foraMes ? "agenda-mes-fora" : "") @(dia.Date == DateTime.Today ? "agenda-dia-hoje" : "")"
+                     @onclick="@(() => SelecionarDia(dia))">
+                    <span class="agenda-mes-dia-num">@dia.Day</span>
+                    @if (eventosDia.Count > 0)
+                    {
+                        <span class="agenda-mes-contador">@eventosDia.Count</span>
+                        @if (eventosDia.Any(e => e.TemConflito))
+                        {
+                            <MudIcon Icon="@Icons.Material.Filled.Warning" Size="Size.Small" Color="Color.Warning" />
+                        }
+                    }
+                </div>
+            }
+        </div>
+    }
+    else
+    {
+        @foreach (var dia in DiasParaExibir)
+        {
+            var eventosDia = EventosDoDia(dia).ToList();
+            var funcs = FuncionariosVisiveis.ToList();
+            <div class="agenda-semana-dia-bloco @(dia.Date == DateTime.Today ? "agenda-dia-hoje" : "")">
+                <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2" Wrap="Wrap.Wrap" Class="agenda-semana-dia-titulo">
+                    <MudText Typo="Typo.subtitle2" Style="text-transform:capitalize">@dia.ToString("dddd, dd/MM", CulturaBr)</MudText>
+                    @if (dia.Date == DateTime.Today)
+                    {
+                        <MudChip T="string" Size="Size.Small" Color="Color.Primary">Hoje</MudChip>
+                    }
+                    <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined">@eventosDia.Count atend.</MudChip>
+                    @if (eventosDia.Any(e => e.TemConflito))
+                    {
+                        <MudChip T="string" Size="Size.Small" Color="Color.Warning" Icon="@Icons.Material.Filled.Warning">Conflitos no mesmo profissional</MudChip>
+                    }
+                </MudStack>
+
+                @if (eventosDia.Count > 0)
+                {
+                    <div class="agenda-lista-cronologica pa-2">
+                        @foreach (var grupo in eventosDia.GroupBy(e => e.Inicio.ToString("HH:mm")).OrderBy(g => g.Key))
+                        {
+                            @foreach (var ev in grupo.OrderBy(x => NomeFuncionario(x.FuncionarioId)))
+                            {
+                                <div class="agenda-lista-item @ClasseEvento(ev)"
+                                     @onclick="@(() => ClicarAgendamento(ev))">
+                                    <span class="agenda-lista-hora">@ev.Inicio.ToString("HH:mm")</span>
+                                    <span class="agenda-lista-func">@NomeFuncionario(ev.FuncionarioId)</span>
+                                    <span class="agenda-lista-cliente">@ev.ClienteNome</span>
+                                    <span class="agenda-lista-servico">@ev.ServicoNome</span>
+                                    @if (ev.TemConflito)
+                                    {
+                                        <MudIcon Icon="@Icons.Material.Filled.Warning" Size="Size.Small" Color="Color.Warning" />
+                                    }
+                                </div>
+                            }
+                        }
+                    </div>
+                }
+
+                @if (funcs.Count == 0)
+                {
+                    <MudAlert Severity="Severity.Info" Dense="true" Class="ma-2">Nenhum profissional cadastrado.</MudAlert>
+                }
+                else
+                {
+                    <div class="agenda-grade-scroll">
+                        <table class="agenda-grade">
+                            <thead>
+                                <tr>
+                                    <th class="agenda-grade-th-hora">Horário</th>
+                                    @foreach (var func in funcs)
+                                    {
+                                        <th class="agenda-grade-th-func agenda-timeline-col-add"
+                                            title="Novo agendamento às 09:00"
+                                            @onclick="@(() => AgendarRapidoColuna(dia, func.Id))">
+                                            @ResumoNome(func.NomeCompleto)
+                                        </th>
+                                    }
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var hora in HorasGrade)
+                                {
+                                    <tr>
+                                        <td class="agenda-grade-hora">@($"{hora:00}:00")</td>
+                                        @foreach (var func in funcs)
+                                        {
+                                            var celulaEventos = EventosIniciandoNaHora(dia, func.Id, hora).ToList();
+                                            <td class="agenda-grade-celula"
+                                                @onclick="@(() => ClicarCelula(dia, func.Id, hora))"
+                                                @ondragover:preventDefault="true"
+                                                @ondrop:preventDefault="true"
+                                                @ondrop="@(e => SoltarAgendamento(dia, func.Id, hora))">
+                                                @foreach (var ev in celulaEventos)
+                                                {
+                                                    <div class="agenda-grade-chip @ClasseEvento(ev) @(ev == _arrastando ? "agenda-grade-chip-arrastando" : "")"
+                                                         draggable="true"
+                                                         title="@ev.Titulo — arraste para reagendar"
+                                                         @ondragstart="@(e => IniciarArrasto(ev, e))"
+                                                         @ondragend="FinalizarArrasto"
+                                                         @onclick:stopPropagation="true"
+                                                         @onclick="@(() => ClicarAgendamento(ev))">
+                                                        <span class="agenda-grade-chip-hora">@ev.Inicio.ToString("HH:mm")</span>
+                                                        <span class="agenda-grade-chip-nome">@ev.ClienteNome</span>
+                                                        <span class="agenda-grade-chip-serv">@ev.ServicoNome</span>
+                                                        @if (ev.TemConflito)
+                                                        {
+                                                            <MudIcon Icon="@Icons.Material.Filled.Warning" Size="Size.Small" Class="agenda-grade-chip-alerta" />
+                                                        }
+                                                    </div>
+                                                }
+                                            </td>
+                                        }
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+            </div>
+        }
+    }
+</MudPaper>
+
+@code {
+    private static readonly System.Globalization.CultureInfo CulturaBr = new("pt-BR");
+    private static readonly string[] RotulosDiasSemana = ["Seg", "Ter", "Qua", "Qui", "Sex", "Sáb", "Dom"];
+
+    public enum ModoCalendario { Dia, Semana, Mes }
+
+    public sealed class EventoCalendario
+    {
+        public Guid AgendamentoId { get; init; }
+        public Guid FuncionarioId { get; init; }
+        public DateTime Inicio { get; init; }
+        public DateTime Fim { get; init; }
+        public string Titulo { get; init; } = string.Empty;
+        public string TituloCurto { get; init; } = string.Empty;
+        public string ClienteNome { get; init; } = string.Empty;
+        public string ServicoNome { get; init; } = string.Empty;
+        public string Status { get; init; } = string.Empty;
+        public bool TemConflito { get; init; }
+    }
+
+    [Parameter] public ModoCalendario Modo { get; set; } = ModoCalendario.Semana;
+    [Parameter] public EventCallback<ModoCalendario> ModoChanged { get; set; }
+    [Parameter] public DateTime DataReferencia { get; set; } = DateTime.Today;
+    [Parameter] public EventCallback<DateTime> DataReferenciaChanged { get; set; }
+    [Parameter] public Guid? FuncionarioFiltroId { get; set; }
+    [Parameter] public IReadOnlyList<FuncionarioDto> Funcionarios { get; set; } = [];
+    [Parameter] public IReadOnlyList<EventoCalendario> Eventos { get; set; } = [];
+    [Parameter] public Func<Guid, string>? NomeFuncionarioResolver { get; set; }
+    [Parameter] public EventCallback<Guid> OnAgendamentoClick { get; set; }
+    [Parameter] public EventCallback<(DateTime Data, Guid FuncionarioId)> OnAgendarRapido { get; set; }
+    [Parameter] public EventCallback<(Guid AgendamentoId, DateTime NovoInicio, Guid FuncionarioId)> OnReagendar { get; set; }
+
+    private EventoCalendario? _arrastando;
+
+    private IEnumerable<int> HorasGrade =>
+        Enumerable.Range(AgendaCalculoHelper.HoraCalendarioInicio, AgendaCalculoHelper.HoraCalendarioFim - AgendaCalculoHelper.HoraCalendarioInicio);
+
+    private IEnumerable<FuncionarioDto> FuncionariosVisiveis =>
+        FuncionarioFiltroId.HasValue
+            ? Funcionarios.Where(f => f.Id == FuncionarioFiltroId.Value)
+            : Funcionarios;
+
+    private IEnumerable<DateTime> DiasParaExibir => Modo switch
+    {
+        ModoCalendario.Dia => [DataReferencia.Date],
+        _ => AgendaCalculoHelper.DiasDaSemana(DataReferencia)
+    };
+
+    private string TituloCalendario() => Modo switch
+    {
+        ModoCalendario.Dia => DataReferencia.ToString("dddd, dd 'de' MMMM", CulturaBr),
+        ModoCalendario.Mes => DataReferencia.ToString("MMMM yyyy", CulturaBr),
+        _ => $"Semana {AgendaCalculoHelper.ObterInicioSemana(DataReferencia):dd/MM} – {AgendaCalculoHelper.ObterInicioSemana(DataReferencia).AddDays(6):dd/MM/yyyy}"
+    };
+
+    private string SubtituloCalendario() => Modo switch
+    {
+        ModoCalendario.Dia => "Grade por profissional — clique na célula ou arraste blocos para reagendar",
+        ModoCalendario.Mes => "Clique em um dia para abrir a visão diária",
+        _ => "Grade horária por profissional — mesmo horário em colunas diferentes não é conflito"
+    };
+
+    private IEnumerable<EventoCalendario> EventosDoDia(DateTime dia) =>
+        Eventos.Where(e => e.Inicio.Date == dia.Date).OrderBy(e => e.Inicio).ThenBy(e => e.FuncionarioId);
+
+    private IEnumerable<EventoCalendario> EventosIniciandoNaHora(DateTime dia, Guid funcionarioId, int hora) =>
+        Eventos.Where(e =>
+            e.FuncionarioId == funcionarioId &&
+            e.Inicio.Date == dia.Date &&
+            e.Inicio.Hour == hora);
+
+    private string NomeFuncionario(Guid id) =>
+        NomeFuncionarioResolver?.Invoke(id) ?? "—";
+
+    private static string ResumoNome(string nome)
+    {
+        if (string.IsNullOrWhiteSpace(nome)) return "—";
+        var partes = nome.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        return partes.Length <= 1 ? nome : $"{partes[0]} {partes[^1][0]}.";
+    }
+
+    private static string ClasseEvento(EventoCalendario ev)
+    {
+        if (ev.TemConflito) return "agenda-ev-conflito";
+        return ev.Status.ToUpperInvariant() switch
+        {
+            "CANCELADO" => "agenda-ev-cancelado",
+            "AGENDADO" => "agenda-ev-confirmado",
+            "CONCLUIDO" => "agenda-ev-concluido",
+            _ => "agenda-ev-desconhecido"
+        };
+    }
+
+    private void IniciarArrasto(EventoCalendario ev, DragEventArgs e)
+    {
+        _arrastando = ev;
+        if (e.DataTransfer is not null)
+            e.DataTransfer.EffectAllowed = "move";
+    }
+
+    private void FinalizarArrasto()
+    {
+        _arrastando = null;
+    }
+
+    private async Task SoltarAgendamento(DateTime dia, Guid funcionarioId, int hora)
+    {
+        if (_arrastando is null || !OnReagendar.HasDelegate)
+        {
+            _arrastando = null;
+            return;
+        }
+
+        var novoInicio = dia.Date.AddHours(hora).AddMinutes(_arrastando.Inicio.Minute);
+        var id = _arrastando.AgendamentoId;
+        _arrastando = null;
+
+        if (id != Guid.Empty)
+            await OnReagendar.InvokeAsync((id, novoInicio, funcionarioId));
+    }
+
+    private async Task ClicarCelula(DateTime dia, Guid funcionarioId, int hora)
+    {
+        if (!OnAgendarRapido.HasDelegate) return;
+        await OnAgendarRapido.InvokeAsync((dia.Date.AddHours(hora), funcionarioId));
+    }
+
+    private async Task AgendarRapidoColuna(DateTime dia, Guid funcionarioId)
+    {
+        if (!OnAgendarRapido.HasDelegate) return;
+        await OnAgendarRapido.InvokeAsync((dia.Date.AddHours(9), funcionarioId));
+    }
+
+    private async Task ClicarAgendamento(EventoCalendario ev)
+    {
+        if (OnAgendamentoClick.HasDelegate && ev.AgendamentoId != Guid.Empty)
+            await OnAgendamentoClick.InvokeAsync(ev.AgendamentoId);
+    }
+
+    private async Task SelecionarDia(DateTime dia)
+    {
+        DataReferencia = dia;
+        Modo = ModoCalendario.Dia;
+        if (ModoChanged.HasDelegate)
+            await ModoChanged.InvokeAsync(Modo);
+        await NotificarData();
+    }
+
+    private async Task AlterarModo(ModoCalendario modo)
+    {
+        Modo = modo;
+        if (ModoChanged.HasDelegate)
+            await ModoChanged.InvokeAsync(modo);
+    }
+
+    private async Task Retroceder()
+    {
+        DataReferencia = Modo switch
+        {
+            ModoCalendario.Dia => DataReferencia.AddDays(-1),
+            ModoCalendario.Mes => DataReferencia.AddMonths(-1),
+            _ => DataReferencia.AddDays(-7)
+        };
+        await NotificarData();
+    }
+
+    private async Task Avancar()
+    {
+        DataReferencia = Modo switch
+        {
+            ModoCalendario.Dia => DataReferencia.AddDays(1),
+            ModoCalendario.Mes => DataReferencia.AddMonths(1),
+            _ => DataReferencia.AddDays(7)
+        };
+        await NotificarData();
+    }
+
+    private async Task IrParaHoje()
+    {
+        DataReferencia = DateTime.Today;
+        await NotificarData();
+    }
+
+    private async Task NotificarData()
+    {
+        if (DataReferenciaChanged.HasDelegate)
+            await DataReferenciaChanged.InvokeAsync(DataReferencia);
+    }
+}
