@@ -1,16 +1,27 @@
 name: Proteger main
 
 on:
-  pull_request:
+  pull_request_target:
     branches:
       - main
+
+permissions: {}
 
 jobs:
   validar-origem:
     runs-on: ubuntu-latest
     steps:
-      - name: PR para main deve vir da develop
-        if: github.head_ref != 'develop'
+      - name: PR para main deve vir da develop deste repositorio
+        env:
+          HEAD_REF: ${{ github.head_ref }}
+          HEAD_REPO_FULL_NAME: ${{ github.event.pull_request.head.repo.full_name }}
+          BASE_REPO_FULL_NAME: ${{ github.repository }}
         run: |
-          echo "Pull requests para main so podem vir da branch develop."
-          exit 1
+          if [ "$HEAD_REF" != "develop" ]; then
+            echo "Pull requests para main so podem vir da branch develop."
+            exit 1
+          fi
+          if [ "$HEAD_REPO_FULL_NAME" != "$BASE_REPO_FULL_NAME" ]; then
+            echo "Pull requests para main nao podem vir de fork externo."
+            exit 1
+          fi
