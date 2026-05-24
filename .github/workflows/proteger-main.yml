@@ -9,8 +9,13 @@ jobs:
   validar-origem:
     runs-on: ubuntu-latest
     steps:
-      - name: PR para main deve vir da develop
-        if: github.head_ref != 'develop'
+      - name: PR para main deve vir da develop deste repositorio
         run: |
-          echo "Pull requests para main so podem vir da branch develop."
-          exit 1
+          if [ "${{ github.head_ref }}" != "develop" ]; then
+            echo "Pull requests para main so podem vir da branch develop."
+            exit 1
+          fi
+          if [ "${{ github.event.pull_request.head.repo.full_name }}" != "${{ github.repository }}" ]; then
+            echo "Pull requests para main nao podem vir de fork externo."
+            exit 1
+          fi
