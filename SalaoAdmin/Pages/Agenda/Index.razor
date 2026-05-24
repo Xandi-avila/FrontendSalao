@@ -1,0 +1,1361 @@
+@page "/agenda"
+@layout AdminLayout
+@inject IAgendaServico AgendaServico
+@inject IFuncionarioServico FuncionarioServico
+@inject IAgendamentoServico AgendamentoServico
+@inject IClienteServico ClienteServico
+@inject IServicoCatalogoServico ServicoCatalogoServico
+@inject IAnaliseServico AnaliseServico
+@inject IServicoNotificacao Notificacoes
+
+<CabecalhoPagina Titulo="Agenda e Agendamentos"
+                 Subtitulo="Assistente operacional flexível — alertas inteligentes, sem bloqueio rígido de horários" />
+
+<MudPaper Class="pa-4 mb-4">
+    <MudGrid Spacing="2">
+        <MudItem xs="12" md="4">
+            <MudSelect T="Guid?" Label="Funcionário" Variant="Variant.Outlined" Margin="Margin.Dense"
+                       Value="_funcionarioSelecionadoId" ValueChanged="AoSelecionarFuncionario">
+                <MudSelectItem T="Guid?" Value="@((Guid?)null)">Todos os funcionários</MudSelectItem>
+                @foreach (var funcionario in _funcionarios)
+                {
+                    <MudSelectItem T="Guid?" Value="@((Guid?)funcionario.Id)">@funcionario.NomeCompleto</MudSelectItem>
+                }
+            </MudSelect>
+        </MudItem>
+        <MudItem xs="12" sm="6" md="3">
+            <MudSelect T="string" Label="Status" Variant="Variant.Outlined" Margin="Margin.Dense"
+                       Value="_filtroStatus" ValueChanged="AoAlterarFiltroStatus" Clearable="true">
+                <MudSelectItem T="string" Value="@("TODOS")">Todos</MudSelectItem>
+                <MudSelectItem T="string" Value="@("AGENDADO")">Confirmado</MudSelectItem>
+                <MudSelectItem T="string" Value="@("CANCELADO")">Cancelado</MudSelectItem>
+                <MudSelectItem T="string" Value="@("CONCLUIDO")">Finalizado</MudSelectItem>
+            </MudSelect>
+        </MudItem>
+        <MudItem xs="12" sm="6" md="3">
+            <MudSelect T="Guid?" Label="Serviço" Variant="Variant.Outlined" Margin="Margin.Dense"
+                       Value="_filtroServicoId" ValueChanged="AoAlterarFiltroServico" Clearable="true">
+                <MudSelectItem T="Guid?" Value="@((Guid?)null)">Todos</MudSelectItem>
+                @foreach (var servico in _servicos)
+                {
+                    <MudSelectItem T="Guid?" Value="@((Guid?)servico.Id)">@servico.Nome</MudSelectItem>
+                }
+            </MudSelect>
+        </MudItem>
+        <MudItem xs="12" md="8">
+            <MudText Typo="Typo.caption" Color="Color.Secondary" Class="mb-1">Período da lista e do calendário</MudText>
+            <MudButtonGroup Variant="Variant.Outlined" Class="mb-2">
+                <MudButton OnClick="@(() => AplicarPeriodo(PeriodoAgenda.Hoje))"
+                           Color="@CorBotaoPeriodo(PeriodoAgenda.Hoje)">Hoje</MudButton>
+                <MudButton OnClick="@(() => AplicarPeriodo(PeriodoAgenda.Semana))"
+                           Color="@CorBotaoPeriodo(PeriodoAgenda.Semana)">Esta semana</MudButton>
+                <MudButton OnClick="@(() => AplicarPeriodo(PeriodoAgenda.Mes))"
+                           Color="@CorBotaoPeriodo(PeriodoAgenda.Mes)">Este mês</MudButton>
+                <MudButton OnClick="@(() => AplicarPeriodo(PeriodoAgenda.Personalizado))"
+                           Color="@CorBotaoPeriodo(PeriodoAgenda.Personalizado)">Personalizado</MudButton>
+            </MudButtonGroup>
+            @if (_periodo == PeriodoAgenda.Personalizado)
+            {
+                <MudGrid Spacing="2">
+                    <MudItem xs="12" sm="6">
+                        <MudDatePicker Label="Data inicial" Variant="Variant.Outlined" Margin="Margin.Dense"
+                                       Date="_filtroInicio" DateChanged="AoAlterarFiltroInicio" />
+                    </MudItem>
+                    <MudItem xs="12" sm="6">
+                        <MudDatePicker Label="Data final" Variant="Variant.Outlined" Margin="Margin.Dense"
+                                       Date="_filtroFim" DateChanged="AoAlterarFiltroFim" />
+                    </MudItem>
+                </MudGrid>
+            }
+            else
+            {
+                <MudText Typo="Typo.body2">@TextoPeriodoAtual()</MudText>
+            }
+        </MudItem>
+    </MudGrid>
+</MudPaper>
+
+@if (_carregandoInicial)
+{
+    <MudProgressLinear Indeterminate="true" Class="mb-4" />
+}
+else
+{
+    <MudTabs @bind-ActivePanelIndex="_abaAtiva" Class="mb-4">
+        <MudTabPanel Text="Agenda operacional" Icon="@Icons.Material.Filled.Event">
+            <MudGrid Spacing="2" Class="mt-2 mb-3">
+                <MudItem xs="6" sm="4" md="2">
+                    <MudPaper Class="pa-3 agenda-card-op" Outlined="true">
+                        <MudText Typo="Typo.caption" Color="Color.Secondary">Hoje</MudText>
+                        <MudText Typo="Typo.h5">@_cardAgendamentosHoje</MudText>
+                    </MudPaper>
+                </MudItem>
+                <MudItem xs="6" sm="4" md="2">
+                    <MudPaper Class="pa-3 agenda-card-op" Outlined="true">
+                        <MudText Typo="Typo.caption" Color="Color.Secondary">Horários livres</MudText>
+                        <MudText Typo="Typo.h5">@_cardHorariosLivresHoje</MudText>
+                    </MudPaper>
+                </MudItem>
+                <MudItem xs="6" sm="4" md="2">
+                    <MudPaper Class="pa-3 agenda-card-op" Outlined="true">
+                        <MudText Typo="Typo.caption" Color="Color.Secondary">Profissionais</MudText>
+                        <MudText Typo="Typo.h5">@_funcionarios.Count</MudText>
+                    </MudPaper>
+                </MudItem>
+                <MudItem xs="6" sm="4" md="3">
+                    <MudPaper Class="pa-3 agenda-card-op" Outlined="true">
+                        <MudText Typo="Typo.caption" Color="Color.Secondary">Próximo atendimento</MudText>
+                        <MudText Typo="Typo.body2">@_cardProximoAtendimento</MudText>
+                    </MudPaper>
+                </MudItem>
+                <MudItem xs="6" sm="4" md="3">
+                    <MudPaper Class="@($"pa-3 agenda-card-op {(_cardConflitosHoje > 0 ? "agenda-card-alerta" : "")}")" Outlined="true">
+                        <MudText Typo="Typo.caption" Color="Color.Secondary">Conflitos hoje</MudText>
+                        <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1">
+                            <MudText Typo="Typo.h5">@_cardConflitosHoje</MudText>
+                            @if (_cardConflitosHoje > 0)
+                            {
+                                <MudIcon Icon="@Icons.Material.Filled.Warning" Color="Color.Warning" Size="Size.Small" />
+                            }
+                        </MudStack>
+                    </MudPaper>
+                </MudItem>
+            </MudGrid>
+
+            <MudStack Row="true" Justify="Justify.FlexEnd" Class="mb-3">
+                <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="AbrirNovoAgendamento"
+                           StartIcon="@Icons.Material.Filled.Add">
+                    Novo agendamento
+                </MudButton>
+            </MudStack>
+
+            <AgendaBuscaInteligente Clientes="_clientes"
+                                   Servicos="_servicos"
+                                   Funcionarios="_funcionarios"
+                                   JanelasPorFuncionario="_janelasPorFuncionario"
+                                   Agendamentos="_agendamentosGlobais"
+                                   ObterFimAgendamento="ObterFimAgendamento"
+                                   Carregando="_carregandoDados"
+                                   OnAgendar="AgendarDaBusca" />
+
+            <MudExpansionPanels Class="mb-4" Elevation="0" Outlined="true">
+                <MudExpansionPanel Text="Consultar horários livres" Icon="@Icons.Material.Filled.Schedule">
+                    <MudGrid Spacing="2">
+                        <MudItem xs="12" sm="5">
+                            <MudSelect T="Guid" Label="Serviço" Variant="Variant.Outlined" Margin="Margin.Dense" @bind-Value="_servicoHorariosLivresId">
+                                @foreach (var servico in _servicos)
+                                {
+                                    <MudSelectItem T="Guid" Value="@servico.Id">@($"{servico.Nome} ({servico.DuracaoMinutos} min)")</MudSelectItem>
+                                }
+                            </MudSelect>
+                        </MudItem>
+                        <MudItem xs="12" sm="4">
+                            <MudDatePicker Label="Data" Variant="Variant.Outlined" Margin="Margin.Dense" @bind-Date="_dataHorariosLivres" />
+                        </MudItem>
+                        <MudItem xs="12" sm="3" Class="d-flex align-end">
+                            <MudButton Variant="Variant.Filled" Color="Color.Info" FullWidth="true"
+                                       OnClick="AbrirHorariosLivresGeral" Disabled="@(_servicoHorariosLivresId == Guid.Empty)">
+                                Ver horários
+                            </MudButton>
+                        </MudItem>
+                    </MudGrid>
+                </MudExpansionPanel>
+            </MudExpansionPanels>
+
+            <AgendaCalendarioVisao Modo="_modoCalendario"
+                                   ModoChanged="AoAlterarModoCalendario"
+                                   DataReferencia="_dataCalendario"
+                                   DataReferenciaChanged="AoAlterarDataCalendario"
+                                   FuncionarioFiltroId="_funcionarioSelecionadoId"
+                                   Funcionarios="_funcionarios"
+                                   Eventos="_eventosCalendario"
+                                   NomeFuncionarioResolver="NomeFuncionario"
+                                   OnAgendamentoClick="AbrirDetalheAgendamento"
+                                   OnAgendarRapido="AbrirAgendamentoRapido"
+                                   OnReagendar="ReagendarAgendamento" />
+
+            <MudText Typo="Typo.h6" Class="mb-2 mt-4">@TituloListaAgendamentos()</MudText>
+            @if (_agendamentosExibidos.Count == 0)
+            {
+                <MudAlert Severity="Severity.Info" Dense="true">Nenhum agendamento no período selecionado.</MudAlert>
+            }
+            else
+            {
+            <MudTable Items="_agendamentosExibidos" Hover="true" Elevation="1" Dense="true" Breakpoint="Breakpoint.Sm">
+                <HeaderContent>
+                    @if (ModoTodosFuncionarios)
+                    {
+                        <MudTh>Funcionário</MudTh>
+                    }
+                    <MudTh>Cliente</MudTh>
+                    <MudTh>Serviço</MudTh>
+                    <MudTh>Horário</MudTh>
+                    <MudTh>Status</MudTh>
+                    <MudTh style="width:120px">Ações</MudTh>
+                </HeaderContent>
+                <RowTemplate>
+                    @if (ModoTodosFuncionarios)
+                    {
+                        <MudTd>@NomeFuncionario(context.FuncionarioId)</MudTd>
+                    }
+                    <MudTd>@NomeCliente(context.ClienteId)</MudTd>
+                    <MudTd>@NomeServico(context.ServicoId)</MudTd>
+                    <MudTd DataLabel="Horário">
+                        @context.DataHoraInicio.ToString("dd/MM HH:mm")
+                        <span class="mud-text-secondary"> – @ObterFimAgendamento(context).ToString("HH:mm")</span>
+                        <MudText Typo="Typo.caption" Color="Color.Secondary">@($"{ObterDuracaoServico(context.ServicoId)} min")</MudText>
+                    </MudTd>
+                    <MudTd>
+                        <MudStack Row="true" Spacing="1" AlignItems="AlignItems.Center">
+                            <MudChip T="string" Size="Size.Small" Color="@CorStatusAgendamento(context.Status, context.Id)">
+                                @TextoStatusAgendamento(context.Status, context.Id)
+                            </MudChip>
+                            @if (_agendamentosComConflito.Contains(context.Id))
+                            {
+                                <MudTooltip Text="Conflito de horário detectado">
+                                    <MudIcon Icon="@Icons.Material.Filled.Warning" Color="Color.Warning" Size="Size.Small" />
+                                </MudTooltip>
+                            }
+                        </MudStack>
+                    </MudTd>
+                    <MudTd>
+                        <MudIconButton Icon="@Icons.Material.Filled.Block" Size="Size.Small" Color="Color.Warning"
+                                       OnClick="@(() => CancelarAgendamento(context.Id))"
+                                       Disabled="@(string.Equals(context.Status, "CANCELADO", StringComparison.OrdinalIgnoreCase))" />
+                        <MudIconButton Icon="@Icons.Material.Filled.Delete" Size="Size.Small" Color="Color.Error"
+                                       OnClick="@(() => ExcluirAgendamento(context.Id))" />
+                    </MudTd>
+                </RowTemplate>
+            </MudTable>
+            }
+        </MudTabPanel>
+
+        <MudTabPanel Text="Preferências de horário" Icon="@Icons.Material.Filled.AccessTime"
+                     Disabled="@ModoTodosFuncionarios">
+            @if (!ModoTodosFuncionarios && _funcionarioSelecionadoId.HasValue)
+            {
+                <MudAlert Severity="Severity.Info" Dense="true" Class="mt-3 mb-3">
+                    Opcional: janelas sugeridas para busca de horários. Não bloqueiam agendamentos — o salão pode flexibilizar.
+                </MudAlert>
+                <MudPaper Class="pa-4 mb-4 mt-3">
+                    <MudText Typo="Typo.h6" Class="mb-1">Adicionar disponibilidade — @NomeFuncionario(_funcionarioSelecionadoId.Value)</MudText>
+                    <MudText Typo="Typo.caption" Color="Color.Secondary" Class="mb-3">
+                        Períodos em que o profissional aceita agendamentos (repetem toda semana).
+                    </MudText>
+                    <MudGrid Spacing="2">
+                        <MudItem xs="12" md="4">
+                            <MudSelect T="int" Label="Dia da semana" Variant="Variant.Outlined" Margin="Margin.Dense" @bind-Value="_diaSelecionado">
+                                <MudSelectItem T="int" Value="@(0)">Domingo</MudSelectItem>
+                                <MudSelectItem T="int" Value="@(1)">Segunda-feira</MudSelectItem>
+                                <MudSelectItem T="int" Value="@(2)">Terça-feira</MudSelectItem>
+                                <MudSelectItem T="int" Value="@(3)">Quarta-feira</MudSelectItem>
+                                <MudSelectItem T="int" Value="@(4)">Quinta-feira</MudSelectItem>
+                                <MudSelectItem T="int" Value="@(5)">Sexta-feira</MudSelectItem>
+                                <MudSelectItem T="int" Value="@(6)">Sábado</MudSelectItem>
+                            </MudSelect>
+                        </MudItem>
+                        <MudItem xs="12" md="3">
+                            <MudTimePicker Label="Hora início" AmPm="false" Variant="Variant.Outlined" Margin="Margin.Dense"
+                                           TimeChanged="@(hora => AtualizarHora(hora, true))" />
+                        </MudItem>
+                        <MudItem xs="12" md="3">
+                            <MudTimePicker Label="Hora fim" AmPm="false" Variant="Variant.Outlined" Margin="Margin.Dense"
+                                           TimeChanged="@(hora => AtualizarHora(hora, false))" />
+                        </MudItem>
+                        <MudItem xs="12" md="2" Class="d-flex align-end">
+                            <MudButton Variant="Variant.Outlined" Color="Color.Primary" OnClick="AdicionarJanela">Adicionar</MudButton>
+                        </MudItem>
+                    </MudGrid>
+                </MudPaper>
+
+                <MudGrid Spacing="2" Class="mb-4">
+                    <MudItem xs="12" md="4">
+                        <MudPaper Class="pa-3" Outlined="true">
+                            <MudText Typo="Typo.caption" Color="Color.Secondary">Total de janelas</MudText>
+                            <MudText Typo="Typo.h5">@_totalJanelas</MudText>
+                        </MudPaper>
+                    </MudItem>
+                    <MudItem xs="12" md="4">
+                        <MudPaper Class="pa-3" Outlined="true">
+                            <MudText Typo="Typo.caption" Color="Color.Secondary">Dias com agenda</MudText>
+                            <MudText Typo="Typo.h5">@_diasComAgenda</MudText>
+                        </MudPaper>
+                    </MudItem>
+                    <MudItem xs="12" md="4">
+                        <MudPaper Class="pa-3" Outlined="true">
+                            <MudText Typo="Typo.caption" Color="Color.Secondary">Horas na semana</MudText>
+                            <MudText Typo="Typo.h5">@($"{_horasSemana:0.#}h")</MudText>
+                        </MudPaper>
+                    </MudItem>
+                </MudGrid>
+
+                <MudTable Items="_janelas" Hover="true" Elevation="1" Class="mb-4">
+                    <HeaderContent>
+                        <MudTh>Dia</MudTh>
+                        <MudTh>Início</MudTh>
+                        <MudTh>Fim</MudTh>
+                        <MudTh></MudTh>
+                    </HeaderContent>
+                    <RowTemplate>
+                        <MudTd>@NomeDia(context.DiaSemana)</MudTd>
+                        <MudTd>@context.HoraInicio</MudTd>
+                        <MudTd>@context.HoraFim</MudTd>
+                        <MudTd>
+                            <MudIconButton Icon="@Icons.Material.Filled.Delete" Color="Color.Error" Size="Size.Small"
+                                           OnClick="@(() => ExcluirJanela(context.Id))" />
+                        </MudTd>
+                    </RowTemplate>
+                </MudTable>
+
+                <MudStack Row="true" Justify="Justify.FlexEnd" Class="mt-4">
+                    <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="SalvarAgenda">Salvar preferências</MudButton>
+                </MudStack>
+
+                <MudPaper Class="pa-4 mt-4" Outlined="true">
+                    <MudText Typo="Typo.h6" Class="mb-1">Pausas, almoço e exceções</MudText>
+                    <MudText Typo="Typo.caption" Color="Color.Secondary" Class="mb-2">
+                        Estrutura preparada para cadastro futuro de pausas, horário de almoço, feriados e dias especiais.
+                    </MudText>
+                    <MudAlert Severity="Severity.Info" Dense="true">
+                        Em breve: bloqueios opcionais de horário (almoço, pausa) e exceções por data — sem bloquear agendamentos manualmente.
+                    </MudAlert>
+                </MudPaper>
+            }
+        </MudTabPanel>
+
+        <MudTabPanel Text="Visão gerencial" Icon="@Icons.Material.Filled.BarChart">
+            <AgendaPainelGerencial TextoPeriodo="@TextoPeriodoAtual()" Indicadores="_indicadoresGerenciais" />
+        </MudTabPanel>
+    </MudTabs>
+}
+
+<MudDialog @bind-Visible="_dialogoAgendamentoAberto" Options="_dialogoLargo">
+    <DialogContent>
+        <MudText Typo="Typo.h6">@(_agendamentoEditandoId.HasValue ? "Editar agendamento" : "Novo agendamento")</MudText>
+        <MudGrid Spacing="2" Class="mt-2">
+            <MudItem xs="12">
+                @if (ModoTodosFuncionarios)
+                {
+                    <MudSelect T="Guid?" Label="Funcionário" Variant="Variant.Outlined" Margin="Margin.Dense"
+                               Value="_formFuncionarioId" ValueChanged="AoAlterarFormFuncionario">
+                        <MudSelectItem T="Guid?" Value="@((Guid?)null)">Selecione o profissional</MudSelectItem>
+                        @foreach (var f in _funcionarios)
+                        {
+                            <MudSelectItem T="Guid?" Value="@((Guid?)f.Id)">@f.NomeCompleto</MudSelectItem>
+                        }
+                    </MudSelect>
+                }
+                else
+                {
+                    <MudTextField Label="Funcionário" Variant="Variant.Outlined" Margin="Margin.Dense"
+                                  Value="@NomeFuncionario(_formFuncionarioId ?? Guid.Empty)" Disabled="true" />
+                }
+            </MudItem>
+            <MudItem xs="12">
+                <MudSelect T="Guid?" Label="Cliente" Variant="Variant.Outlined" Margin="Margin.Dense"
+                           Value="_formClienteId" ValueChanged="AoAlterarFormCliente">
+                    <MudSelectItem T="Guid?" Value="@((Guid?)null)">Selecione o cliente</MudSelectItem>
+                    @foreach (var cliente in _clientes)
+                    {
+                        <MudSelectItem T="Guid?" Value="@((Guid?)cliente.Id)">@cliente.NomeCompleto</MudSelectItem>
+                    }
+                </MudSelect>
+            </MudItem>
+            <MudItem xs="12">
+                <MudSelect T="Guid?" Label="Serviço" Variant="Variant.Outlined" Margin="Margin.Dense"
+                           Value="_formServicoId" ValueChanged="AoAlterarFormServico">
+                    <MudSelectItem T="Guid?" Value="@((Guid?)null)">Selecione o serviço</MudSelectItem>
+                    @foreach (var servico in _servicos)
+                    {
+                        <MudSelectItem T="Guid?" Value="@((Guid?)servico.Id)">@($"{servico.Nome} ({servico.DuracaoMinutos} min)")</MudSelectItem>
+                    }
+                </MudSelect>
+            </MudItem>
+            @if (_formServicoId.HasValue && _formServicoId.Value != Guid.Empty)
+            {
+                <MudItem xs="12">
+                    <MudAlert Severity="Severity.Info" Dense="true">
+                        Duração estimada: @ObterDuracaoServico(_formServicoId.Value) min.
+                    </MudAlert>
+                </MudItem>
+            }
+            @if (_alertasAgendamentoAtual is not null && (_alertasAgendamentoAtual.TemConflito || _alertasAgendamentoAtual.Alertas.Count > 0))
+            {
+                <MudItem xs="12">
+                    <MudAlert Severity="Severity.Warning" Variant="Variant.Outlined">
+                        @foreach (var alerta in _alertasAgendamentoAtual.Alertas)
+                        {
+                            <div>@alerta</div>
+                        }
+                        @foreach (var c in _alertasAgendamentoAtual.Conflitos)
+                        {
+                            <div><strong>@c.Mensagem</strong></div>
+                        }
+                        <MudText Typo="Typo.caption" Class="mt-2">Você pode salvar mesmo assim — confirmação será solicitada.</MudText>
+                    </MudAlert>
+                </MudItem>
+            }
+            <MudItem xs="12" md="5">
+                <MudDatePicker Label="Data" Variant="Variant.Outlined" Margin="Margin.Dense"
+                               Date="_agendamentoData" DateChanged="AoAlterarDataAgendamento" />
+            </MudItem>
+            <MudItem xs="12" md="4">
+                <MudTimePicker Label="Hora" AmPm="false" Variant="Variant.Outlined" Margin="Margin.Dense"
+                               Time="_agendamentoHora" TimeChanged="AoAlterarHoraAgendamento" />
+            </MudItem>
+            <MudItem xs="12" md="3" Class="d-flex align-end">
+                <MudButton Variant="Variant.Outlined" Color="Color.Info" FullWidth="true" OnClick="AbrirHorariosLivresDoDialogo">
+                    Horários livres
+                </MudButton>
+            </MudItem>
+        </MudGrid>
+    </DialogContent>
+    <DialogActions>
+        <MudButton Variant="Variant.Text" OnClick="FecharDialogoAgendamento">Cancelar</MudButton>
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="SalvarAgendamento">
+            @(_agendamentoEditandoId.HasValue ? "Atualizar" : "Salvar")
+        </MudButton>
+    </DialogActions>
+</MudDialog>
+
+<MudDialog @bind-Visible="_dialogoConfirmarConflito" Options="_dialogoLargo">
+    <DialogContent>
+        <MudText Typo="Typo.h6" Class="mb-2">Confirmar agendamento com alerta</MudText>
+        <MudAlert Severity="Severity.Warning" Variant="Variant.Outlined" Class="mb-3">
+            @if (_alertasAgendamentoAtual?.TemConflito == true)
+            {
+                <MudText Typo="Typo.body2" Class="mb-2">Este funcionário já possui atendimento(s) no mesmo período.</MudText>
+            }
+            @if (_alertasAgendamentoAtual is not null)
+            {
+                @foreach (var c in _alertasAgendamentoAtual.Conflitos)
+                {
+                    <div class="mb-1">• @c.Mensagem</div>
+                }
+                @foreach (var a in _alertasAgendamentoAtual.Alertas)
+                {
+                    <div class="mb-1">• @a</div>
+                }
+            }
+            <MudText Typo="Typo.subtitle2" Class="mt-3">Deseja continuar mesmo assim?</MudText>
+        </MudAlert>
+    </DialogContent>
+    <DialogActions>
+        <MudButton Variant="Variant.Text" OnClick="@(() => _dialogoConfirmarConflito = false)">Cancelar</MudButton>
+        <MudButton Variant="Variant.Filled" Color="Color.Warning" OnClick="ConfirmarSalvarComConflito">Continuar agendamento</MudButton>
+    </DialogActions>
+</MudDialog>
+
+<MudDialog @bind-Visible="_dialogoHorariosLivres" Options="_dialogoLargo">
+    <DialogContent>
+        <MudText Typo="Typo.h6" Class="mb-2">Horários livres</MudText>
+        <MudText Typo="Typo.caption" Color="Color.Secondary" Class="mb-3">
+            @TextoHorariosLivres()
+        </MudText>
+        @if (_slotsLivres.Count == 0)
+        {
+            <MudAlert Severity="Severity.Warning" Dense="true">Nenhum horário livre encontrado.</MudAlert>
+        }
+        else
+        {
+            <MudStack Spacing="1" Style="max-height:400px;overflow-y:auto">
+                @foreach (var slot in _slotsLivres)
+                {
+                    <MudButton Variant="Variant.Outlined" FullWidth="true" Class="justify-start"
+                               OnClick="@(() => SelecionarSlot(slot))">
+                        @if (ModoTodosFuncionarios || _funcionarioSelecionadoId is null)
+                        {
+                            <span><strong>@slot.NomeFuncionario</strong> — </span>
+                        }
+                        <span>@slot.Inicio.ToString("dd/MM HH:mm") até @slot.Fim.ToString("HH:mm")</span>
+                    </MudButton>
+                }
+            </MudStack>
+        }
+    </DialogContent>
+    <DialogActions>
+        <MudButton Variant="Variant.Text" OnClick="@(() => _dialogoHorariosLivres = false)">Fechar</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    private readonly DialogOptions _dialogoLargo = new() { MaxWidth = MaxWidth.Medium, FullWidth = true };
+
+    private List<FuncionarioDto> _funcionarios = [];
+    private List<ClienteDto> _clientes = [];
+    private List<ServicoDto> _servicos = [];
+    private List<JanelaAgendaDto> _janelas = [];
+    private Dictionary<Guid, List<JanelaAgendaDto>> _janelasPorFuncionario = new();
+    private List<AgendamentoDto> _agendamentosGlobais = [];
+    private List<AgendamentoDto> _agendamentosExibidos = [];
+    private List<AgendaCalendarioVisao.EventoCalendario> _eventosCalendario = [];
+    private List<SlotHorarioLivre> _slotsLivres = [];
+    private HashSet<Guid> _agendamentosComConflito = [];
+    private AnaliseAgendamentoResultado? _alertasAgendamentoAtual;
+
+    private Guid? _funcionarioSelecionadoId;
+    private string? _filtroStatus;
+    private Guid? _filtroServicoId;
+    private bool ModoTodosFuncionarios => !_funcionarioSelecionadoId.HasValue;
+
+    private int _cardAgendamentosHoje;
+    private int _cardHorariosLivresHoje;
+    private int _cardConflitosHoje;
+    private string _cardProximoAtendimento = "—";
+
+    private PeriodoAgenda _periodo = PeriodoAgenda.Semana;
+    private DateTime? _filtroInicio;
+    private DateTime? _filtroFim;
+    private int _abaAtiva;
+
+    private AgendaCalendarioVisao.ModoCalendario _modoCalendario = AgendaCalendarioVisao.ModoCalendario.Semana;
+    private DateTime _dataCalendario = DateTime.Today;
+
+    private bool _carregandoInicial = true;
+    private bool _carregandoDados;
+    private bool _dialogoAgendamentoAberto;
+    private bool _dialogoHorariosLivres;
+    private bool _dialogoConfirmarConflito;
+
+    private readonly AgendamentoCadastroDto _agendamentoCadastro = new();
+    private Guid? _agendamentoEditandoId;
+    private Guid? _formFuncionarioId;
+    private Guid? _formClienteId;
+    private Guid? _formServicoId;
+    private DateTime? _agendamentoData = DateTime.Today;
+    private TimeSpan _agendamentoHora = TimeSpan.FromHours(9);
+
+    private AgendaPainelGerencial.IndicadoresGerenciais _indicadoresGerenciais = new();
+
+    private Guid _servicoHorariosLivresId;
+    private DateTime? _dataHorariosLivres = DateTime.Today;
+
+    private int _diaSelecionado = ObterDiaSemanaPadrao();
+    private double[] _dadosGrafico = [];
+    private string[] _labelsGrafico = [];
+    private int _totalJanelas;
+    private int _diasComAgenda;
+    private double _horasSemana;
+
+    private JanelaAgendaDto _novaJanela = new()
+    {
+        DiaSemana = ObterDiaSemanaPadrao(),
+        HoraInicio = "09:00",
+        HoraFim = "18:00"
+    };
+
+    protected override async Task OnInitializedAsync()
+    {
+        await CarregarCatalogosAsync();
+        DefinirIntervaloPeriodo(PeriodoAgenda.Semana);
+        await CarregarDadosAgendaAsync();
+        AtualizarEventosCalendario();
+        _carregandoInicial = false;
+    }
+
+    private async Task CarregarCatalogosAsync()
+    {
+        var funcionarios = await FuncionarioServico.ListarAsync(new FiltroPaginacao { Pagina = 1, ItensPorPagina = 100 });
+        if (funcionarios.Sucesso && funcionarios.Dados is not null)
+            _funcionarios = funcionarios.Dados.Itens
+                .Where(f => f.Status == StatusRegistro.Ativo)
+                .OrderBy(f => f.NomeCompleto)
+                .ToList();
+
+        var clientes = await ClienteServico.ListarAsync(new FiltroPaginacao { Pagina = 1, ItensPorPagina = 200 });
+        if (clientes.Sucesso && clientes.Dados is not null)
+            _clientes = clientes.Dados.Itens.OrderBy(c => c.NomeCompleto).ToList();
+
+        var servicos = await ServicoCatalogoServico.ListarAsync(new FiltroPaginacao { Pagina = 1, ItensPorPagina = 200 });
+        if (servicos.Sucesso && servicos.Dados is not null)
+        {
+            _servicos = servicos.Dados.Itens.OrderBy(s => s.Nome).ToList();
+            if (_servicos.Count > 0)
+                _servicoHorariosLivresId = _servicos[0].Id;
+        }
+    }
+
+    private async Task CarregarDadosAgendaAsync()
+    {
+        _carregandoDados = true;
+        await CarregarAgendamentosGlobaisAsync();
+        await CarregarTodasJanelasAsync();
+
+        if (_funcionarioSelecionadoId.HasValue)
+            await CarregarAgendaFuncionarioAsync(_funcionarioSelecionadoId.Value);
+
+        AtualizarAgendamentosExibidos();
+        AtualizarEventosCalendario();
+        _carregandoDados = false;
+    }
+
+    private async Task CarregarAgendamentosGlobaisAsync()
+    {
+        if (!_filtroInicio.HasValue || !_filtroFim.HasValue)
+            DefinirIntervaloPeriodo(PeriodoAgenda.Semana);
+
+        var todos = new List<AgendamentoDto>();
+        var pagina = 1;
+        const int tamanho = 100;
+
+        while (true)
+        {
+            var filtro = new FiltroAgendamento
+            {
+                Pagina = pagina,
+                ItensPorPagina = tamanho,
+                Inicio = _filtroInicio!.Value.Date,
+                Fim = _filtroFim!.Value.Date.AddDays(1).AddTicks(-1)
+            };
+
+            var resposta = await AgendamentoServico.ListarAsync(filtro);
+            if (!resposta.Sucesso || resposta.Dados is null)
+            {
+                Notificacoes.Erro(resposta.Mensagem ?? "Não foi possível carregar agendamentos.");
+                return;
+            }
+
+            todos.AddRange(resposta.Dados.Itens);
+            if (todos.Count >= resposta.Dados.Total || resposta.Dados.Itens.Count < tamanho)
+                break;
+
+            pagina++;
+        }
+
+        _agendamentosGlobais = todos.OrderBy(a => a.DataHoraInicio).ToList();
+        RecalcularConflitosGlobais();
+        AtualizarCardsOperacionais();
+    }
+
+    private void RecalcularConflitosGlobais()
+    {
+        _agendamentosComConflito = AgendaCalculoHelper.DetectarAgendamentosComConflito(
+            _agendamentosGlobais, ObterFimAgendamento);
+    }
+
+    private void AtualizarCardsOperacionais()
+    {
+        var hoje = DateTime.Today;
+        var agHoje = _agendamentosGlobais
+            .Where(a => a.DataHoraInicio.Date == hoje && !AgendaCalculoHelper.AgendamentoCancelado(a))
+            .ToList();
+
+        _cardAgendamentosHoje = agHoje.Count;
+        _cardConflitosHoje = agHoje.Count(a => _agendamentosComConflito.Contains(a.Id));
+
+        var proximo = _agendamentosGlobais
+            .Where(a => !AgendaCalculoHelper.AgendamentoCancelado(a))
+            .Where(a => a.DataHoraInicio >= DateTime.Now)
+            .OrderBy(a => a.DataHoraInicio)
+            .FirstOrDefault();
+
+        _cardProximoAtendimento = proximo is null
+            ? "Nenhum"
+            : $"{proximo.DataHoraInicio:HH:mm} — {NomeCliente(proximo.ClienteId)} ({NomeFuncionario(proximo.FuncionarioId)})";
+
+        _cardHorariosLivresHoje = 0;
+        if (_servicoHorariosLivresId != Guid.Empty)
+        {
+            var duracao = ObterDuracaoServico(_servicoHorariosLivresId);
+            foreach (var f in _funcionarios)
+            {
+                _janelasPorFuncionario.TryGetValue(f.Id, out var janelas);
+                janelas ??= [];
+                _cardHorariosLivresHoje += AgendaCalculoHelper.CalcularHorariosLivres(
+                    hoje, f.Id, f.NomeCompleto, duracao, janelas, _agendamentosGlobais, ObterFimAgendamento).Count;
+            }
+        }
+    }
+
+    private async Task CarregarTodasJanelasAsync()
+    {
+        var dict = new Dictionary<Guid, List<JanelaAgendaDto>>();
+        foreach (var funcionario in _funcionarios)
+        {
+            var resultado = await AgendaServico.ListarPorFuncionarioAsync(funcionario.Id);
+            if (resultado.Sucesso && resultado.Dados is not null)
+                dict[funcionario.Id] = resultado.Dados.Select(NormalizarJanelaDiaSemana).ToList();
+            else
+                dict[funcionario.Id] = [];
+        }
+
+        _janelasPorFuncionario = dict;
+    }
+
+    private async Task AoSelecionarFuncionario(Guid? id)
+    {
+        _funcionarioSelecionadoId = id;
+        if (id.HasValue)
+        {
+            await CarregarAgendaFuncionarioAsync(id.Value);
+            if (_abaAtiva == 1)
+                _abaAtiva = 0;
+        }
+        else
+        {
+            _janelas = [];
+            AtualizarResumo();
+        }
+
+        AtualizarAgendamentosExibidos();
+        AtualizarEventosCalendario();
+    }
+
+    private async Task CarregarAgendaFuncionarioAsync(Guid funcionarioId)
+    {
+        if (_janelasPorFuncionario.TryGetValue(funcionarioId, out var cache))
+        {
+            _janelas = cache.OrderBy(x => x.DiaSemana).ThenBy(x => x.HoraInicio).ToList();
+            AtualizarResumo();
+            return;
+        }
+
+        var resultado = await AgendaServico.ListarPorFuncionarioAsync(funcionarioId);
+        if (!resultado.Sucesso || resultado.Dados is null)
+        {
+            Notificacoes.Erro(resultado.Mensagem ?? "Não foi possível carregar a agenda.");
+            return;
+        }
+
+        _janelas = resultado.Dados.Select(NormalizarJanelaDiaSemana).OrderBy(x => x.DiaSemana).ThenBy(x => x.HoraInicio).ToList();
+        _janelasPorFuncionario[funcionarioId] = _janelas.ToList();
+        AtualizarResumo();
+    }
+
+    private void AtualizarAgendamentosExibidos()
+    {
+        IEnumerable<AgendamentoDto> query = _agendamentosGlobais;
+
+        if (_funcionarioSelecionadoId.HasValue)
+            query = query.Where(a => a.FuncionarioId == _funcionarioSelecionadoId.Value);
+
+        if (_filtroServicoId.HasValue)
+            query = query.Where(a => a.ServicoId == _filtroServicoId.Value);
+
+        if (!string.IsNullOrWhiteSpace(_filtroStatus) && _filtroStatus != "TODOS")
+            query = query.Where(a => string.Equals(a.Status, _filtroStatus, StringComparison.OrdinalIgnoreCase));
+
+        if (_filtroInicio.HasValue && _filtroFim.HasValue)
+        {
+            var inicio = _filtroInicio.Value.Date;
+            var fim = _filtroFim.Value.Date;
+            query = query.Where(a => a.DataHoraInicio.Date >= inicio && a.DataHoraInicio.Date <= fim);
+        }
+
+        _agendamentosExibidos = query.OrderBy(a => a.DataHoraInicio).ToList();
+        _ = CarregarIndicadoresGerenciaisAsync();
+    }
+
+    private async Task CarregarIndicadoresGerenciaisAsync()
+    {
+        if (!_filtroInicio.HasValue || !_filtroFim.HasValue)
+            return;
+
+        var resumo = _agendamentosExibidos.Select(a => new AgendamentoResumoAnalise
+        {
+            FuncionarioId = a.FuncionarioId,
+            ServicoId = a.ServicoId,
+            DataHoraInicio = a.DataHoraInicio,
+            Status = a.Status
+        }).ToList();
+
+        var resultado = await AnaliseServico.ObterIndicadoresAsync(
+            _filtroInicio.Value,
+            _filtroFim.Value,
+            resumo,
+            NomeFuncionario,
+            NomeServico);
+
+        if (resultado.Sucesso && resultado.Dados is not null)
+            _indicadoresGerenciais = resultado.Dados;
+
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private void AtualizarEventosCalendario()
+    {
+        var (inicio, fim) = ObterIntervaloCalendario();
+        var query = _agendamentosGlobais
+            .Where(a => a.DataHoraInicio.Date >= inicio && a.DataHoraInicio.Date <= fim);
+
+        if (_funcionarioSelecionadoId.HasValue)
+            query = query.Where(a => a.FuncionarioId == _funcionarioSelecionadoId.Value);
+
+        _eventosCalendario = query.Select(a => new AgendaCalendarioVisao.EventoCalendario
+        {
+            AgendamentoId = a.Id,
+            FuncionarioId = a.FuncionarioId,
+            Inicio = a.DataHoraInicio,
+            Fim = ObterFimAgendamento(a),
+            ClienteNome = NomeCliente(a.ClienteId),
+            ServicoNome = NomeServico(a.ServicoId),
+            Titulo = $"{NomeCliente(a.ClienteId)} — {NomeServico(a.ServicoId)}",
+            TituloCurto = $"{a.DataHoraInicio:HH:mm} {ResumoNome(NomeCliente(a.ClienteId))}",
+            Status = a.Status,
+            TemConflito = _agendamentosComConflito.Contains(a.Id)
+        }).ToList();
+    }
+
+    private (DateTime Inicio, DateTime Fim) ObterIntervaloCalendario()
+    {
+        if (_modoCalendario == AgendaCalendarioVisao.ModoCalendario.Dia)
+            return (_dataCalendario.Date, _dataCalendario.Date);
+
+        if (_modoCalendario == AgendaCalendarioVisao.ModoCalendario.Mes)
+        {
+            var ini = AgendaCalculoHelper.ObterInicioMes(_dataCalendario);
+            return (ini, ini.AddMonths(1).AddDays(-1));
+        }
+
+        var inicio = AgendaCalculoHelper.ObterInicioSemana(_dataCalendario);
+        return (inicio, inicio.AddDays(6));
+    }
+
+    private Task AoAlterarFiltroStatus(string? status)
+    {
+        _filtroStatus = status;
+        AtualizarAgendamentosExibidos();
+        return Task.CompletedTask;
+    }
+
+    private Task AoAlterarFiltroServico(Guid? servicoId)
+    {
+        _filtroServicoId = servicoId;
+        AtualizarAgendamentosExibidos();
+        return Task.CompletedTask;
+    }
+
+    private void AbrirDetalheAgendamento(Guid agendamentoId)
+    {
+        var ag = _agendamentosGlobais.FirstOrDefault(a => a.Id == agendamentoId);
+        if (ag is null) return;
+
+        _agendamentoEditandoId = ag.Id;
+        _funcionarioSelecionadoId = ag.FuncionarioId;
+        _formFuncionarioId = ag.FuncionarioId;
+        _formClienteId = ag.ClienteId;
+        _formServicoId = ag.ServicoId;
+        _agendamentoData = ag.DataHoraInicio.Date;
+        _agendamentoHora = ag.DataHoraInicio.TimeOfDay;
+        AtualizarPreviewAlertas();
+        _dialogoAgendamentoAberto = true;
+    }
+
+    private void AbrirAgendamentoRapido((DateTime Data, Guid FuncionarioId) args)
+    {
+        _agendamentoEditandoId = null;
+        _funcionarioSelecionadoId = args.FuncionarioId;
+        _formFuncionarioId = args.FuncionarioId;
+        _formClienteId = null;
+        _formServicoId = null;
+        _agendamentoData = args.Data.Date;
+        _agendamentoHora = args.Data.TimeOfDay.TotalMinutes > 0
+            ? args.Data.TimeOfDay
+            : TimeSpan.FromHours(9);
+        _alertasAgendamentoAtual = null;
+        _dialogoAgendamentoAberto = true;
+    }
+
+    private async Task ReagendarAgendamento((Guid AgendamentoId, DateTime NovoInicio, Guid FuncionarioId) args)
+    {
+        var ag = _agendamentosGlobais.FirstOrDefault(a => a.Id == args.AgendamentoId);
+        if (ag is null) return;
+
+        _janelasPorFuncionario.TryGetValue(args.FuncionarioId, out var janelas);
+        var analise = AgendaCalculoHelper.AnalisarNovoAgendamento(
+            args.FuncionarioId,
+            args.NovoInicio,
+            ObterDuracaoServico(ag.ServicoId),
+            janelas ?? [],
+            _agendamentosGlobais,
+            ObterFimAgendamento,
+            args.AgendamentoId);
+
+        var edicao = new AgendamentoEdicaoDto
+        {
+            Id = ag.Id,
+            ClienteId = ag.ClienteId,
+            FuncionarioId = args.FuncionarioId,
+            ServicoId = ag.ServicoId,
+            DataHoraInicio = args.NovoInicio
+        };
+
+        var resultado = await AgendamentoServico.AtualizarAsync(edicao);
+        if (!resultado.Sucesso)
+        {
+            Notificacoes.Erro(resultado.Mensagem ?? "Não foi possível reagendar.");
+            return;
+        }
+
+        Notificacoes.Sucesso(analise.TemConflito
+            ? "Reagendado com alerta de conflito no mesmo profissional."
+            : "Agendamento reagendado.");
+
+        await RecarregarAposAlteracaoAsync();
+    }
+
+    private void FecharDialogoAgendamento()
+    {
+        _dialogoAgendamentoAberto = false;
+        _agendamentoEditandoId = null;
+        _alertasAgendamentoAtual = null;
+    }
+
+    private async Task AgendarDaBusca(AgendaBuscaAgendamentoRequest request)
+    {
+        _agendamentoEditandoId = null;
+        _funcionarioSelecionadoId = request.Sugestao.FuncionarioId;
+        await CarregarAgendaFuncionarioAsync(request.Sugestao.FuncionarioId);
+
+        _formClienteId = request.ClienteId;
+        _formServicoId = request.ServicoId;
+        _formFuncionarioId = request.Sugestao.FuncionarioId;
+        _agendamentoData = request.Sugestao.HorarioInicio.Date;
+        _agendamentoHora = request.Sugestao.HorarioInicio.TimeOfDay;
+        AtualizarPreviewAlertas();
+        _dialogoAgendamentoAberto = true;
+    }
+
+    private void AbrirHorariosLivresGeral() => CalcularEMostrarSlots(
+        _servicoHorariosLivresId,
+        _dataHorariosLivres ?? DateTime.Today,
+        _funcionarioSelecionadoId);
+
+    private void AbrirHorariosLivresDoDialogo() => CalcularEMostrarSlots(
+        _formServicoId ?? Guid.Empty,
+        _agendamentoData ?? DateTime.Today,
+        _funcionarioSelecionadoId ?? _formFuncionarioId);
+
+    private void CalcularEMostrarSlots(Guid servicoId, DateTime data, Guid? funcionarioId)
+    {
+        var duracao = ObterDuracaoServico(servicoId);
+        if (duracao <= 0)
+        {
+            Notificacoes.Erro("Selecione um serviço com duração cadastrada.");
+            return;
+        }
+
+        _slotsLivres.Clear();
+        var funcionariosAlvo = funcionarioId.HasValue
+            ? _funcionarios.Where(f => f.Id == funcionarioId.Value)
+            : _funcionarios;
+
+        foreach (var f in funcionariosAlvo)
+        {
+            _janelasPorFuncionario.TryGetValue(f.Id, out var janelas);
+            janelas ??= [];
+
+            var slots = AgendaCalculoHelper.CalcularHorariosLivres(
+                data, f.Id, f.NomeCompleto, duracao, janelas, _agendamentosGlobais, ObterFimAgendamento);
+
+            _slotsLivres.AddRange(slots);
+        }
+
+        _slotsLivres = _slotsLivres.OrderBy(s => s.Inicio).ThenBy(s => s.NomeFuncionario).Take(80).ToList();
+        _dialogoHorariosLivres = true;
+    }
+
+    private void SelecionarSlot(SlotHorarioLivre slot)
+    {
+        _formFuncionarioId = slot.FuncionarioId;
+        _funcionarioSelecionadoId = slot.FuncionarioId;
+        _ = CarregarAgendaFuncionarioAsync(slot.FuncionarioId);
+        _agendamentoData = slot.Inicio.Date;
+        _agendamentoHora = slot.Inicio.TimeOfDay;
+        _dialogoHorariosLivres = false;
+        _dialogoAgendamentoAberto = true;
+    }
+
+    private string TextoHorariosLivres()
+    {
+        var servicoId = _dialogoAgendamentoAberto ? _agendamentoCadastro.ServicoId : _servicoHorariosLivresId;
+        var data = _dialogoAgendamentoAberto ? (_agendamentoData ?? DateTime.Today) : (_dataHorariosLivres ?? DateTime.Today);
+        var nome = _servicos.FirstOrDefault(s => s.Id == servicoId)?.Nome ?? "serviço";
+        return $"Clique em um horário para agendar {nome} em {data:dd/MM/yyyy}.";
+    }
+
+    private string TituloListaAgendamentos() =>
+        ModoTodosFuncionarios ? "Agendamentos de todos os funcionários" : "Agendamentos do funcionário";
+
+    private enum PeriodoAgenda { Hoje, Semana, Mes, Personalizado }
+
+    private void DefinirIntervaloPeriodo(PeriodoAgenda periodo)
+    {
+        _periodo = periodo;
+        var hoje = DateTime.Today;
+        switch (periodo)
+        {
+            case PeriodoAgenda.Hoje:
+                _filtroInicio = hoje; _filtroFim = hoje; break;
+            case PeriodoAgenda.Semana:
+                _filtroInicio = AgendaCalculoHelper.ObterInicioSemana(hoje);
+                _filtroFim = _filtroInicio.Value.AddDays(6); break;
+            case PeriodoAgenda.Mes:
+                _filtroInicio = new DateTime(hoje.Year, hoje.Month, 1);
+                _filtroFim = _filtroInicio.Value.AddMonths(1).AddDays(-1); break;
+            case PeriodoAgenda.Personalizado:
+                _filtroInicio ??= hoje; _filtroFim ??= hoje.AddDays(7); break;
+        }
+    }
+
+    private async Task AplicarPeriodo(PeriodoAgenda periodo)
+    {
+        DefinirIntervaloPeriodo(periodo);
+        await CarregarAgendamentosGlobaisAsync();
+        AtualizarAgendamentosExibidos();
+        AtualizarEventosCalendario();
+    }
+
+    private async Task AoAlterarFiltroInicio(DateTime? data)
+    {
+        _filtroInicio = data?.Date;
+        if (_filtroInicio > _filtroFim) _filtroFim = _filtroInicio;
+        await CarregarAgendamentosGlobaisAsync();
+        AtualizarAgendamentosExibidos();
+        AtualizarEventosCalendario();
+    }
+
+    private async Task AoAlterarFiltroFim(DateTime? data)
+    {
+        _filtroFim = data?.Date;
+        if (_filtroFim < _filtroInicio) _filtroInicio = _filtroFim;
+        await CarregarAgendamentosGlobaisAsync();
+        AtualizarAgendamentosExibidos();
+        AtualizarEventosCalendario();
+    }
+
+    private Task AoAlterarModoCalendario(AgendaCalendarioVisao.ModoCalendario modo)
+    {
+        _modoCalendario = modo;
+        AtualizarEventosCalendario();
+        return Task.CompletedTask;
+    }
+
+    private Task AoAlterarDataCalendario(DateTime data)
+    {
+        _dataCalendario = data;
+        AtualizarEventosCalendario();
+        return Task.CompletedTask;
+    }
+
+    private Color CorBotaoPeriodo(PeriodoAgenda periodo) => _periodo == periodo ? Color.Primary : Color.Default;
+
+    private string TextoPeriodoAtual()
+    {
+        if (!_filtroInicio.HasValue || !_filtroFim.HasValue) return "Selecione o período.";
+        if (_filtroInicio.Value.Date == _filtroFim.Value.Date)
+            return $"Exibindo agendamentos de {_filtroInicio.Value:dd/MM/yyyy}.";
+        return $"Exibindo de {_filtroInicio.Value:dd/MM/yyyy} até {_filtroFim.Value:dd/MM/yyyy}.";
+    }
+
+    private void AoAlterarFormFuncionario(Guid? id)
+    {
+        _formFuncionarioId = id;
+        if (!ModoTodosFuncionarios && id.HasValue)
+            _funcionarioSelecionadoId = id;
+        AtualizarPreviewAlertas();
+    }
+
+    private void AoAlterarFormCliente(Guid? id)
+    {
+        _formClienteId = id;
+    }
+
+    private void AoAlterarFormServico(Guid? id)
+    {
+        _formServicoId = id;
+        AtualizarPreviewAlertas();
+    }
+
+    private void AtualizarPreviewAlertas()
+    {
+        if (_agendamentoData is null || !_formFuncionarioId.HasValue || !_formServicoId.HasValue)
+        {
+            _alertasAgendamentoAtual = null;
+            return;
+        }
+
+        var inicio = _agendamentoData.Value.Date.Add(_agendamentoHora);
+        _janelasPorFuncionario.TryGetValue(_formFuncionarioId.Value, out var janelas);
+        _alertasAgendamentoAtual = AgendaCalculoHelper.AnalisarNovoAgendamento(
+            _formFuncionarioId.Value,
+            inicio,
+            ObterDuracaoServico(_formServicoId.Value),
+            janelas ?? [],
+            _agendamentosGlobais,
+            ObterFimAgendamento,
+            _agendamentoEditandoId);
+    }
+
+    private void AbrirNovoAgendamento()
+    {
+        _agendamentoEditandoId = null;
+        _formFuncionarioId = _funcionarioSelecionadoId;
+        _formClienteId = null;
+        _formServicoId = null;
+        _agendamentoData = DateTime.Today;
+        _agendamentoHora = TimeSpan.FromHours(9);
+        _alertasAgendamentoAtual = null;
+        _dialogoAgendamentoAberto = true;
+    }
+
+    private async Task SalvarAgendamento()
+    {
+        if (_agendamentoData is null) return;
+
+        if (!_formFuncionarioId.HasValue)
+        {
+            Notificacoes.Erro("Selecione o profissional.");
+            return;
+        }
+
+        if (!_formClienteId.HasValue || !_formServicoId.HasValue)
+        {
+            Notificacoes.Erro("Informe cliente e serviço.");
+            return;
+        }
+
+        _agendamentoCadastro.FuncionarioId = _formFuncionarioId.Value;
+        _agendamentoCadastro.ClienteId = _formClienteId.Value;
+        _agendamentoCadastro.ServicoId = _formServicoId.Value;
+        _agendamentoCadastro.DataHoraInicio = _agendamentoData.Value.Date.Add(_agendamentoHora);
+        AtualizarPreviewAlertas();
+
+        if (_alertasAgendamentoAtual?.RequerConfirmacao == true)
+        {
+            _dialogoConfirmarConflito = true;
+            return;
+        }
+
+        await ExecutarSalvarAgendamentoAsync();
+    }
+
+    private async Task ConfirmarSalvarComConflito()
+    {
+        _dialogoConfirmarConflito = false;
+        await ExecutarSalvarAgendamentoAsync();
+    }
+
+    private async Task ExecutarSalvarAgendamentoAsync()
+    {
+        var tinhaConflito = _alertasAgendamentoAtual?.TemConflito == true;
+
+        if (_agendamentoEditandoId.HasValue)
+        {
+            var edicao = new AgendamentoEdicaoDto
+            {
+                Id = _agendamentoEditandoId.Value,
+                ClienteId = _agendamentoCadastro.ClienteId,
+                FuncionarioId = _agendamentoCadastro.FuncionarioId,
+                ServicoId = _agendamentoCadastro.ServicoId,
+                DataHoraInicio = _agendamentoCadastro.DataHoraInicio
+            };
+
+            var atualizacao = await AgendamentoServico.AtualizarAsync(edicao);
+            if (!atualizacao.Sucesso)
+            {
+                Notificacoes.Erro(MensagemErroAgendamento(atualizacao.Mensagem, tinhaConflito));
+                return;
+            }
+
+            FecharDialogoAgendamento();
+            Notificacoes.Sucesso(tinhaConflito && atualizacao.Sucesso
+                ? "Agendamento atualizado. Conflito de horário registrado como alerta."
+                : (atualizacao.Mensagem ?? "Agendamento atualizado."));
+        }
+        else
+        {
+            var criacao = await AgendamentoServico.CriarAsync(_agendamentoCadastro);
+            if (!criacao.Sucesso)
+            {
+                Notificacoes.Erro(MensagemErroAgendamento(criacao.Mensagem, tinhaConflito));
+                return;
+            }
+
+            FecharDialogoAgendamento();
+            Notificacoes.Sucesso(tinhaConflito
+                ? "Agendamento criado. Conflito de horário registrado como alerta."
+                : (criacao.Mensagem ?? "Agendamento criado."));
+        }
+
+        await CarregarAgendamentosGlobaisAsync();
+        if (_funcionarioSelecionadoId.HasValue)
+            await CarregarAgendaFuncionarioAsync(_funcionarioSelecionadoId.Value);
+        AtualizarAgendamentosExibidos();
+        AtualizarEventosCalendario();
+    }
+
+    private async Task CancelarAgendamento(Guid id)
+    {
+        var resultado = await AgendamentoServico.CancelarAsync(id);
+        if (!resultado.Sucesso) { Notificacoes.Erro(resultado.Mensagem ?? "Erro ao cancelar."); return; }
+        Notificacoes.Sucesso("Agendamento cancelado.");
+        await RecarregarAposAlteracaoAsync();
+    }
+
+    private async Task ExcluirAgendamento(Guid id)
+    {
+        var resultado = await AgendamentoServico.ExcluirAsync(id);
+        if (!resultado.Sucesso) { Notificacoes.Erro(resultado.Mensagem ?? "Erro ao excluir."); return; }
+        Notificacoes.Sucesso("Agendamento excluído.");
+        await RecarregarAposAlteracaoAsync();
+    }
+
+    private async Task RecarregarAposAlteracaoAsync()
+    {
+        await CarregarAgendamentosGlobaisAsync();
+        AtualizarAgendamentosExibidos();
+        AtualizarEventosCalendario();
+    }
+
+    private void AoAlterarHoraAgendamento(TimeSpan? hora)
+    {
+        _agendamentoHora = hora ?? TimeSpan.FromHours(9);
+        AtualizarPreviewAlertas();
+    }
+
+    private void AoAlterarDataAgendamento(DateTime? data)
+    {
+        _agendamentoData = data;
+        AtualizarPreviewAlertas();
+    }
+
+    private void AdicionarJanela()
+    {
+        if (_funcionarioSelecionadoId is null) return;
+        if (!AgendaCalculoHelper.TryParseHora(_novaJanela.HoraInicio, out var inicio) ||
+            !AgendaCalculoHelper.TryParseHora(_novaJanela.HoraFim, out var fim) || inicio >= fim)
+        {
+            Notificacoes.Erro("Hora de fim deve ser maior que hora de início.");
+            return;
+        }
+        if (ExisteConflitoJanela(_novaJanela))
+        {
+            Notificacoes.Erro("Conflito com outra janela do mesmo dia.");
+            return;
+        }
+
+        _janelas.Add(new JanelaAgendaDto
+        {
+            Id = Guid.NewGuid(),
+            FuncionarioId = _funcionarioSelecionadoId.Value,
+            DiaSemana = AgendaCalculoHelper.NormalizarDiaSemana(_diaSelecionado),
+            HoraInicio = _novaJanela.HoraInicio,
+            HoraFim = _novaJanela.HoraFim
+        });
+        _janelas = _janelas.OrderBy(x => x.DiaSemana).ThenBy(x => x.HoraInicio).ToList();
+        _janelasPorFuncionario[_funcionarioSelecionadoId.Value] = _janelas.ToList();
+        AtualizarResumo();
+    }
+
+    private async Task SalvarAgenda()
+    {
+        if (_funcionarioSelecionadoId is null) return;
+        var resultado = await AgendaServico.DefinirAgendaAsync(_funcionarioSelecionadoId.Value, new DefinirAgendaDto { Janelas = _janelas });
+        if (!resultado.Sucesso) { Notificacoes.Erro(resultado.Mensagem ?? "Erro ao salvar."); return; }
+        Notificacoes.Sucesso("Agenda salva.");
+        if (resultado.Dados is not null)
+        {
+            _janelas = resultado.Dados.Select(NormalizarJanelaDiaSemana).OrderBy(x => x.DiaSemana).ThenBy(x => x.HoraInicio).ToList();
+            _janelasPorFuncionario[_funcionarioSelecionadoId.Value] = _janelas.ToList();
+        }
+        AtualizarResumo();
+    }
+
+    private async Task ExcluirJanela(Guid janelaId)
+    {
+        var resultado = await AgendaServico.ExcluirJanelaAsync(janelaId);
+        if (!resultado.Sucesso) { Notificacoes.Erro(resultado.Mensagem ?? "Erro ao excluir."); return; }
+        _janelas.RemoveAll(x => x.Id == janelaId);
+        if (_funcionarioSelecionadoId.HasValue)
+            _janelasPorFuncionario[_funcionarioSelecionadoId.Value] = _janelas.ToList();
+        Notificacoes.Sucesso("Janela removida.");
+        AtualizarResumo();
+        await Task.CompletedTask;
+    }
+
+    private void AtualizarHora(TimeSpan? hora, bool inicio)
+    {
+        if (hora is null) return;
+        var texto = $"{hora.Value.Hours:00}:{hora.Value.Minutes:00}";
+        if (inicio) _novaJanela.HoraInicio = texto; else _novaJanela.HoraFim = texto;
+    }
+
+    private bool ExisteConflitoJanela(JanelaAgendaDto nova)
+    {
+        if (!AgendaCalculoHelper.TryParseHora(nova.HoraInicio, out var ini) || !AgendaCalculoHelper.TryParseHora(nova.HoraFim, out var fim))
+            return false;
+        return _janelas.Any(atual =>
+        {
+            if (AgendaCalculoHelper.NormalizarDiaSemana(atual.DiaSemana) != AgendaCalculoHelper.NormalizarDiaSemana(nova.DiaSemana)) return false;
+            if (!AgendaCalculoHelper.TryParseHora(atual.HoraInicio, out var ia) || !AgendaCalculoHelper.TryParseHora(atual.HoraFim, out var fa)) return false;
+            return ini < fa && fim > ia;
+        });
+    }
+
+    private static JanelaAgendaDto NormalizarJanelaDiaSemana(JanelaAgendaDto j)
+    {
+        j.DiaSemana = AgendaCalculoHelper.NormalizarDiaSemana(j.DiaSemana);
+        return j;
+    }
+
+    private void AtualizarResumo()
+    {
+        _totalJanelas = _janelas.Count;
+        _diasComAgenda = _janelas.Select(x => AgendaCalculoHelper.NormalizarDiaSemana(x.DiaSemana)).Distinct().Count();
+        _horasSemana = _janelas.Sum(j =>
+        {
+            if (!AgendaCalculoHelper.TryParseHora(j.HoraInicio, out var i) || !AgendaCalculoHelper.TryParseHora(j.HoraFim, out var f)) return 0.0;
+            return (f - i).TotalHours;
+        });
+        var porDia = _janelas.GroupBy(j => AgendaCalculoHelper.NormalizarDiaSemana(j.DiaSemana)).OrderBy(g => g.Key).ToList();
+        _labelsGrafico = porDia.Select(g => NomeDia(g.Key)).ToArray();
+        _dadosGrafico = porDia.Select(g => (double)g.Count()).ToArray();
+    }
+
+    private int ObterDuracaoServico(Guid servicoId) => _servicos.FirstOrDefault(x => x.Id == servicoId)?.DuracaoMinutos ?? 0;
+    private DateTime ObterFimAgendamento(AgendamentoDto a) =>
+        a.DataHoraInicio.AddMinutes(ObterDuracaoServico(a.ServicoId));
+    private static bool IntervalosConflitam(DateTime iA, DateTime fA, DateTime iB, DateTime fB) =>
+        AgendaCalculoHelper.IntervalosConflitam(iA, fA, iB, fB);
+    private static int ObterDiaSemanaPadrao() => (int)DateTime.Today.DayOfWeek;
+
+    private string NomeCliente(Guid id) => _clientes.FirstOrDefault(x => x.Id == id)?.NomeCompleto ?? "—";
+    private string NomeFuncionario(Guid id) => _funcionarios.FirstOrDefault(x => x.Id == id)?.NomeCompleto ?? "—";
+    private string NomeServico(Guid id) => _servicos.FirstOrDefault(x => x.Id == id)?.Nome ?? "—";
+    private static string ResumoNome(string nome) => string.IsNullOrWhiteSpace(nome) ? "—" : nome.Split(' ')[0];
+
+    private static string TextoStatusAgendamento(string status, Guid id) => status.ToUpperInvariant() switch
+    {
+        "AGENDADO" => "Confirmado",
+        "CANCELADO" => "Cancelado",
+        "CONCLUIDO" => "Finalizado",
+        _ => status
+    };
+
+    private static string MensagemErroAgendamento(string? mensagemApi, bool tinhaConflitoLocal)
+    {
+        var msg = mensagemApi ?? "Não foi possível salvar o agendamento.";
+        if (tinhaConflitoLocal && msg.Contains("conflito", StringComparison.OrdinalIgnoreCase))
+            return "A API rejeitou o agendamento por conflito de horário neste profissional. " + msg;
+        return msg;
+    }
+
+    private Color CorStatusAgendamento(string status, Guid id)
+    {
+        if (_agendamentosComConflito.Contains(id))
+            return Color.Warning;
+        return status.ToUpperInvariant() switch
+        {
+            "AGENDADO" => Color.Success,
+            "CANCELADO" => Color.Error,
+            "CONCLUIDO" => Color.Info,
+            _ => Color.Default
+        };
+    }
+
+    private static string NomeDia(int d) => AgendaCalculoHelper.NormalizarDiaSemana(d) switch
+    {
+        0 => "Domingo", 1 => "Segunda", 2 => "Terça", 3 => "Quarta", 4 => "Quinta", 5 => "Sexta", 6 => "Sábado", _ => "—"
+    };
+}

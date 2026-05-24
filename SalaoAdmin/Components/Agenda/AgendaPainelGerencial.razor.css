@@ -1,0 +1,50 @@
+.agenda-barra-linha {
+    display: grid;
+    grid-template-columns: minmax(80px, 28%) 1fr 36px;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+.agenda-barra-label {
+    font-size: 0.78rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.agenda-barra-track {
+    height: 10px;
+    border-radius: 5px;
+    background: var(--mud-palette-lines-default);
+    overflow: hidden;
+}
+
+.agenda-barra-fill {
+    height: 100%;
+    border-radius: 5px;
+    min-width: 2px;
+    transition: width 0.3s ease;
+}
+
+.agenda-barra-primaria {
+    background: var(--mud-palette-primary);
+}
+
+.agenda-barra-info {
+    background: #2196f3;
+}
+
+.agenda-barra-secundaria {
+    background: #9c27b0;
+}
+
+.agenda-barra-erro {
+    background: #f44336;
+}
+
+.agenda-barra-valor {
+    font-size: 0.78rem;
+    font-weight: 600;
+    text-align: right;
+}

@@ -1,3 +1,5 @@
+using SalaoAdmin.Dtos.Agenda;
+using SalaoAdmin.Dtos.Agendamentos;
 using SalaoAdmin.Dtos.Categorias;
 using SalaoAdmin.Dtos.Clientes;
 using SalaoAdmin.Dtos.Funcionarios;
@@ -14,6 +16,8 @@ public class ArmazenamentoLocal
     public List<ProdutoDto> Produtos { get; } = GerarProdutos();
     public List<CategoriaDto> Categorias { get; } = GerarCategorias();
     public List<ServicoDto> Servicos { get; } = GerarServicos();
+    public List<JanelaAgendaDto> JanelasAgenda { get; } = [];
+    public List<AgendamentoDto> Agendamentos { get; } = [];
 
     private static List<FuncionarioDto> GerarFuncionarios() =>
     [
