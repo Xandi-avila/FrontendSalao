@@ -7,6 +7,10 @@
 
 <CabecalhoPagina Titulo="Serviços" Subtitulo="Catálogo de serviços do salão">
     <Acoes>
+        <MudButton Variant="Variant.Outlined" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Category"
+                   OnClick="@(() => Navegacao.NavigateTo("/categorias"))">
+            Gerenciar categorias
+        </MudButton>
         <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add"
                    OnClick="@(() => Navegacao.NavigateTo("/servicos/cadastro"))">
             Novo serviço
@@ -69,12 +73,12 @@
                 </MudTd>
             </RowTemplate>
             <PagerContent>
-                <MudTablePager Page="@(_pagina - 1)"
-                               PageSize="@_itensPorPagina"
-                               TotalItems="@_total"
-                               PageSizeOptions="@(new int[] { 5, 10, 25 })"
-                               PageChanged="MudarPagina"
-                               PageSizeChanged="MudarTamanhoPagina"
+                <MudTablePager page="@(_pagina - 1)"
+                               pageSize="@_itensPorPagina"
+                               totalItems="@_total"
+                               pageSizeOptions="@(new int[] { 5, 10, 25 })"
+                               pageChanged="MudarPagina"
+                               pageSizeChanged="MudarTamanhoPagina"
                                InfoFormat="{first_item}-{last_item} de {all_items}" />
             </PagerContent>
         </MudTable>
