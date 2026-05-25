@@ -1,11 +1,11 @@
-<MudTablePager Page="@(Pagina - 1)"
-               PageSize="@ItensPorPagina"
-               TotalItems="@TotalItens"
-               PageSizeOptions="@(new int[] { 5, 10, 25, 50 })"
-               PageChanged="AoMudarPagina"
-               PageSizeChanged="AoMudarTamanho"
-               InfoFormat="{first_item}-{last_item} de {all_items}"
-               RowsPerPageString="Itens por página:" />
+<MudTablePager page="@(Pagina - 1)"
+               pageSize="@ItensPorPagina"
+               totalItems="@TotalItens"
+               pageSizeOptions="@(new int[] { 5, 10, 25, 50 })"
+               pageChanged="AoMudarPagina"
+               pageSizeChanged="AoMudarTamanho"
+               infoFormat="{first_item}-{last_item} de {all_items}"
+               rowsPerPageString="Itens por página:" />
 
 @code {
     [Parameter] public int Pagina { get; set; } = 1;
