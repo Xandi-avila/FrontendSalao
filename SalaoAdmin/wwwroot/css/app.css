@@ -1,6 +1,127 @@
 html, body {
-    font-family: 'Roboto', 'Segoe UI', sans-serif;
+    font-family: 'Inter', 'Segoe UI', sans-serif;
     margin: 0;
+    min-height: 100%;
+    background: #F2F5F5;
+    color: #141C1E;
+}
+
+h1, h2, h3, h4, h5, h6 {
+    font-family: 'Nunito', 'Inter', sans-serif;
+    color: #141C1E;
+    margin: 0;
+}
+
+h1 { font-size: 24px; line-height: 120%; font-weight: 700; }
+h2 { font-size: 20px; line-height: 120%; font-weight: 600; }
+h3 { font-size: 18px; line-height: 130%; font-weight: 600; }
+
+body, input, textarea, button, select, .mud-typography {
+    font-family: 'Inter', 'Segoe UI', sans-serif;
+}
+
+.mud-button-root,
+.mud-filled-button,
+.mud-button-root {
+    border-radius: 8px;
+}
+
+.mud-paper,
+.mud-card,
+.mud-table-root .mud-paper,
+.mud-table-root,
+.mud-table-paper {
+    border-radius: 16px;
+}
+
+.mud-dialog-paper {
+    border-radius: 24px;
+}
+
+.mud-input-root,
+.mud-select-root,
+.mud-autocomplete-root,
+.mud-text-field,
+.mud-input-root .mud-input-slot {
+    border-radius: 8px;
+}
+
+.mud-nav-link,
+.mud-nav-link-active {
+    border-radius: 12px;
+}
+
+.mud-snackbar {
+    border-radius: 16px;
+}
+
+.mud-table-root .mud-table-row:hover {
+    background: rgba(57, 142, 151, 0.08);
+}
+
+.mud-input-root .mud-input-slot::before {
+    border-color: #D1E2E4;
+}
+
+.mud-input-root:hover .mud-input-slot::before,
+.mud-input-root.mud-focused .mud-input-slot::before {
+    border-color: #398E97;
+}
+
+.mud-formcontrol label,
+.mud-formcontrol .mud-input-label,
+.mud-textfield .mud-input-input::placeholder {
+    color: #4A5557;
+}
+
+.mud-filled-button.mud-primary {
+    color: #FFFFFF;
+}
+
+.mud-filled-button.mud-primary:hover {
+    background-color: #006276;
+}
+
+/* Localize este bloco no seu app.css e substitua/adicione as propriedades abaixo */
+html.mud-theme-dark body {
+    background: #0F1416;
+    color: #E1E8E9;
+    min-height: 100vh;
+}
+
+/* Força o contêiner de conteúdo do MudBlazor a herdar a cor correta em toda a sua extensão */
+html.mud-theme-dark .mud-layout {
+    background: #0F1416;
+}
+
+html.mud-theme-dark .mud-paper,
+html.mud-theme-dark .mud-card,
+html.mud-theme-dark .mud-dialog-paper,
+html.mud-theme-dark .mud-table-root .mud-paper {
+    background: #192224;
+}
+
+html.mud-theme-dark .mud-input-root .mud-input-slot {
+    background: #243134;
+}
+
+html.mud-theme-dark .mud-table-root .mud-table-row:hover {
+    background: rgba(76, 210, 236, 0.08);
+}
+
+html.mud-theme-dark .mud-nav-link,
+html.mud-theme-dark .mud-nav-link-active,
+html.mud-theme-dark .mud-typography {
+    color: #E1E8E9;
+}
+
+html.mud-theme-dark .mud-filled-button.mud-primary {
+    background-color: #4CD2EC;
+    color: #003541;
+}
+
+html.mud-theme-dark .mud-filled-button.mud-primary:hover {
+    background-color: #39B2C9;
 }
 
 #blazor-error-ui {
@@ -40,7 +161,7 @@ html, body {
 }
 
 .loading-progress circle:last-child {
-    stroke: #7B4B94;
+    stroke: #398E97;
     stroke-dasharray: calc(3.141 * var(--blazor-load-percentage, 0%) * 0.8), 500%;
     transition: stroke-dasharray 0.05s ease-in-out;
 }
@@ -48,5 +169,6 @@ html, body {
 .loading-progress-text {
     text-align: center;
     font-weight: 500;
-    color: #7B4B94;
+    color: #398E97;
 }
+
