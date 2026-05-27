@@ -144,6 +144,157 @@ html.mud-theme-dark .mud-filled-button.mud-primary:hover {
     top: 0.5rem;
 }
 
+/* =================================================================== */
+/* Login: full-screen layout + dark/light input visibility overrides      */
+/* =================================================================== */
+
+.auth-shell {
+    min-height: 100vh !important;
+    padding: 0 !important;
+}
+
+.auth-container {
+    width: 100% !important;
+    max-width: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    height: 100vh !important;
+    display: flex !important;
+    align-items: stretch !important;
+    justify-content: stretch !important;
+}
+
+.auth-container.mud-container,
+.auth-shell .mud-container.auth-container {
+    max-width: none !important;
+}
+
+.login-card {
+    width: 100% !important;
+    height: 100% !important;
+    border-radius: 0 !important;
+    overflow: hidden !important;
+    box-shadow: none !important;
+    border: 0 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    background: transparent !important;
+}
+
+.login-header {
+    padding: 2.5rem 2rem 1rem !important;
+}
+
+.login-form {
+    flex: 1 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    padding: 0 2rem 2rem !important;
+}
+
+.login-form .mud-stack {
+    width: 100% !important;
+    max-width: 520px !important;
+}
+
+@media (max-width: 640px) {
+    .login-card { border-radius: 12px !important; }
+}
+
+/* Dark theme: make inputs and text legible and remove pale backgrounds */
+html.mud-theme-dark .auth-shell {
+    background: linear-gradient(135deg, #0B1215 0%, #111B1F 45%, #15262B 100%) !important;
+}
+
+html.mud-theme-dark .login-card,
+html.mud-theme-dark .login-card .mud-paper {
+    background: #0F1416 !important;
+}
+
+/* Make the login panel visibly span the full width (dark slab) */
+.auth-shell .login-card {
+    background: linear-gradient(90deg, #0F1416 0%, #102226 50%, #0F1416 100%) !important;
+}
+
+html.mud-theme-dark .login-card .mud-input-root .mud-input-slot {
+    background: #142022 !important;
+    border-color: rgba(255,255,255,0.06) !important;
+}
+
+html.mud-theme-dark .login-card .mud-text-field .mud-input-root .mud-input-slot,
+html.mud-theme-dark .login-card .mud-text-field .mud-input-root .mud-input-slot input,
+html.mud-theme-dark .login-card .mud-text-field .mud-input-root input,
+html.mud-theme-dark .login-card .mud-text-field .mud-input-root .mud-input-control,
+html.mud-theme-dark .login-card .mud-text-field .mud-input-root .mud-input-input,
+html.mud-theme-dark .login-card .mud-text-field .mud-input-root .mud-input-label,
+html.mud-theme-dark .login-card .mud-input-root input,
+html.mud-theme-dark .login-card .mud-input-root input.mud-input-element,
+html.mud-theme-dark .login-card .mud-input-root .mud-input-input,
+html.mud-theme-dark .login-card .mud-input-root .mud-input-control,
+html.mud-theme-dark .login-card .mud-input-root .mud-input-slot,
+html.mud-theme-dark .login-card .mud-input-root .mud-input-label,
+html.mud-theme-dark .login-card .mud-input-root .mud-input-slot .mud-input-input {
+    color: #E1E8E9 !important;
+    -webkit-text-fill-color: #E1E8E9 !important;
+    caret-color: #E1E8E9 !important;
+    opacity: 1 !important;
+    filter: none !important;
+}
+
+html.mud-theme-dark .login-card .mud-text-field .mud-input-root input::placeholder,
+html.mud-theme-dark .login-card .mud-text-field .mud-input-root .mud-input-input::placeholder,
+html.mud-theme-dark .login-card .mud-text-field .mud-input-root .mud-input-slot input::placeholder,
+html.mud-theme-dark .login-card .mud-input-root input::placeholder,
+html.mud-theme-dark .login-card .mud-input-root .mud-input-input::placeholder,
+html.mud-theme-dark .login-card .mud-input-root .mud-input-slot input::placeholder {
+    color: rgba(225,232,233,0.56) !important;
+    opacity: 1 !important;
+}
+
+/* Autofill styling */
+html.mud-theme-dark .login-card .mud-input-root input:-webkit-autofill,
+html.mud-theme-dark .login-card .mud-input-root input:-webkit-autofill:hover,
+html.mud-theme-dark .login-card .mud-input-root input:-webkit-autofill:focus {
+    -webkit-text-fill-color: #E1E8E9 !important;
+    box-shadow: 0 0 0px 1000px #142022 inset !important;
+}
+
+/* Light theme: ensure login fills and text is dark */
+html:not(.mud-theme-dark) .auth-shell {
+    background: linear-gradient(135deg, #f5f3f7 0%, #e8d5f0 45%, #f5e8ef 100%) !important;
+}
+
+html:not(.mud-theme-dark) .login-card .mud-input-root .mud-input-slot {
+    background: #FFFFFF !important;
+}
+
+html:not(.mud-theme-dark) .login-card .mud-input-root input,
+html:not(.mud-theme-dark) .login-card .mud-input-root .mud-input-input,
+html:not(.mud-theme-dark) .login-card .mud-input-root .mud-input-control {
+    color: #141C1E !important;
+    -webkit-text-fill-color: #141C1E !important;
+}
+
+/* Make the login panel visibly span the full width (light slab) */
+html:not(.mud-theme-dark) .auth-shell .login-card {
+    background: linear-gradient(90deg, #FFFFFF 0%, #F2F5F5 50%, #FFFFFF 100%) !important;
+}
+
+/* Button contrast tweak for dark theme */
+html.mud-theme-dark .mud-filled-button.mud-primary {
+    background-color: #3AA7AD !important;
+    color: #FFFFFF !important;
+}
+
+/* Small visual polish: center the content vertically on tall screens */
+.auth-shell .auth-container > * {
+    align-self: center;
+}
+
+/* End login overrides */
+
+
 .loading-progress {
     position: relative;
     display: block;
