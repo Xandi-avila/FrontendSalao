@@ -1,0 +1,80 @@
+@using SalaoAdmin.Utilitarios
+
+<MudPaper Class="pa-4 venda-carrinho-painel" Outlined="true">
+    <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Class="mb-2">
+        <MudText Typo="Typo.subtitle1">Carrinho</MudText>
+        <MudChip T="string" Size="Size.Small" Color="Color.Primary">@Itens.Count item(ns)</MudChip>
+    </MudStack>
+
+    @if (Itens.Count == 0)
+    {
+        <MudAlert Severity="Severity.Info" Dense="true" Class="mb-2">
+            Adicione produtos ou serviços ao carrinho.
+        </MudAlert>
+    }
+    else
+    {
+        <div class="venda-carrinho-lista mb-3">
+            @foreach (var item in Itens)
+            {
+                <div class="venda-carrinho-item">
+                    <div class="venda-carrinho-item-topo">
+                        <div>
+                            <MudText Typo="Typo.body2"><strong>@item.Nome</strong></MudText>
+                            <MudText Typo="Typo.caption" Color="Color.Secondary">
+                                @VendaExibicaoHelper.TextoTipoItem(item.Tipo) · @item.Categoria
+                            </MudText>
+                        </div>
+                        <MudIconButton Icon="@Icons.Material.Filled.Delete" Size="Size.Small" Color="Color.Error"
+                                       OnClick="() => OnRemover.InvokeAsync(item.Chave)" />
+                    </div>
+                    <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween">
+                        <MudNumericField T="int" Value="item.Quantidade" ValueChanged="v => AlterarQuantidade(item.Chave, v)"
+                                         Min="1" Max="999" Variant="Variant.Outlined" Margin="Margin.Dense"
+                                         Style="max-width: 100px;" HideSpinButtons="false" />
+                        <div class="text-right">
+                            <MudText Typo="Typo.caption" Color="Color.Secondary">@FormatacaoCampos.Moeda(item.ValorUnitario) un.</MudText>
+                            <MudText Typo="Typo.body2"><strong>@FormatacaoCampos.Moeda(item.Subtotal)</strong></MudText>
+                        </div>
+                    </MudStack>
+                </div>
+            }
+        </div>
+    }
+
+    <MudDivider Class="my-2" />
+
+    <MudStack Spacing="1">
+        <MudStack Row="true" Justify="Justify.SpaceBetween">
+            <MudText Typo="Typo.body2">Subtotal</MudText>
+            <MudText Typo="Typo.body2">@FormatacaoCampos.Moeda(VendaCalculoHelper.CalcularSubtotal(Itens))</MudText>
+        </MudStack>
+        @if (Itens.Any(i => i.Desconto > 0))
+        {
+            <MudStack Row="true" Justify="Justify.SpaceBetween">
+                <MudText Typo="Typo.caption" Color="Color.Secondary">Descontos (futuro)</MudText>
+                <MudText Typo="Typo.caption" Color="Color.Secondary">-@FormatacaoCampos.Moeda(Itens.Sum(i => i.Desconto))</MudText>
+            </MudStack>
+        }
+        <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center">
+            <MudText Typo="Typo.subtitle1">Total</MudText>
+            <MudText Typo="Typo.h6" Color="Color.Primary">@FormatacaoCampos.Moeda(Total)</MudText>
+        </MudStack>
+    </MudStack>
+
+    @* Campos preparados para futuras regras (não enviados à API) *@
+    <MudExpansionPanels Dense="true" Class="mt-3">
+        <MudExpansionPanel Text="Observações e extras (em breve)" Disabled="@(Itens.Count == 0)">
+        </MudExpansionPanel>
+    </MudExpansionPanels>
+</MudPaper>
+
+@code {
+    [Parameter] public List<ItemCarrinhoVenda> Itens { get; set; } = [];
+    [Parameter] public decimal Total { get; set; }
+    [Parameter] public EventCallback<string> OnRemover { get; set; }
+    [Parameter] public EventCallback<(string Chave, int Quantidade)> OnAlterarQuantidade { get; set; }
+
+    private Task AlterarQuantidade(string chave, int qtd) =>
+        OnAlterarQuantidade.InvokeAsync((chave, Math.Max(1, qtd)));
+}
