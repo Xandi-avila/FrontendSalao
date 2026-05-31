@@ -1,0 +1,9 @@
+.venda-card-op {
+    border-left: 4px solid var(--mud-palette-primary);
+    height: 100%;
+}
+
+.venda-graficos-placeholder {
+    border-style: dashed;
+    opacity: 0.85;
+}

@@ -1,0 +1,309 @@
+@page "/vendas"
+@layout AdminLayout
+@inject IVendaServico VendaServico
+@inject IProdutoServico ProdutoServico
+@inject IServicoCatalogoServico ServicoCatalogoServico
+@inject IClienteServico ClienteServico
+@inject TokenStorageService TokenStorage
+@inject ConfiguracaoApi Configuracao
+@inject IServicoNotificacao Notificacoes
+@inject NavigationManager Navegacao
+
+<CabecalhoPagina Titulo="PDV — Vendas" >
+    <Acoes>
+        <MudButton Variant="Variant.Outlined" StartIcon="@Icons.Material.Filled.History"
+                   Href="/vendas/historico">Histórico de vendas</MudButton>
+    </Acoes>
+</CabecalhoPagina>
+
+@if (_carregando)
+{
+    <MudProgressLinear Indeterminate="true" Class="mb-4" />
+}
+else
+{
+    <VendaCardsOperacionais Indicadores="_indicadores" />
+
+    @if (_etapa == EtapaVenda.Confirmacao && _vendaRegistrada is not null)
+    {
+        <VendaConfirmacao Venda="_vendaRegistrada"
+                          NomeCliente="@NomeCliente(_vendaRegistrada.ClienteId)"
+                          FormaPagamentoExibicao="@TextoFormaPagamento(_formaPagamento)"
+                          ResolverNomeItem="ResolverNomeItemVenda"
+                          OnNovaVenda="ReiniciarVenda" />
+    }
+    else
+    {
+        <MudStepper @bind-ActiveIndex="_indiceEtapa" Linear="true" Class="mb-4">
+            <MudStep Title="Venda" Icon="@Icons.Material.Filled.PointOfSale" />
+            <MudStep Title="Checkout" Icon="@Icons.Material.Filled.ShoppingCartCheckout" />
+            <MudStep Title="Pagamento" Icon="@Icons.Material.Filled.Payment" />
+        </MudStepper>
+
+        @if (_etapa == EtapaVenda.Pdv)
+        {
+            <MudPaper Class="pa-4 mb-4" Outlined="true">
+                <MudGrid Spacing="2">
+                    <MudItem xs="12" md="6">
+                        <MudAutocomplete T="ClienteDto" Label="Cliente (opcional)" Variant="Variant.Outlined"
+                                         Margin="Margin.Dense" SearchFunc="BuscarClientes" ToStringFunc="@(c => c?.NomeCompleto ?? "")"
+                                         Value="_clienteSelecionado" ValueChanged="AoSelecionarCliente"
+                                         Clearable="true" ResetValueOnEmptyText="true" CoerceText="true"
+                                         Placeholder="Digite o nome do cliente..." />
+                    </MudItem>
+                    <MudItem xs="12" md="6">
+                        <MudTextField Label="Profissional" Variant="Variant.Outlined" Margin="Margin.Dense"
+                                      Value="@_nomeFuncionario" ReadOnly="true" />
+                    </MudItem>
+                </MudGrid>
+            </MudPaper>
+
+            <MudGrid Spacing="3" Class="venda-pdv-layout">
+                <MudItem xs="12" md="7">
+                    <VendaBuscaCatalogo Produtos="_produtos" Servicos="_servicos" OnAdicionar="AdicionarAoCarrinho" />
+                </MudItem>
+                <MudItem xs="12" md="5" Class="venda-carrinho-sticky">
+                    <VendaCarrinhoPainel Itens="_carrinho" Total="_totalCarrinho"
+                                         OnRemover="RemoverDoCarrinho"
+                                         OnAlterarQuantidade="AlterarQuantidadeCarrinho" />
+                    <MudButton Variant="Variant.Filled" Color="Color.Primary" FullWidth="true" Class="mt-3"
+                               Disabled="@(_carrinho.Count == 0)" OnClick="IrParaCheckout">
+                        Ir para checkout
+                    </MudButton>
+                </MudItem>
+            </MudGrid>
+        }
+        else if (_etapa == EtapaVenda.Checkout)
+        {
+            <VendaCheckoutResumo ClienteSelecionado="_clienteSelecionado"
+                                 NomeFuncionario="_nomeFuncionario"
+                                 Itens="_carrinho" Total="_totalCarrinho" />
+            <MudStack Row="true" Spacing="2" Class="mt-4">
+                <MudButton Variant="Variant.Outlined" OnClick="VoltarPdv">Voltar</MudButton>
+                <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="IrParaPagamento">
+                    Continuar para pagamento
+                </MudButton>
+            </MudStack>
+        }
+        else if (_etapa == EtapaVenda.Pagamento)
+        {
+            <VendaPagamentoFicticio Total="_totalCarrinho"
+                                    FormaPagamento="_formaPagamento"
+                                    FormaPagamentoChanged="v => _formaPagamento = v" />
+            <MudStack Row="true" Spacing="2" Class="mt-4">
+                <MudButton Variant="Variant.Outlined" OnClick="VoltarCheckout" Disabled="_salvando">Voltar</MudButton>
+                <MudButton Variant="Variant.Filled" Color="Color.Success" OnClick="FinalizarVenda"
+                           Disabled="_salvando" StartIcon="@Icons.Material.Filled.Check">
+                    @(_salvando ? "Registrando..." : "Confirmar e registrar venda")
+                </MudButton>
+            </MudStack>
+        }
+    }
+}
+
+@code {
+    private enum EtapaVenda { Pdv, Checkout, Pagamento, Confirmacao }
+
+    private EtapaVenda _etapa = EtapaVenda.Pdv;
+    private int _indiceEtapa;
+    private bool _carregando = true;
+    private bool _salvando;
+    private Guid _funcionarioId;
+    private string _nomeFuncionario = "—";
+    private ClienteDto? _clienteSelecionado;
+    private List<ItemCarrinhoVenda> _carrinho = [];
+    private List<ProdutoDto> _produtos = [];
+    private List<ServicoDto> _servicos = [];
+    private List<ClienteDto> _clientes = [];
+    private List<VendaDto> _vendasRecentes = [];
+    private VendaDto? _vendaRegistrada;
+    private string _formaPagamento = "DINHEIRO";
+    private VendaCardsOperacionais.IndicadoresVenda _indicadores = new();
+
+    private decimal _totalCarrinho => VendaCalculoHelper.CalcularTotal(_carrinho);
+
+    protected override async Task OnInitializedAsync()
+    {
+        var usuario = await TokenStorage.ObterUsuarioAsync();
+        if (usuario is null)
+        {
+            if (Configuracao.UsarMocks)
+            {
+                _funcionarioId = Guid.Parse("11111111-1111-1111-1111-111111111101");
+                _nomeFuncionario = "Operador (mock)";
+            }
+            else
+            {
+                Notificacoes.Erro("Sessão não encontrada. Faça login novamente.");
+                Navegacao.NavigateTo("/login");
+                return;
+            }
+        }
+        else
+        {
+            _funcionarioId = usuario.Id;
+            _nomeFuncionario = usuario.NomeCompleto;
+        }
+
+        await CarregarCatalogosAsync();
+        await CarregarIndicadoresAsync();
+        _carregando = false;
+    }
+
+    private async Task CarregarCatalogosAsync()
+    {
+        var produtos = await ProdutoServico.ListarAsync(new FiltroPaginacao { Pagina = 1, ItensPorPagina = 200 });
+        if (produtos.Sucesso && produtos.Dados is not null)
+            _produtos = produtos.Dados.Itens.Where(p => p.Status == StatusRegistro.Ativo).OrderBy(p => p.Nome).ToList();
+
+        var servicos = await ServicoCatalogoServico.ListarAsync(new FiltroPaginacao { Pagina = 1, ItensPorPagina = 200 });
+        if (servicos.Sucesso && servicos.Dados is not null)
+            _servicos = servicos.Dados.Itens.Where(s => s.Status == StatusRegistro.Ativo).OrderBy(s => s.Nome).ToList();
+
+        var clientes = await ClienteServico.ListarAsync(new FiltroPaginacao { Pagina = 1, ItensPorPagina = 300 });
+        if (clientes.Sucesso && clientes.Dados is not null)
+            _clientes = clientes.Dados.Itens.OrderBy(c => c.NomeCompleto).ToList();
+    }
+
+    private async Task CarregarIndicadoresAsync()
+    {
+        _vendasRecentes = await ListarTodasVendasAsync();
+        var hoje = DateTime.Today;
+        var vendasHoje = _vendasRecentes.Where(v => v.DataHora.Date == hoje).ToList();
+
+        _indicadores = new VendaCardsOperacionais.IndicadoresVenda
+        {
+            QuantidadeVendasHoje = vendasHoje.Count,
+            ValorVendidoHoje = vendasHoje.Sum(v => v.Total),
+            QuantidadeTotal = _vendasRecentes.Count,
+            ProdutosVendidos = VendaCalculoHelper.ContarItensPorTipo(_vendasRecentes, TipoItemVenda.Produto),
+            ServicosVendidos = VendaCalculoHelper.ContarItensPorTipo(_vendasRecentes, TipoItemVenda.Servico)
+        };
+    }
+
+    private async Task<List<VendaDto>> ListarTodasVendasAsync()
+    {
+        var todos = new List<VendaDto>();
+        var pagina = 1;
+        while (true)
+        {
+            var resposta = await VendaServico.ListarAsync(new FiltroVenda { Pagina = pagina, ItensPorPagina = 100 });
+            if (!resposta.Sucesso || resposta.Dados is null) break;
+            todos.AddRange(resposta.Dados.Itens);
+            if (todos.Count >= resposta.Dados.Total || resposta.Dados.Itens.Count < 100) break;
+            pagina++;
+        }
+        return todos.OrderByDescending(v => v.DataHora).ToList();
+    }
+
+    private Task<IEnumerable<ClienteDto>> BuscarClientes(string texto, CancellationToken _)
+    {
+        if (string.IsNullOrWhiteSpace(texto))
+            return Task.FromResult(_clientes.Take(20).AsEnumerable());
+        var b = texto.Trim().ToLowerInvariant();
+        return Task.FromResult(_clientes.Where(c => c.NomeCompleto.ToLowerInvariant().Contains(b)).Take(20));
+    }
+
+    private void AoSelecionarCliente(ClienteDto? cliente) => _clienteSelecionado = cliente;
+
+    private void AdicionarAoCarrinho(ItemCarrinhoVenda item)
+    {
+        var existente = _carrinho.FirstOrDefault(c =>
+            c.ReferenciaId == item.ReferenciaId && c.Tipo == item.Tipo);
+        if (existente is not null)
+            existente.Quantidade++;
+        else
+            _carrinho.Add(item);
+        Notificacoes.Sucesso($"{item.Nome} adicionado.");
+    }
+
+    private void RemoverDoCarrinho(string chave)
+    {
+        _carrinho.RemoveAll(c => c.Chave == chave);
+    }
+
+    private void AlterarQuantidadeCarrinho((string Chave, int Quantidade) args)
+    {
+        var item = _carrinho.FirstOrDefault(c => c.Chave == args.Chave);
+        if (item is not null)
+            item.Quantidade = Math.Max(1, args.Quantidade);
+    }
+
+    private void IrParaCheckout()
+    {
+        if (_carrinho.Count == 0) return;
+        _etapa = EtapaVenda.Checkout;
+        _indiceEtapa = 1;
+    }
+
+    private void VoltarPdv()
+    {
+        _etapa = EtapaVenda.Pdv;
+        _indiceEtapa = 0;
+    }
+
+    private void IrParaPagamento()
+    {
+        _etapa = EtapaVenda.Pagamento;
+        _indiceEtapa = 2;
+    }
+
+    private void VoltarCheckout()
+    {
+        _etapa = EtapaVenda.Checkout;
+        _indiceEtapa = 1;
+    }
+
+    private async Task FinalizarVenda()
+    {
+        if (_carrinho.Count == 0 || _salvando) return;
+        _salvando = true;
+
+        var payload = VendaCalculoHelper.MontarPayload(_funcionarioId, _clienteSelecionado?.Id, _carrinho);
+        var resultado = await VendaServico.RegistrarAsync(payload);
+
+        _salvando = false;
+        if (!resultado.Sucesso || resultado.Dados is null)
+        {
+            Notificacoes.Erro(resultado.Mensagem ?? "Não foi possível registrar a venda.");
+            return;
+        }
+
+        _vendaRegistrada = resultado.Dados;
+        _etapa = EtapaVenda.Confirmacao;
+        await CarregarIndicadoresAsync();
+        Notificacoes.Sucesso(resultado.Mensagem ?? "Venda registrada com sucesso.");
+    }
+
+    private async Task ReiniciarVenda()
+    {
+        _carrinho = [];
+        _clienteSelecionado = null;
+        _vendaRegistrada = null;
+        _formaPagamento = "DINHEIRO";
+        _etapa = EtapaVenda.Pdv;
+        _indiceEtapa = 0;
+        await CarregarIndicadoresAsync();
+    }
+
+    private string NomeCliente(Guid? id) =>
+        id is null ? string.Empty : _clientes.FirstOrDefault(c => c.Id == id)?.NomeCompleto ?? "Cliente";
+
+    private string ResolverNomeItemVenda(ItemVendaDto item)
+    {
+        if (item.Tipo == TipoItemVenda.Produto && item.ProdutoId.HasValue)
+            return _produtos.FirstOrDefault(p => p.Id == item.ProdutoId)?.Nome ?? "Produto";
+        if (item.Tipo == TipoItemVenda.Servico && item.ServicoId.HasValue)
+            return _servicos.FirstOrDefault(s => s.Id == item.ServicoId)?.Nome ?? "Serviço";
+        return VendaExibicaoHelper.TextoTipoItem(item.Tipo);
+    }
+
+    private static string TextoFormaPagamento(string id) => id switch
+    {
+        "DINHEIRO" => "Dinheiro",
+        "PIX" => "PIX",
+        "DEBITO" => "Cartão débito",
+        "CREDITO" => "Cartão crédito",
+        _ => "Registro interno"
+    };
+}
