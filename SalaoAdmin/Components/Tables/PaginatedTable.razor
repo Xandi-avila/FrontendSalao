@@ -1,11 +1,11 @@
-<MudTablePager Page="@(State.Page - 1)"
-               PageSize="@State.PageSize"
-               TotalItems="@State.TotalItems"
-               PageSizeOptions="@(new int[] { 5, 10, 25, 50 })"
-               PageChanged="AoMudarPagina"
-               PageSizeChanged="AoMudarTamanho"
-               InfoFormat="{first_item}-{last_item} de {all_items}"
-               RowsPerPageString="Itens por página:" />
+<MudTablePager page="@(State.Page - 1)"
+               pageSize="@State.PageSize"
+               totalItems="@State.TotalItems"
+               pageSizeOptions="@(new int[] { 5, 10, 25, 50 })"
+               pageChanged="AoMudarPagina"
+               pageSizeChanged="AoMudarTamanho"
+               infoFormat="{first_item}-{last_item} de {all_items}"
+               rowsPerPageString="Itens por página:" />
 
 @code {
     [Parameter, EditorRequired] public PaginationState State { get; set; } = new();

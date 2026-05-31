@@ -69,13 +69,13 @@
                 </MudTd>
             </RowTemplate>
             <PagerContent>
-                <MudTablePager Page="@(_pagina - 1)"
-                               PageSize="@_itensPorPagina"
-                               TotalItems="@_total"
-                               PageSizeOptions="@(new int[] { 5, 10, 25 })"
-                               PageChanged="MudarPagina"
-                               PageSizeChanged="MudarTamanhoPagina"
-                               InfoFormat="{first_item}-{last_item} de {all_items}" />
+                <MudTablePager page="@(_pagina - 1)"
+                               pageSize="@_itensPorPagina"
+                               totalItems="@_total"
+                               pageSizeOptions="@(new int[] { 5, 10, 25 })"
+                               pageChanged="MudarPagina"
+                               pageSizeChanged="MudarTamanhoPagina"
+                               infoFormat="{first_item}-{last_item} de {all_items}" />
             </PagerContent>
         </MudTable>
     }

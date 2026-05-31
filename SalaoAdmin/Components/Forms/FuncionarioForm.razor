@@ -44,7 +44,7 @@
                       ErrorText="@MsgErro(nameof(Modelo.Senha))" />
     </MudItem>
     <MudItem xs="12" md="6">
-        <CampoTelefone @bind-Valor="Modelo.Telefone"
+        <MudTextField @bind-Value="Modelo.Telefone"
                        Rotulo="Telefone / WhatsApp"
                        Obrigatorio="true"
                        ComErro="@TemErro(nameof(Modelo.Telefone))"
