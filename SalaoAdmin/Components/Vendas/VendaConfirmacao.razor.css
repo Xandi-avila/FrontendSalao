@@ -1,0 +1,9 @@
+.venda-confirmacao {
+    max-width: 720px;
+    margin: 0 auto;
+}
+
+.venda-confirmacao-total {
+    background: rgba(76, 175, 80, 0.1);
+    border-radius: 8px;
+}

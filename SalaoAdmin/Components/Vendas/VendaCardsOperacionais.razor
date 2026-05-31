@@ -1,0 +1,59 @@
+@using SalaoAdmin.Utilitarios
+
+<MudGrid Spacing="2" Class="mb-4">
+    <MudItem xs="6" sm="4" md="2">
+        <MudPaper Class="pa-3 venda-card-op" Outlined="true">
+            <MudText Typo="Typo.caption" Color="Color.Secondary">Vendas hoje</MudText>
+            <MudText Typo="Typo.h5">@Indicadores.QuantidadeVendasHoje</MudText>
+        </MudPaper>
+    </MudItem>
+    <MudItem xs="6" sm="4" md="2">
+        <MudPaper Class="pa-3 venda-card-op" Outlined="true">
+            <MudText Typo="Typo.caption" Color="Color.Secondary">Valor hoje</MudText>
+            <MudText Typo="Typo.h5" Color="Color.Success">@FormatacaoCampos.Moeda(Indicadores.ValorVendidoHoje)</MudText>
+        </MudPaper>
+    </MudItem>
+    <MudItem xs="6" sm="4" md="2">
+        <MudPaper Class="pa-3 venda-card-op" Outlined="true">
+            <MudText Typo="Typo.caption" Color="Color.Secondary">Total vendas</MudText>
+            <MudText Typo="Typo.h5">@Indicadores.QuantidadeTotal</MudText>
+        </MudPaper>
+    </MudItem>
+    <MudItem xs="6" sm="4" md="3">
+        <MudPaper Class="pa-3 venda-card-op" Outlined="true">
+            <MudText Typo="Typo.caption" Color="Color.Secondary">Produtos vendidos</MudText>
+            <MudText Typo="Typo.h5">@Indicadores.ProdutosVendidos</MudText>
+        </MudPaper>
+    </MudItem>
+    <MudItem xs="6" sm="4" md="3">
+        <MudPaper Class="pa-3 venda-card-op" Outlined="true">
+            <MudText Typo="Typo.caption" Color="Color.Secondary">Serviços vendidos</MudText>
+            <MudText Typo="Typo.h5">@Indicadores.ServicosVendidos</MudText>
+        </MudPaper>
+    </MudItem>
+</MudGrid>
+
+<MudPaper Class="pa-4 mb-4 venda-graficos-placeholder" Outlined="true">
+    <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+        <MudIcon Icon="@Icons.Material.Filled.BarChart" Color="Color.Secondary" />
+        <div>
+            <MudText Typo="Typo.subtitle2">Análises e relatórios</MudText>
+            <MudText Typo="Typo.caption" Color="Color.Secondary">
+                Espaço reservado para dashboard financeiro e métricas avançadas.
+            </MudText>
+        </div>
+    </MudStack>
+</MudPaper>
+
+@code {
+    public sealed class IndicadoresVenda
+    {
+        public int QuantidadeVendasHoje { get; init; }
+        public decimal ValorVendidoHoje { get; init; }
+        public int QuantidadeTotal { get; init; }
+        public int ProdutosVendidos { get; init; }
+        public int ServicosVendidos { get; init; }
+    }
+
+    [Parameter] public IndicadoresVenda Indicadores { get; set; } = new();
+}

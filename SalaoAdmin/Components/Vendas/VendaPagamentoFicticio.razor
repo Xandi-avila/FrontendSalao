@@ -1,0 +1,66 @@
+@using SalaoAdmin.Utilitarios
+
+<MudPaper Class="pa-4" Outlined="true">
+    <MudText Typo="Typo.h6" Class="mb-2">Pagamento</MudText>
+    <MudAlert Severity="Severity.Info" Dense="true" Class="mb-4">
+        Registro fictício para operação interna — sem integração com maquininha ou gateway.
+    </MudAlert>
+
+    <MudGrid Spacing="2">
+        @foreach (var forma in FormasPagamento)
+        {
+            var selecionada = _formaSelecionada == forma.Id;
+            <MudItem xs="12" sm="6" md="4">
+                <MudPaper Class="@($"pa-3 venda-pagamento-opcao {(selecionada ? "venda-pagamento-ativo" : "")}")"
+                          Outlined="true" @onclick="() => Selecionar(forma.Id)">
+                    <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+                        <MudIcon Icon="@forma.Icone" Color="@(selecionada ? Color.Primary : Color.Default)" />
+                        <MudText Typo="Typo.body1">@forma.Nome</MudText>
+                    </MudStack>
+                </MudPaper>
+            </MudItem>
+        }
+    </MudGrid>
+
+    <MudPaper Class="pa-4 mt-4 venda-pagamento-resumo" Outlined="true">
+        <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center">
+            <div>
+                <MudText Typo="Typo.caption" Color="Color.Secondary">Valor a registrar</MudText>
+                <MudText Typo="Typo.h5" Color="Color.Primary">@FormatacaoCampos.Moeda(Total)</MudText>
+            </div>
+            <MudChip T="string" Color="Color.Success" Variant="Variant.Outlined">
+                @FormasPagamento.First(f => f.Id == _formaSelecionada).Nome
+            </MudChip>
+        </MudStack>
+    </MudPaper>
+</MudPaper>
+
+@code {
+    [Parameter] public decimal Total { get; set; }
+    [Parameter] public string FormaPagamento { get; set; } = "DINHEIRO";
+    [Parameter] public EventCallback<string> FormaPagamentoChanged { get; set; }
+
+    private string _formaSelecionada = "DINHEIRO";
+
+    protected override void OnParametersSet()
+    {
+        _formaSelecionada = string.IsNullOrWhiteSpace(FormaPagamento) ? "DINHEIRO" : FormaPagamento;
+    }
+
+    private sealed record FormaPagamentoItem(string Id, string Nome, string Icone);
+
+    private static readonly FormaPagamentoItem[] FormasPagamento =
+    [
+        new("DINHEIRO", "Dinheiro", Icons.Material.Filled.Payments),
+        new("PIX", "PIX", Icons.Material.Filled.QrCode2),
+        new("DEBITO", "Cartão débito", Icons.Material.Filled.CreditCard),
+        new("CREDITO", "Cartão crédito", Icons.Material.Filled.CreditScore),
+        new("INTERNO", "Registro interno", Icons.Material.Filled.Receipt)
+    ];
+
+    private async Task Selecionar(string id)
+    {
+        _formaSelecionada = id;
+        await FormaPagamentoChanged.InvokeAsync(id);
+    }
+}
