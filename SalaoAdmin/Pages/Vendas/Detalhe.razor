@@ -1,0 +1,164 @@
+@page "/vendas/{Id:guid}"
+@layout AdminLayout
+@inject IVendaServico VendaServico
+@inject IClienteServico ClienteServico
+@inject IFuncionarioServico FuncionarioServico
+@inject IProdutoServico ProdutoServico
+@inject IServicoCatalogoServico ServicoCatalogoServico
+@inject IServicoNotificacao Notificacoes
+@inject NavigationManager Navegacao
+
+<CabecalhoPagina Titulo="@($"Venda {VendaExibicaoHelper.NumeroAmigavel(Id)}")"
+                 Subtitulo="Detalhamento da venda">
+    <Acoes>
+        <MudButton Variant="Variant.Outlined" StartIcon="@Icons.Material.Filled.ArrowBack"
+                   Href="/vendas/historico">Voltar</MudButton>
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" Href="/vendas">Nova venda</MudButton>
+    </Acoes>
+</CabecalhoPagina>
+
+@if (_carregando)
+{
+    <MudProgressLinear Indeterminate="true" />
+}
+else if (_venda is null)
+{
+    <EstadoVazio Titulo="Venda não encontrada" Descricao="O registro pode ter sido removido ou o link está incorreto."
+                 Icone="@Icons.Material.Filled.ReceiptLong" />
+}
+else
+{
+    <MudGrid Spacing="3">
+        <MudItem xs="12" md="4">
+            <MudPaper Class="pa-4" Outlined="true">
+                <MudText Typo="Typo.subtitle2" Class="mb-3">Dados da venda</MudText>
+                <MudStack Spacing="2">
+                    <div>
+                        <MudText Typo="Typo.caption" Color="Color.Secondary">Número</MudText>
+                        <MudText Typo="Typo.body1">@VendaExibicaoHelper.NumeroAmigavel(_venda.Id)</MudText>
+                    </div>
+                    <div>
+                        <MudText Typo="Typo.caption" Color="Color.Secondary">Data e hora</MudText>
+                        <MudText Typo="Typo.body1">@_venda.DataHora.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</MudText>
+                    </div>
+                    <div>
+                        <MudText Typo="Typo.caption" Color="Color.Secondary">Cliente</MudText>
+                        <MudText Typo="Typo.body1">@_nomeCliente</MudText>
+                    </div>
+                    <div>
+                        <MudText Typo="Typo.caption" Color="Color.Secondary">Profissional</MudText>
+                        <MudText Typo="Typo.body1">@_nomeFuncionario</MudText>
+                    </div>
+                    <div>
+                        <MudText Typo="Typo.caption" Color="Color.Secondary">Status</MudText>
+                        <MudChip T="string" Size="Size.Small" Color="Color.Success">@VendaExibicaoHelper.TextoStatus()</MudChip>
+                    </div>
+                    <MudDivider />
+                    <MudStack Row="true" Justify="Justify.SpaceBetween">
+                        <MudText Typo="Typo.subtitle1">Total</MudText>
+                        <MudText Typo="Typo.h6" Color="Color.Primary">@FormatacaoCampos.Moeda(_venda.Total)</MudText>
+                    </MudStack>
+                </MudStack>
+            </MudPaper>
+        </MudItem>
+
+        <MudItem xs="12" md="8">
+            <MudPaper Class="pa-4" Outlined="true">
+                <MudText Typo="Typo.subtitle2" Class="mb-3">Itens vendidos</MudText>
+                <MudTable Items="_linhas" Dense="true" Hover="true" Breakpoint="Breakpoint.Sm">
+                    <HeaderContent>
+                        <MudTh>Item</MudTh>
+                        <MudTh>Categoria</MudTh>
+                        <MudTh>Tipo</MudTh>
+                        <MudTh>Qtd</MudTh>
+                        <MudTh Style="text-align:right">Unit.</MudTh>
+                        <MudTh Style="text-align:right">Subtotal</MudTh>
+                    </HeaderContent>
+                    <RowTemplate>
+                        <MudTd DataLabel="Item"><strong>@context.Nome</strong></MudTd>
+                        <MudTd DataLabel="Categoria">@context.Categoria</MudTd>
+                        <MudTd DataLabel="Tipo">@VendaExibicaoHelper.TextoTipoItem(context.Tipo)</MudTd>
+                        <MudTd DataLabel="Qtd">@context.Quantidade</MudTd>
+                        <MudTd DataLabel="Unit." Style="text-align:right">@FormatacaoCampos.Moeda(context.ValorUnitario)</MudTd>
+                        <MudTd DataLabel="Subtotal" Style="text-align:right">@FormatacaoCampos.Moeda(context.Subtotal)</MudTd>
+                    </RowTemplate>
+                </MudTable>
+            </MudPaper>
+        </MudItem>
+    </MudGrid>
+}
+
+@code {
+    [Parameter] public Guid Id { get; set; }
+
+    private bool _carregando = true;
+    private VendaDto? _venda;
+    private string _nomeCliente = "—";
+    private string _nomeFuncionario = "—";
+    private List<LinhaDetalhe> _linhas = [];
+
+    private sealed class LinhaDetalhe
+    {
+        public string Nome { get; init; } = string.Empty;
+        public string Categoria { get; init; } = string.Empty;
+        public string Tipo { get; init; } = string.Empty;
+        public int Quantidade { get; init; }
+        public decimal ValorUnitario { get; init; }
+        public decimal Subtotal => ValorUnitario * Quantidade;
+    }
+
+    protected override async Task OnInitializedAsync() => await CarregarAsync();
+
+    protected override async Task OnParametersSetAsync() => await CarregarAsync();
+
+    private async Task CarregarAsync()
+    {
+        _carregando = true;
+        var resultado = await VendaServico.ObterPorIdAsync(Id);
+        if (!resultado.Sucesso || resultado.Dados is null)
+        {
+            _venda = null;
+            _carregando = false;
+            return;
+        }
+
+        _venda = resultado.Dados;
+
+        var produtos = await ProdutoServico.ListarAsync(new FiltroPaginacao { Pagina = 1, ItensPorPagina = 200 });
+        var servicos = await ServicoCatalogoServico.ListarAsync(new FiltroPaginacao { Pagina = 1, ItensPorPagina = 200 });
+
+        if (_venda.ClienteId.HasValue)
+        {
+            var cli = await ClienteServico.ObterPorIdAsync(_venda.ClienteId.Value);
+            _nomeCliente = cli.Sucesso && cli.Dados is not null ? cli.Dados.NomeCompleto : "Cliente";
+        }
+        else
+        {
+            _nomeCliente = "Sem cliente";
+        }
+
+        var func = await FuncionarioServico.ObterPorIdAsync(_venda.FuncionarioId);
+        _nomeFuncionario = func.Sucesso && func.Dados is not null ? func.Dados.NomeCompleto : "Profissional";
+
+        var mapProd = produtos.Dados?.Itens.ToDictionary(p => p.Id) ?? [];
+        var mapServ = servicos.Dados?.Itens.ToDictionary(s => s.Id) ?? [];
+
+        _linhas = _venda.Itens.Select(i =>
+        {
+            if (i.Tipo == TipoItemVenda.Produto && i.ProdutoId.HasValue && mapProd.TryGetValue(i.ProdutoId.Value, out var p))
+                return new LinhaDetalhe { Nome = p.Nome, Categoria = "Produto", Tipo = i.Tipo, Quantidade = i.Quantidade, ValorUnitario = i.ValorUnitario };
+            if (i.Tipo == TipoItemVenda.Servico && i.ServicoId.HasValue && mapServ.TryGetValue(i.ServicoId.Value, out var s))
+                return new LinhaDetalhe { Nome = s.Nome, Categoria = s.NomeCategoria, Tipo = i.Tipo, Quantidade = i.Quantidade, ValorUnitario = i.ValorUnitario };
+            return new LinhaDetalhe
+            {
+                Nome = VendaExibicaoHelper.TextoTipoItem(i.Tipo),
+                Categoria = "—",
+                Tipo = i.Tipo,
+                Quantidade = i.Quantidade,
+                ValorUnitario = i.ValorUnitario
+            };
+        }).ToList();
+
+        _carregando = false;
+    }
+}

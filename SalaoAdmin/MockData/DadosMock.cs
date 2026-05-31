@@ -5,6 +5,7 @@ using SalaoAdmin.Dtos.Clientes;
 using SalaoAdmin.Dtos.Funcionarios;
 using SalaoAdmin.Dtos.Produtos;
 using SalaoAdmin.Dtos.Servicos;
+using SalaoAdmin.Dtos.Vendas;
 using SalaoAdmin.Enums;
 
 namespace SalaoAdmin.DadosMock;
@@ -18,6 +19,7 @@ public class ArmazenamentoLocal
     public List<ServicoDto> Servicos { get; } = GerarServicos();
     public List<JanelaAgendaDto> JanelasAgenda { get; } = [];
     public List<AgendamentoDto> Agendamentos { get; } = [];
+    public List<VendaDto> Vendas { get; } = GerarVendasIniciais();
 
     private static List<FuncionarioDto> GerarFuncionarios() =>
     [
@@ -216,5 +218,44 @@ public class ArmazenamentoLocal
             ServicoIds = servicoIds,
             NomesServicosVinculados = nomes
         };
+
+    private static List<VendaDto> GerarVendasIniciais()
+    {
+        var funcId = Guid.Parse("11111111-1111-1111-1111-111111111101");
+        var clienteId = Guid.Parse("22222222-2222-2222-2222-222222222201");
+        var produtoId = Guid.Parse("33333333-3333-3333-3333-333333333301");
+        var servicoId = Guid.Parse("44444444-4444-4444-4444-444444444401");
+
+        return
+        [
+            new VendaDto
+            {
+                Id = Guid.Parse("55555555-5555-5555-5555-555555555501"),
+                DataHora = DateTime.Today.AddHours(-2),
+                FuncionarioId = funcId,
+                ClienteId = clienteId,
+                Total = 85m,
+                Itens =
+                [
+                    new ItemVendaDto
+                    {
+                        Id = Guid.NewGuid(),
+                        Tipo = TipoItemVenda.Servico,
+                        ServicoId = servicoId,
+                        Quantidade = 1,
+                        ValorUnitario = 45m
+                    },
+                    new ItemVendaDto
+                    {
+                        Id = Guid.NewGuid(),
+                        Tipo = TipoItemVenda.Produto,
+                        ProdutoId = produtoId,
+                        Quantidade = 1,
+                        ValorUnitario = 40m
+                    }
+                ]
+            }
+        ];
+    }
 }
 

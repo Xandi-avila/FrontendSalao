@@ -60,6 +60,7 @@ public static class RegistroServicos
         servicos.AddScoped<IAgendaServico, AgendaApiService>();
         servicos.AddScoped<IAgendamentoServico, AgendamentoApiService>();
         servicos.AddScoped<IAnaliseServico, AnaliseApiService>();
+        servicos.AddScoped<IVendaServico, VendaApiService>();
 
         if (config.UsarMocks)
         {
@@ -71,6 +72,7 @@ public static class RegistroServicos
             servicos.AddScoped<IAgendaServico, AgendaServicoMock>();
             servicos.AddScoped<IAgendamentoServico, AgendamentoServicoMock>();
             servicos.AddScoped<IAnaliseServico, AnaliseServicoMock>();
+            servicos.AddScoped<IVendaServico, VendaServicoMock>();
         }
         else
         {
