@@ -1,0 +1,133 @@
+@using SalaoAdmin.Dtos.Produtos
+@using SalaoAdmin.Dtos.Servicos
+@using SalaoAdmin.Dtos.Vendas
+@using SalaoAdmin.Utilitarios
+
+<MudPaper Class="pa-4 venda-busca-painel" Outlined="true">
+    <MudText Typo="Typo.subtitle1" Class="mb-2">Adicionar itens</MudText>
+
+    <MudTabs @bind-ActivePanelIndex="_aba" Rounded="true" Class="mb-3">
+        <MudTabPanel Text="Produtos" Icon="@Icons.Material.Filled.Inventory2" />
+        <MudTabPanel Text="Serviços" Icon="@Icons.Material.Filled.ContentCut" />
+    </MudTabs>
+
+    <MudTextField @bind-Value="_busca"
+                  Placeholder="Buscar por nome..."
+                  Adornment="Adornment.Start"
+                  AdornmentIcon="@Icons.Material.Filled.Search"
+                  Variant="Variant.Outlined"
+                  Margin="Margin.Dense"
+                  Immediate="true"
+                  Class="mb-2" />
+
+    @if (_aba == 1)
+    {
+        <MudSelect T="Guid?" Label="Categoria" Variant="Variant.Outlined" Margin="Margin.Dense"
+                   Value="_categoriaId" ValueChanged="v => _categoriaId = v" Clearable="true" Class="mb-2">
+            <MudSelectItem T="Guid?" Value="@((Guid?)null)">Todas</MudSelectItem>
+            @foreach (var cat in CategoriasServico.DistinctBy(c => c.CategoriaId).OrderBy(c => c.NomeCategoria))
+            {
+                <MudSelectItem T="Guid?" Value="@((Guid?)cat.CategoriaId)">@cat.NomeCategoria</MudSelectItem>
+            }
+        </MudSelect>
+    }
+
+    <div class="venda-catalogo-lista">
+        @if (_aba == 0)
+        {
+            @foreach (var p in ProdutosFiltrados())
+            {
+                <div class="venda-catalogo-item" @onclick="() => AdicionarProduto(p)">
+                    <div>
+                        <MudText Typo="Typo.body2"><strong>@p.Nome</strong></MudText>
+                        <MudText Typo="Typo.caption" Color="Color.Secondary">Produto</MudText>
+                    </div>
+                    <MudText Typo="Typo.body2" Color="Color.Primary">@FormatacaoCampos.Moeda(p.Valor)</MudText>
+                </div>
+            }
+            @if (!ProdutosFiltrados().Any())
+            {
+                <MudText Typo="Typo.body2" Color="Color.Secondary" Class="pa-2">Nenhum produto encontrado.</MudText>
+            }
+        }
+        else
+        {
+            @foreach (var s in ServicosFiltrados())
+            {
+                <div class="venda-catalogo-item" @onclick="() => AdicionarServico(s)">
+                    <div>
+                        <MudText Typo="Typo.body2"><strong>@s.Nome</strong></MudText>
+                        <MudText Typo="Typo.caption" Color="Color.Secondary">@s.NomeCategoria</MudText>
+                    </div>
+                    <MudText Typo="Typo.body2" Color="Color.Primary">@FormatacaoCampos.Moeda(s.PrecoMinimo)</MudText>
+                </div>
+            }
+            @if (!ServicosFiltrados().Any())
+            {
+                <MudText Typo="Typo.body2" Color="Color.Secondary" Class="pa-2">Nenhum serviço encontrado.</MudText>
+            }
+        }
+    </div>
+</MudPaper>
+
+@code {
+    [Parameter] public IReadOnlyList<ProdutoDto> Produtos { get; set; } = [];
+    [Parameter] public IReadOnlyList<ServicoDto> Servicos { get; set; } = [];
+    [Parameter] public EventCallback<ItemCarrinhoVenda> OnAdicionar { get; set; }
+
+    private int _aba;
+    private string _busca = string.Empty;
+    private Guid? _categoriaId;
+
+    private IEnumerable<ProdutoDto> ProdutosFiltrados()
+    {
+        var q = Produtos.Where(p => p.Status == Enums.StatusRegistro.Ativo);
+        if (!string.IsNullOrWhiteSpace(_busca))
+        {
+            var b = _busca.Trim().ToLowerInvariant();
+            q = q.Where(p => p.Nome.ToLowerInvariant().Contains(b));
+        }
+        return q.OrderBy(p => p.Nome).Take(30);
+    }
+
+    private IEnumerable<ServicoDto> CategoriasServico => Servicos.Where(s => s.Status == Enums.StatusRegistro.Ativo);
+
+    private IEnumerable<ServicoDto> ServicosFiltrados()
+    {
+        var q = Servicos.Where(s => s.Status == Enums.StatusRegistro.Ativo);
+        if (_categoriaId.HasValue)
+            q = q.Where(s => s.CategoriaId == _categoriaId.Value);
+        if (!string.IsNullOrWhiteSpace(_busca))
+        {
+            var b = _busca.Trim().ToLowerInvariant();
+            q = q.Where(s => s.Nome.ToLowerInvariant().Contains(b) || s.NomeCategoria.ToLowerInvariant().Contains(b));
+        }
+        return q.OrderBy(s => s.Nome).Take(30);
+    }
+
+    private async Task AdicionarProduto(ProdutoDto p)
+    {
+        await OnAdicionar.InvokeAsync(new ItemCarrinhoVenda
+        {
+            ReferenciaId = p.Id,
+            Tipo = TipoItemVenda.Produto,
+            Nome = p.Nome,
+            Categoria = "Produto",
+            ValorUnitario = p.Valor,
+            Quantidade = 1
+        });
+    }
+
+    private async Task AdicionarServico(ServicoDto s)
+    {
+        await OnAdicionar.InvokeAsync(new ItemCarrinhoVenda
+        {
+            ReferenciaId = s.Id,
+            Tipo = TipoItemVenda.Servico,
+            Nome = s.Nome,
+            Categoria = s.NomeCategoria,
+            ValorUnitario = s.PrecoMinimo,
+            Quantidade = 1
+        });
+    }
+}

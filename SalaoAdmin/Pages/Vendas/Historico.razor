@@ -1,0 +1,185 @@
+@page "/vendas/historico"
+@layout AdminLayout
+@inject IVendaServico VendaServico
+@inject IClienteServico ClienteServico
+@inject IProdutoServico ProdutoServico
+@inject IServicoCatalogoServico ServicoCatalogoServico
+@inject IServicoNotificacao Notificacoes
+@inject NavigationManager Navegacao
+
+<CabecalhoPagina Titulo="Histórico de vendas"
+                 Subtitulo="Historico de vendas de pedidos e produtos.">
+    <Acoes>
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.PointOfSale"
+                   Href="/vendas">Nova venda</MudButton>
+    </Acoes>
+</CabecalhoPagina>
+
+<MudPaper Class="pa-4 mb-4" Outlined="true">
+    <MudGrid Spacing="2">
+        <MudItem xs="12" sm="6" md="3">
+            <MudDatePicker Label="Data inicial" Variant="Variant.Outlined" Margin="Margin.Dense"
+                           Date="_filtroInicio" DateChanged="v => _filtroInicio = v" Clearable="true" />
+        </MudItem>
+        <MudItem xs="12" sm="6" md="3">
+            <MudDatePicker Label="Data final" Variant="Variant.Outlined" Margin="Margin.Dense"
+                           Date="_filtroFim" DateChanged="v => _filtroFim = v" Clearable="true" />
+        </MudItem>
+        <MudItem xs="12" sm="6" md="3">
+            <MudAutocomplete T="ClienteDto" Label="Cliente" Variant="Variant.Outlined" Margin="Margin.Dense"
+                             SearchFunc="BuscarClientes" ToStringFunc="@(c => c?.NomeCompleto ?? "")"
+                             Value="_clienteFiltro" ValueChanged="v => _clienteFiltro = v"
+                             Clearable="true" ResetValueOnEmptyText="true" />
+        </MudItem>
+        <MudItem xs="12" sm="6" md="3">
+            <MudSelect T="string" Label="Tipo de item" Variant="Variant.Outlined" Margin="Margin.Dense"
+                       Value="_filtroTipo" ValueChanged="v => _filtroTipo = v" Clearable="true">
+                <MudSelectItem T="string" Value="@((string?)null)">Todos</MudSelectItem>
+                <MudSelectItem T="string" Value="@TipoItemVenda.Produto">Produtos</MudSelectItem>
+                <MudSelectItem T="string" Value="@TipoItemVenda.Servico">Serviços</MudSelectItem>
+            </MudSelect>
+        </MudItem>
+        <MudItem xs="12" md="6">
+            <MudTextField @bind-Value="_busca" Placeholder="Buscar por número da venda..."
+                          Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search"
+                          Variant="Variant.Outlined" Margin="Margin.Dense" />
+        </MudItem>
+        <MudItem xs="12" md="6" Class="d-flex align-center">
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="Carregar" Class="mr-2">Filtrar</MudButton>
+            <MudButton Variant="Variant.Outlined" OnClick="LimparFiltros">Limpar</MudButton>
+        </MudItem>
+    </MudGrid>
+</MudPaper>
+
+<div style="position: relative; min-height: 200px;">
+    <OverlayCarregando Visivel="_carregando" />
+
+    @if (!_carregando && _lista.Count == 0)
+    {
+        <EstadoVazio Titulo="Nenhuma venda" Descricao="Registre vendas no PDV ou altere os filtros."
+                     Icone="@Icons.Material.Filled.ReceiptLong">
+            <Acao>
+                <MudButton Variant="Variant.Filled" Color="Color.Primary" Href="/vendas">Ir ao PDV</MudButton>
+            </Acao>
+        </EstadoVazio>
+    }
+    else if (!_carregando)
+    {
+        <MudTable Items="_lista" Hover="true" Breakpoint="Breakpoint.Sm" Elevation="1"
+                  OnRowClick="AbrirDetalhe" T="VendaDto" RowClass="cursor-pointer">
+            <HeaderContent>
+                <MudTh>Venda</MudTh>
+                <MudTh>Cliente</MudTh>
+                <MudTh>Data</MudTh>
+                <MudTh>Itens</MudTh>
+                <MudTh>Total</MudTh>
+                <MudTh>Status</MudTh>
+            </HeaderContent>
+            <RowTemplate>
+                <MudTd DataLabel="Venda">
+                    <MudText Typo="Typo.body2"><strong>@VendaExibicaoHelper.NumeroAmigavel(context.Id)</strong></MudText>
+                </MudTd>
+                <MudTd DataLabel="Cliente">@NomeCliente(context.ClienteId)</MudTd>
+                <MudTd DataLabel="Data">@context.DataHora.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</MudTd>
+                <MudTd DataLabel="Itens">@ResumoItens(context)</MudTd>
+                <MudTd DataLabel="Total">@FormatacaoCampos.Moeda(context.Total)</MudTd>
+                <MudTd DataLabel="Status">
+                    <MudChip T="string" Size="Size.Small" Color="Color.Success">@VendaExibicaoHelper.TextoStatus()</MudChip>
+                </MudTd>
+            </RowTemplate>
+            <PagerContent>
+                <MudTablePager page="@(_pagina - 1)" pageSize="@_itensPorPagina" totalItems="@_total"
+                               pageChanged="p => { _pagina = p + 1; _ = Carregar(); }"
+                               pageSizeChanged="s => { _itensPorPagina = s; _pagina = 1; _ = Carregar(); }" />
+            </PagerContent>
+        </MudTable>
+    }
+</div>
+
+@code {
+    private bool _carregando = true;
+    private List<VendaDto> _lista = [];
+    private List<ClienteDto> _clientes = [];
+    private int _pagina = 1;
+    private int _itensPorPagina = 15;
+    private int _total;
+    private string _busca = string.Empty;
+    private DateTime? _filtroInicio;
+    private DateTime? _filtroFim;
+    private ClienteDto? _clienteFiltro;
+    private string? _filtroTipo;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _filtroInicio = DateTime.Today.AddDays(-30);
+        _filtroFim = DateTime.Today;
+        var clientes = await ClienteServico.ListarAsync(new FiltroPaginacao { Pagina = 1, ItensPorPagina = 300 });
+        if (clientes.Sucesso && clientes.Dados is not null)
+            _clientes = clientes.Dados.Itens.ToList();
+        await Carregar();
+    }
+
+    private async Task Carregar()
+    {
+        _carregando = true;
+        var resposta = await VendaServico.ListarAsync(new FiltroVenda
+        {
+            Pagina = _pagina,
+            ItensPorPagina = _itensPorPagina,
+            ClienteId = _clienteFiltro?.Id,
+            Inicio = _filtroInicio,
+            Fim = _filtroFim,
+            TipoItem = _filtroTipo,
+            Busca = _busca
+        });
+
+        if (!resposta.Sucesso || resposta.Dados is null)
+        {
+            Notificacoes.Erro(resposta.Mensagem ?? "Erro ao carregar vendas.");
+            _lista = [];
+            _total = 0;
+        }
+        else
+        {
+            _lista = resposta.Dados.Itens.ToList();
+            _total = resposta.Dados.Total;
+        }
+
+        _carregando = false;
+    }
+
+    private Task LimparFiltros()
+    {
+        _busca = string.Empty;
+        _filtroInicio = DateTime.Today.AddDays(-30);
+        _filtroFim = DateTime.Today;
+        _clienteFiltro = null;
+        _filtroTipo = null;
+        _pagina = 1;
+        return Carregar();
+    }
+
+    private Task<IEnumerable<ClienteDto>> BuscarClientes(string texto, CancellationToken _) =>
+        Task.FromResult(string.IsNullOrWhiteSpace(texto)
+            ? _clientes.Take(20)
+            : _clientes.Where(c => c.NomeCompleto.Contains(texto, StringComparison.OrdinalIgnoreCase)).Take(20));
+
+    private void AbrirDetalhe(TableRowClickEventArgs<VendaDto> args)
+    {
+        if (args.Item is null) return;
+        Navegacao.NavigateTo($"/vendas/{args.Item.Id}");
+    }
+
+    private string NomeCliente(Guid? id) =>
+        id is null ? "—" : _clientes.FirstOrDefault(c => c.Id == id)?.NomeCompleto ?? "Cliente";
+
+    private static string ResumoItens(VendaDto v)
+    {
+        var prod = v.Itens.Count(i => i.Tipo == TipoItemVenda.Produto);
+        var serv = v.Itens.Count(i => i.Tipo == TipoItemVenda.Servico);
+        if (prod > 0 && serv > 0) return $"{prod} prod. · {serv} serv.";
+        if (prod > 0) return $"{prod} produto(s)";
+        if (serv > 0) return $"{serv} serviço(s)";
+        return "—";
+    }
+}

@@ -1,0 +1,21 @@
+.venda-catalogo-lista {
+    max-height: 420px;
+    overflow-y: auto;
+}
+
+.venda-catalogo-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 12px;
+    border-radius: 8px;
+    cursor: pointer;
+    border: 1px solid var(--mud-palette-lines-default);
+    margin-bottom: 8px;
+    transition: background 0.15s, border-color 0.15s;
+}
+
+.venda-catalogo-item:hover {
+    background: rgba(57, 142, 151, 0.08);
+    border-color: var(--mud-palette-primary);
+}
