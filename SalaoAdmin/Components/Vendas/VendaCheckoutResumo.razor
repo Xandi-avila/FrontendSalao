@@ -1,0 +1,62 @@
+@using SalaoAdmin.Dtos.Clientes
+@using SalaoAdmin.Utilitarios
+
+<MudPaper Class="pa-4" Outlined="true">
+    <MudText Typo="Typo.h6" Class="mb-3">Checkout</MudText>
+    <MudText Typo="Typo.caption" Color="Color.Secondary" Class="mb-4">
+        Revise os dados antes de registrar a venda.
+    </MudText>
+
+    <MudGrid Spacing="3">
+        <MudItem xs="12" md="6">
+            <MudText Typo="Typo.subtitle2" Class="mb-2">Cliente</MudText>
+            @if (ClienteSelecionado is null)
+            {
+                <MudAlert Severity="Severity.Info" Dense="true">Venda sem cliente (permitido pela API).</MudAlert>
+            }
+            else
+            {
+                <MudPaper Class="pa-3" Outlined="true">
+                    <MudText Typo="Typo.body1"><strong>@ClienteSelecionado.NomeCompleto</strong></MudText>
+                    @if (!string.IsNullOrWhiteSpace(ClienteSelecionado.WhatsApp))
+                    {
+                        <MudText Typo="Typo.body2" Color="Color.Secondary">@FormatacaoCampos.Telefone(ClienteSelecionado.WhatsApp)</MudText>
+                    }
+                </MudPaper>
+            }
+
+            <MudText Typo="Typo.subtitle2" Class="mt-4 mb-2">Profissional</MudText>
+            <MudText Typo="Typo.body2">@NomeFuncionario</MudText>
+        </MudItem>
+
+        <MudItem xs="12" md="6">
+            <MudText Typo="Typo.subtitle2" Class="mb-2">Resumo da compra</MudText>
+            <MudTable Items="Itens" Dense="true" Hover="true" Elevation="0" Outlined="true">
+                <HeaderContent>
+                    <MudTh>Item</MudTh>
+                    <MudTh>Qtd</MudTh>
+                    <MudTh Style="text-align:right">Subtotal</MudTh>
+                </HeaderContent>
+                <RowTemplate>
+                    <MudTd>
+                        <MudText Typo="Typo.body2">@context.Nome</MudText>
+                        <MudText Typo="Typo.caption" Color="Color.Secondary">@VendaExibicaoHelper.TextoTipoItem(context.Tipo)</MudText>
+                    </MudTd>
+                    <MudTd>@context.Quantidade</MudTd>
+                    <MudTd Style="text-align:right">@FormatacaoCampos.Moeda(context.Subtotal)</MudTd>
+                </RowTemplate>
+            </MudTable>
+            <MudStack Row="true" Justify="Justify.SpaceBetween" Class="mt-3 pa-2 venda-checkout-total">
+                <MudText Typo="Typo.subtitle1">Total estimado</MudText>
+                <MudText Typo="Typo.h6" Color="Color.Primary">@FormatacaoCampos.Moeda(Total)</MudText>
+            </MudStack>
+        </MudItem>
+    </MudGrid>
+</MudPaper>
+
+@code {
+    [Parameter] public ClienteDto? ClienteSelecionado { get; set; }
+    [Parameter] public string NomeFuncionario { get; set; } = "—";
+    [Parameter] public IReadOnlyList<ItemCarrinhoVenda> Itens { get; set; } = [];
+    [Parameter] public decimal Total { get; set; }
+}
