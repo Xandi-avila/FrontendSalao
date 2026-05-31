@@ -1,0 +1,16 @@
+.venda-carrinho-lista {
+    max-height: 360px;
+    overflow-y: auto;
+}
+
+.venda-carrinho-item {
+    padding: 10px 0;
+    border-bottom: 1px solid var(--mud-palette-lines-default);
+}
+
+.venda-carrinho-item-topo {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 6px;
+}

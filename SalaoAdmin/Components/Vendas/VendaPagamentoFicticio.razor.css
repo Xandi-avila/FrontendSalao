@@ -1,0 +1,17 @@
+.venda-pagamento-opcao {
+    cursor: pointer;
+    transition: border-color 0.15s, background 0.15s;
+}
+
+.venda-pagamento-opcao:hover {
+    border-color: var(--mud-palette-primary);
+}
+
+.venda-pagamento-ativo {
+    border-color: var(--mud-palette-primary) !important;
+    background: rgba(57, 142, 151, 0.08);
+}
+
+.venda-pagamento-resumo {
+    background: rgba(76, 175, 80, 0.06);
+}
