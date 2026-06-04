@@ -28,7 +28,9 @@ public class FuncionarioApiService(
             itens = itens.Where(x =>
                     x.NomeCompleto.ToLowerInvariant().Contains(busca) ||
                     x.Email.ToLowerInvariant().Contains(busca) ||
-                    x.ProfissaoCargo.ToLowerInvariant().Contains(busca))
+                    x.Celular?.ToLowerInvariant().Contains(busca) == true ||
+                    x.CPF?.ToLowerInvariant().Contains(busca) == true ||
+                    x.Profissoes.Any(p => p.ToLowerInvariant().Contains(busca)))
                 .ToList();
         }
 
@@ -49,7 +51,23 @@ public class FuncionarioApiService(
 
     public async Task<Resultado<FuncionarioDto>> CriarAsync(FuncionarioCadastroDto dto, CancellationToken cancelamento = default)
     {
-        var api = await PostAsync<FuncionarioCadastroDto, FuncionarioDto>("funcionarios", dto, cancelamento);
+        var payload = new FuncionarioCadastroDto
+        {
+            NomeCompleto = dto.NomeCompleto,
+            Endereco = dto.Endereco,
+            Telefone = dto.Telefone,
+            Celular = dto.Celular,
+            CPF = string.IsNullOrWhiteSpace(dto.CPF) ? null : new string(dto.CPF.Where(char.IsDigit).ToArray()),
+            DataAdmissao = dto.DataAdmissao,
+            Profissoes = dto.Profissoes,
+            Email = dto.Email,
+            Senha = dto.Senha,
+            DataNascimento = dto.DataNascimento,
+            NivelPermissao = dto.NivelPermissao,
+            Status = dto.Status
+        };
+
+        var api = await PostAsync<FuncionarioCadastroDto, FuncionarioDto>("funcionarios", payload, cancelamento);
         return api.ParaResultado();
     }
 
@@ -60,7 +78,10 @@ public class FuncionarioApiService(
             NomeCompleto = dto.NomeCompleto,
             Endereco = dto.Endereco,
             Telefone = dto.Telefone,
-            ProfissaoCargo = dto.ProfissaoCargo,
+            Celular = dto.Celular,
+            CPF = string.IsNullOrWhiteSpace(dto.CPF) ? null : new string(dto.CPF.Where(char.IsDigit).ToArray()),
+            DataAdmissao = dto.DataAdmissao,
+            Profissoes = dto.Profissoes,
             Email = dto.Email,
             Senha = dto.Senha,
             DataNascimento = dto.DataNascimento,

@@ -6,3 +6,17 @@
     border-color: #ff5722 !important;
     background: rgba(255, 87, 34, 0.06);
 }
+
+.horario-livre-item {
+    border-radius: 10px;
+}
+
+.horario-livre-botao {
+    min-height: 52px;
+    text-align: left;
+}
+
+.horario-livre-botao span {
+    display: inline-block;
+    line-height: 1.5;
+}
