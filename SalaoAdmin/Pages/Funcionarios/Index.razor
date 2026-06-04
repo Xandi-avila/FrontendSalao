@@ -45,7 +45,10 @@
             <HeaderContent>
                 <MudTh>Nome</MudTh>
                 <MudTh>E-mail</MudTh>
-                <MudTh>Cargo</MudTh>
+                <MudTh>CPF</MudTh>
+                <MudTh>Celular</MudTh>
+                <MudTh>Admissão</MudTh>
+                <MudTh>Profissões</MudTh>
                 <MudTh>Permissão</MudTh>
                 <MudTh>Status</MudTh>
                 <MudTh Style="width: 120px">Ações</MudTh>
@@ -53,7 +56,10 @@
             <RowTemplate>
                 <MudTd DataLabel="Nome">@context.NomeCompleto</MudTd>
                 <MudTd DataLabel="E-mail">@context.Email</MudTd>
-                <MudTd DataLabel="Cargo">@context.ProfissaoCargo</MudTd>
+                <MudTd DataLabel="CPF">@context.CPF ?? "—"</MudTd>
+                <MudTd DataLabel="Celular">@context.Celular ?? "—"</MudTd>
+                <MudTd DataLabel="Admissão">@(context.DataAdmissao?.ToString("dd/MM/yyyy") ?? "—")</MudTd>
+                <MudTd DataLabel="Profissões">@(context.Profissoes is null || !context.Profissoes.Any() ? "—" : string.Join(", ", context.Profissoes))</MudTd>
                 <MudTd DataLabel="Permissão">@context.NivelPermissao.Descricao()</MudTd>
                 <MudTd DataLabel="Status">
                     <MudChip T="string" Size="Size.Small"
