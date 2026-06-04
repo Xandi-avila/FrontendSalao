@@ -28,6 +28,10 @@ public class ClienteApiService(
             itens = itens.Where(x =>
                     x.NomeCompleto.ToLowerInvariant().Contains(busca) ||
                     x.WhatsApp.Contains(busca) ||
+                    x.Email?.ToLowerInvariant().Contains(busca) == true ||
+                    x.Instagram?.ToLowerInvariant().Contains(busca) == true ||
+                    x.Facebook?.ToLowerInvariant().Contains(busca) == true ||
+                    x.Profissoes.Any(p => p.ToLowerInvariant().Contains(busca)) ||
                     x.Endereco.ToLowerInvariant().Contains(busca))
                 .ToList();
         }
@@ -59,6 +63,10 @@ public class ClienteApiService(
         {
             NomeCompleto = dto.NomeCompleto,
             WhatsApp = dto.WhatsApp,
+            Email = dto.Email,
+            Instagram = dto.Instagram,
+            Facebook = dto.Facebook,
+            Profissoes = dto.Profissoes,
             DataNascimento = dto.DataNascimento,
             Endereco = dto.Endereco
         };

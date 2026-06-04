@@ -18,6 +18,34 @@
                        TextoErro="@MsgErro(nameof(Modelo.WhatsApp))" />
     </MudItem>
     <MudItem xs="12" md="4">
+        <MudTextField @bind-Value="Modelo.Email"
+                      Label="E-mail"
+                      Variant="Variant.Outlined"
+                      Margin="Margin.Dense"
+                      InputType="InputType.Email" />
+    </MudItem>
+    <MudItem xs="12" md="4">
+        <MudTextField @bind-Value="Modelo.Instagram"
+                      Label="Instagram"
+                      Variant="Variant.Outlined"
+                      Margin="Margin.Dense" />
+    </MudItem>
+    <MudItem xs="12" md="4">
+        <MudTextField @bind-Value="Modelo.Facebook"
+                      Label="Facebook"
+                      Variant="Variant.Outlined"
+                      Margin="Margin.Dense" />
+    </MudItem>
+    <MudItem xs="12" md="4">
+        <MudTextField T="string"
+                      Value="ProfissoesTexto"
+                      ValueChanged="EventCallback.Factory.Create<string>(this, AtualizarProfissoes)"
+                      Label="Profissões (separe por vírgula)"
+                      Variant="Variant.Outlined"
+                      Margin="Margin.Dense"
+                      Lines="2" />
+    </MudItem>
+    <MudItem xs="12" md="4">
         <MudDatePicker @bind-Date="Modelo.DataNascimento"
                        Label="Data de nascimento"
                        Variant="Variant.Outlined"
@@ -41,6 +69,21 @@
 @code {
     [Parameter, EditorRequired] public ClienteCadastroDto Modelo { get; set; } = new();
     [Parameter] public Dictionary<string, string> Erros { get; set; } = new();
+
+    private string ProfissoesTexto { get; set; } = string.Empty;
+
+    protected override void OnParametersSet() =>
+        ProfissoesTexto = string.Join(", ", Modelo.Profissoes ?? new List<string>());
+
+    private void AtualizarProfissoes(string valor)
+    {
+        ProfissoesTexto = valor;
+        Modelo.Profissoes = valor?
+            .Split(',')
+            .Select(x => x.Trim())
+            .Where(x => !string.IsNullOrWhiteSpace(x))
+            .ToList() ?? new List<string>();
+    }
 
     private bool TemErro(string campo) => Erros.ContainsKey(campo);
     private string? MsgErro(string campo) => Erros.TryGetValue(campo, out var msg) ? msg : null;

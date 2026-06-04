@@ -17,6 +17,10 @@ public class ClienteServicoMock(ArmazenamentoLocal dados) : ServicoMockBase<Clie
             c => string.IsNullOrEmpty(busca) ||
                  c.NomeCompleto.ToLowerInvariant().Contains(busca) ||
                  c.WhatsApp.Contains(busca) ||
+                 c.Email?.ToLowerInvariant().Contains(busca) == true ||
+                 c.Instagram?.ToLowerInvariant().Contains(busca) == true ||
+                 c.Facebook?.ToLowerInvariant().Contains(busca) == true ||
+                 c.Profissoes.Any(p => p.ToLowerInvariant().Contains(busca)) ||
                  c.Endereco.ToLowerInvariant().Contains(busca),
             c => c.NomeCompleto);
     }
@@ -38,6 +42,10 @@ public class ClienteServicoMock(ArmazenamentoLocal dados) : ServicoMockBase<Clie
             Id = Guid.NewGuid(),
             NomeCompleto = dto.NomeCompleto,
             WhatsApp = dto.WhatsApp,
+            Email = dto.Email,
+            Instagram = dto.Instagram,
+            Facebook = dto.Facebook,
+            Profissoes = dto.Profissoes,
             DataNascimento = dto.DataNascimento,
             Endereco = dto.Endereco
         };
@@ -57,6 +65,10 @@ public class ClienteServicoMock(ArmazenamentoLocal dados) : ServicoMockBase<Clie
             Id = dto.Id,
             NomeCompleto = dto.NomeCompleto,
             WhatsApp = dto.WhatsApp,
+            Email = dto.Email,
+            Instagram = dto.Instagram,
+            Facebook = dto.Facebook,
+            Profissoes = dto.Profissoes,
             DataNascimento = dto.DataNascimento,
             Endereco = dto.Endereco
         };

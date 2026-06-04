@@ -1,0 +1,135 @@
+@using System.Globalization
+@inject IAgendamentoServico AgendamentoServico
+
+<MudCard Elevation="2" Class="pa-4">
+    <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2" Class="mb-4">
+        <MudAvatar Color="Color.Info" Variant="Variant.Filled">
+            <MudIcon Icon="@Icons.Material.Filled.BarChart" />
+        </MudAvatar>
+        <div>
+            <MudText Typo="Typo.h6">Resumo de agendamentos</MudText>
+            <MudText Typo="Typo.body2" Color="Color.Secondary">Contagem por dia nos próximos 7 dias</MudText>
+        </div>
+    </MudStack>
+
+    @if (_carregando)
+    {
+        <MudProgressLinear Indeterminate="true" />
+    }
+    else if (!string.IsNullOrWhiteSpace(_erroCarregamento))
+    {
+        <MudAlert Severity="Severity.Error" Dense="true">@_erroCarregamento</MudAlert>
+    }
+    else if (_semDados)
+    {
+        <MudAlert Severity="Severity.Info" Dense="true">Nenhum agendamento encontrado no período.</MudAlert>
+    }
+    else
+    {
+        <div class="weekly-summary-grid">
+            <div class="summary-header">
+                <div>
+                    <MudText Typo="Typo.subtitle2" Color="Color.Secondary">Total de agendamentos</MudText>
+                    <MudText Typo="Typo.h4">@_totalAgendamentos</MudText>
+                </div>
+                <div class="status-row">
+                    @foreach (var status in _contagemPorStatus)
+                    {
+                        <MudChip T="string" Color="@CorStatus(status.Key)" Size="Size.Small" Class="status-chip">
+                            @status.Key: @status.Value
+                        </MudChip>
+                    }
+                </div>
+            </div>
+
+            <div class="chart-grid">
+                @foreach (var item in _contagemPorDia)
+                {
+                    <div class="chart-column">
+                        <div class="bar-track">
+                            <div class="bar-fill" style="height:@BarHeight(item.Value);" title="@item.Value agendamentos"></div>
+                        </div>
+                        <div class="bar-count">@item.Value</div>
+                        <div class="bar-label">@item.Key</div>
+                    </div>
+                }
+            </div>
+        </div>
+    }
+</MudCard>
+
+@code {
+    private IDictionary<string, int> _contagemPorDia = new Dictionary<string, int>();
+    private IDictionary<string, int> _contagemPorStatus = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+    private bool _carregando = true;
+    private bool _semDados;
+    private int _totalAgendamentos;
+    private string? _erroCarregamento;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await CarregarResumoAsync();
+    }
+
+    private async Task CarregarResumoAsync()
+    {
+        _carregando = true;
+        _erroCarregamento = null;
+
+        var hoje = DateTime.Today;
+        var fim = hoje.AddDays(6).AddDays(1).AddTicks(-1);
+        var filtro = new FiltroAgendamento
+        {
+            Pagina = 1,
+            ItensPorPagina = 100,
+            Inicio = hoje,
+            Fim = fim
+        };
+
+        var resultado = await AgendamentoServico.ListarAsync(filtro);
+        if (!resultado.Sucesso)
+        {
+            _erroCarregamento = resultado.Erros is { Count: > 0 } ? string.Join(", ", resultado.Erros) : resultado.Mensagem;
+            _contagemPorDia = new Dictionary<string, int>();
+            _contagemPorStatus = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+            _totalAgendamentos = 0;
+            _semDados = true;
+            _carregando = false;
+            return;
+        }
+
+        var agendamentos = resultado.Dados?.Itens ?? new List<AgendamentoDto>();
+        var cultura = CultureInfo.CreateSpecificCulture("pt-BR");
+        var dias = Enumerable.Range(0, 7).Select(offset => hoje.AddDays(offset)).ToList();
+
+        _contagemPorDia = dias.ToDictionary(
+            dia => dia.ToString("ddd", cultura),
+            dia => agendamentos.Count(a => a.DataHoraInicio.Date == dia.Date));
+
+        _contagemPorStatus = agendamentos
+            .GroupBy(a => string.IsNullOrWhiteSpace(a.Status) ? "Desconhecido" : a.Status)
+            .ToDictionary(g => g.Key, g => g.Count(), StringComparer.OrdinalIgnoreCase);
+
+        _totalAgendamentos = agendamentos.Count;
+        _semDados = _totalAgendamentos == 0;
+        _carregando = false;
+    }
+
+    private string BarHeight(int valor)
+    {
+        var max = _contagemPorDia.Values.DefaultIfEmpty(0).Max();
+        var altura = max > 0 ? 30 + (valor * 100.0 / max) : 30;
+        return $"{Math.Max(28, altura):F0}px";
+    }
+
+    private Color CorStatus(string status)
+    {
+        return status.ToUpperInvariant() switch
+        {
+            "AGENDADO" => Color.Info,
+            "CANCELADO" => Color.Error,
+            "CONCLUIDO" => Color.Success,
+            _ => Color.Default
+        };
+    }
+}
