@@ -18,7 +18,9 @@ public class FuncionarioServicoMock(ArmazenamentoLocal dados) : ServicoMockBase<
             f => string.IsNullOrEmpty(busca) ||
                  f.NomeCompleto.ToLowerInvariant().Contains(busca) ||
                  f.Email.ToLowerInvariant().Contains(busca) ||
-                 f.ProfissaoCargo.ToLowerInvariant().Contains(busca),
+                 f.Celular?.ToLowerInvariant().Contains(busca) == true ||
+                 f.CPF?.ToLowerInvariant().Contains(busca) == true ||
+                 f.Profissoes.Any(p => p.ToLowerInvariant().Contains(busca)),
             f => f.NomeCompleto);
     }
 
@@ -40,7 +42,10 @@ public class FuncionarioServicoMock(ArmazenamentoLocal dados) : ServicoMockBase<
             NomeCompleto = dto.NomeCompleto,
             Endereco = dto.Endereco,
             Telefone = dto.Telefone,
-            ProfissaoCargo = dto.ProfissaoCargo,
+            Celular = dto.Celular,
+            CPF = dto.CPF,
+            DataAdmissao = dto.DataAdmissao,
+            Profissoes = dto.Profissoes,
             Email = dto.Email,
             DataNascimento = dto.DataNascimento,
             NivelPermissao = dto.NivelPermissao,
@@ -63,7 +68,10 @@ public class FuncionarioServicoMock(ArmazenamentoLocal dados) : ServicoMockBase<
             NomeCompleto = dto.NomeCompleto,
             Endereco = dto.Endereco,
             Telefone = dto.Telefone,
-            ProfissaoCargo = dto.ProfissaoCargo,
+            Celular = dto.Celular,
+            CPF = dto.CPF,
+            DataAdmissao = dto.DataAdmissao,
+            Profissoes = dto.Profissoes,
             Email = dto.Email,
             DataNascimento = dto.DataNascimento,
             NivelPermissao = dto.NivelPermissao,
