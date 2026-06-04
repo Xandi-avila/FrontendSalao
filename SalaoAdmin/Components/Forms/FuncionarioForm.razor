@@ -43,21 +43,48 @@
                       Error="@TemErro(nameof(Modelo.Senha))"
                       ErrorText="@MsgErro(nameof(Modelo.Senha))" />
     </MudItem>
-    <MudItem xs="12" md="6">
+    <MudItem xs="12" md="4">
         <MudTextField @bind-Value="Modelo.Telefone"
-                       Rotulo="Telefone / WhatsApp"
-                       Obrigatorio="true"
-                       ComErro="@TemErro(nameof(Modelo.Telefone))"
-                       TextoErro="@MsgErro(nameof(Modelo.Telefone))" />
-    </MudItem>
-    <MudItem xs="12" md="6">
-        <MudTextField @bind-Value="Modelo.ProfissaoCargo"
-                      Label="Profissão / Cargo"
+                      Label="Telefone"
                       Variant="Variant.Outlined"
                       Margin="Margin.Dense"
                       Required="true"
-                      Error="@TemErro(nameof(Modelo.ProfissaoCargo))"
-                      ErrorText="@MsgErro(nameof(Modelo.ProfissaoCargo))" />
+                      Error="@TemErro(nameof(Modelo.Telefone))"
+                      ErrorText="@MsgErro(nameof(Modelo.Telefone))" />
+    </MudItem>
+    <MudItem xs="12" md="4">
+        <MudTextField @bind-Value="Modelo.Celular"
+                      Label="Celular"
+                      Variant="Variant.Outlined"
+                      Margin="Margin.Dense"
+                      InputType="InputType.Telephone" />
+    </MudItem>
+    <MudItem xs="12" md="4">
+        <MudTextField @bind-Value="Modelo.CPF"
+                      Label="CPF"
+                      Variant="Variant.Outlined"
+                      Margin="Margin.Dense"
+                      MaxLength="14" />
+    </MudItem>
+    <MudItem xs="12" md="6">
+        <MudTextField T="string"
+                      Value="ProfissoesTexto"
+                      ValueChanged="EventCallback.Factory.Create<string>(this, AtualizarProfissoes)"
+                      Label="Profissões (separe por vírgula)"
+                      Variant="Variant.Outlined"
+                      Margin="Margin.Dense"
+                      Lines="2"
+                      Error="@TemErro(nameof(Modelo.Profissoes))"
+                      ErrorText="@MsgErro(nameof(Modelo.Profissoes))" />
+    </MudItem>
+    <MudItem xs="12" md="6">
+        <MudDatePicker @bind-Date="Modelo.DataAdmissao"
+                       Label="Data de admissão"
+                       Variant="Variant.Outlined"
+                       Margin="Margin.Dense"
+                       DateFormat="dd/MM/yyyy"
+                       Editable="true"
+                       Clearable="true" />
     </MudItem>
     <MudItem xs="12" md="6">
         <MudDatePicker @bind-Date="Modelo.DataNascimento"
@@ -89,12 +116,26 @@
     [Parameter] public bool Edicao { get; set; }
 
     private bool _ativo = true;
+    private string ProfissoesTexto { get; set; } = string.Empty;
 
-    protected override void OnParametersSet() =>
+    protected override void OnParametersSet()
+    {
         _ativo = Modelo.Status == StatusRegistro.Ativo;
+        ProfissoesTexto = string.Join(", ", Modelo.Profissoes ?? new List<string>());
+    }
 
     protected override void OnAfterRender(bool firstRender) =>
         Modelo.Status = _ativo ? StatusRegistro.Ativo : StatusRegistro.Inativo;
+
+    private void AtualizarProfissoes(string valor)
+    {
+        ProfissoesTexto = valor;
+        Modelo.Profissoes = valor?
+            .Split(',')
+            .Select(x => x.Trim())
+            .Where(x => !string.IsNullOrWhiteSpace(x))
+            .ToList() ?? new List<string>();
+    }
 
     private bool TemErro(string campo) => Erros.ContainsKey(campo);
     private string? MsgErro(string campo) => Erros.TryGetValue(campo, out var msg) ? msg : null;

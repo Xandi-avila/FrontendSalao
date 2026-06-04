@@ -458,17 +458,19 @@ else
         }
         else
         {
-            <MudStack Spacing="1" Style="max-height:400px;overflow-y:auto">
+            <MudStack Spacing="2" Style="max-height:420px;overflow-y:auto; padding-right:4px;">
                 @foreach (var slot in _slotsLivres)
                 {
-                    <MudButton Variant="Variant.Outlined" FullWidth="true" Class="justify-start"
-                               OnClick="@(() => SelecionarSlot(slot))">
-                        @if (ModoTodosFuncionarios || _funcionarioSelecionadoId is null)
-                        {
-                            <span><strong>@slot.NomeFuncionario</strong> — </span>
-                        }
-                        <span>@slot.Inicio.ToString("dd/MM HH:mm") até @slot.Fim.ToString("HH:mm")</span>
-                    </MudButton>
+                    <MudPaper Class="pa-2 horario-livre-item" Outlined="true">
+                        <MudButton Variant="Variant.Text" FullWidth="true" Class="justify-start horario-livre-botao"
+                                   OnClick="@(() => SelecionarSlot(slot))">
+                            @if (ModoTodosFuncionarios || _funcionarioSelecionadoId is null)
+                            {
+                                <span><strong>@slot.NomeFuncionario</strong> — </span>
+                            }
+                            <span>@slot.Inicio.ToString("dd/MM HH:mm") até @slot.Fim.ToString("HH:mm")</span>
+                        </MudButton>
+                    </MudPaper>
                 }
             </MudStack>
         }
