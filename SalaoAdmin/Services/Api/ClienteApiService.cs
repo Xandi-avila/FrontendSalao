@@ -1,6 +1,7 @@
 using SalaoAdmin.Comum;
 using SalaoAdmin.Contratos;
 using SalaoAdmin.Dtos.Clientes;
+using SalaoAdmin.Utilitarios;
 
 namespace SalaoAdmin.Servicos.Api;
 
@@ -31,7 +32,7 @@ public class ClienteApiService(
                     x.Email?.ToLowerInvariant().Contains(busca) == true ||
                     x.Instagram?.ToLowerInvariant().Contains(busca) == true ||
                     x.Facebook?.ToLowerInvariant().Contains(busca) == true ||
-                    x.Profissoes.Any(p => p.ToLowerInvariant().Contains(busca)) ||
+                    ProfissoesHelper.ContemBusca(x.Profissao, busca) ||
                     x.Endereco.ToLowerInvariant().Contains(busca))
                 .ToList();
         }
@@ -53,23 +54,14 @@ public class ClienteApiService(
 
     public async Task<Resultado<ClienteDto>> CriarAsync(ClienteCadastroDto dto, CancellationToken cancelamento = default)
     {
-        var api = await PostAsync<ClienteCadastroDto, ClienteDto>("clientes", dto, cancelamento);
+        var payload = NormalizarCadastro(dto);
+        var api = await PostAsync<ClienteCadastroDto, ClienteDto>("clientes", payload, cancelamento);
         return api.ParaResultado();
     }
 
     public async Task<Resultado<ClienteDto>> AtualizarAsync(ClienteEdicaoDto dto, CancellationToken cancelamento = default)
     {
-        var payload = new ClienteCadastroDto
-        {
-            NomeCompleto = dto.NomeCompleto,
-            WhatsApp = dto.WhatsApp,
-            Email = dto.Email,
-            Instagram = dto.Instagram,
-            Facebook = dto.Facebook,
-            Profissoes = dto.Profissoes,
-            DataNascimento = dto.DataNascimento,
-            Endereco = dto.Endereco
-        };
+        var payload = NormalizarCadastro(dto);
         var api = await PutAsync<ClienteCadastroDto, ClienteDto>($"clientes/{dto.Id}", payload, cancelamento);
         return api.ParaResultado();
     }
@@ -78,5 +70,18 @@ public class ClienteApiService(
     {
         var api = await DeleteAsync<object>($"clientes/{id}", cancelamento);
         return api.ParaResultadoBase();
+    }
+
+    private static ClienteCadastroDto NormalizarCadastro(ClienteCadastroDto dto)
+    {
+        dto.NomeCompleto = dto.NomeCompleto.Trim();
+        dto.Endereco = dto.Endereco.Trim();
+        dto.WhatsApp = FormatacaoCampos.Telefone(dto.WhatsApp);
+        dto.Email = string.IsNullOrWhiteSpace(dto.Email) ? null : dto.Email.Trim();
+        dto.Instagram = string.IsNullOrWhiteSpace(dto.Instagram) ? null : dto.Instagram.Trim();
+        dto.Facebook = string.IsNullOrWhiteSpace(dto.Facebook) ? null : dto.Facebook.Trim();
+        dto.Profissao = ProfissoesHelper.Limpar(dto.Profissao);
+        dto.DataNascimento = ApiDateTimeHelper.NormalizarDataNascimento(dto.DataNascimento);
+        return dto;
     }
 }
