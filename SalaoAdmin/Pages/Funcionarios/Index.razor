@@ -5,7 +5,7 @@
 @inject IDialogService Dialogos
 @inject NavigationManager Navegacao
 
-<CabecalhoPagina Titulo="Funcionários" Subtitulo="Equipe do salão">
+<CabecalhoPagina Titulo="Funcionários" Subtitulo="Cadastro e gerenciamento da equipe do salão">
     <Acoes>
         <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add"
                    OnClick="@(() => Navegacao.NavigateTo("/funcionarios/cadastro"))">
@@ -16,7 +16,7 @@
 
 <MudPaper Class="pa-4 mb-4" Elevation="1">
     <MudTextField @bind-Value="_busca"
-                  Placeholder="Nome, e-mail ou cargo..."
+                  Placeholder="Nome, e-mail, CPF, celular ou profissão..."
                   Adornment="Adornment.Start"
                   AdornmentIcon="@Icons.Material.Filled.Search"
                   DebounceInterval="400"
@@ -56,10 +56,10 @@
             <RowTemplate>
                 <MudTd DataLabel="Nome">@context.NomeCompleto</MudTd>
                 <MudTd DataLabel="E-mail">@context.Email</MudTd>
-                <MudTd DataLabel="CPF">@context.CPF ?? "—"</MudTd>
-                <MudTd DataLabel="Celular">@context.Celular ?? "—"</MudTd>
+                <MudTd DataLabel="CPF">@(string.IsNullOrWhiteSpace(context.CPF) ? "—" : FormatacaoCampos.Cpf(context.CPF))</MudTd>
+                <MudTd DataLabel="Celular">@(string.IsNullOrWhiteSpace(context.Celular) ? "—" : FormatacaoCampos.Telefone(context.Celular))</MudTd>
                 <MudTd DataLabel="Admissão">@(context.DataAdmissao?.ToString("dd/MM/yyyy") ?? "—")</MudTd>
-                <MudTd DataLabel="Profissões">@(context.Profissoes is null || !context.Profissoes.Any() ? "—" : string.Join(", ", context.Profissoes))</MudTd>
+                <MudTd DataLabel="Profissões">@ProfissoesHelper.Exibir(context.Profissoes)</MudTd>
                 <MudTd DataLabel="Permissão">@context.NivelPermissao.Descricao()</MudTd>
                 <MudTd DataLabel="Status">
                     <MudChip T="string" Size="Size.Small"
