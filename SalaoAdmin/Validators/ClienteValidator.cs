@@ -31,4 +31,3 @@ public class ValidadorClienteEdicao : AbstractValidator<ClienteEdicaoDto>
         RuleFor(x => x).SetValidator(new ValidadorClienteCadastro());
     }
 }
-

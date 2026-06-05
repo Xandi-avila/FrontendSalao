@@ -1,6 +1,6 @@
 @using SalaoAdmin.Dtos.Clientes
 
-<MudGrid Spacing="3">
+<MudGrid Spacing="2">
     <MudItem xs="12" md="8">
         <MudTextField @bind-Value="Modelo.NomeCompleto"
                       Label="Nome completo"
@@ -11,7 +11,8 @@
                       ErrorText="@MsgErro(nameof(Modelo.NomeCompleto))" />
     </MudItem>
     <MudItem xs="12" md="4">
-        <CampoTelefone @bind-Valor="Modelo.WhatsApp"
+        <CampoTelefone Valor="@Modelo.WhatsApp"
+                       ValorChanged="@(v => Modelo.WhatsApp = v ?? string.Empty)"
                        Rotulo="WhatsApp"
                        Obrigatorio="true"
                        ComErro="@TemErro(nameof(Modelo.WhatsApp))"
@@ -22,13 +23,16 @@
                       Label="E-mail"
                       Variant="Variant.Outlined"
                       Margin="Margin.Dense"
-                      InputType="InputType.Email" />
+                      InputType="InputType.Email"
+                      Error="@TemErro(nameof(Modelo.Email))"
+                      ErrorText="@MsgErro(nameof(Modelo.Email))" />
     </MudItem>
     <MudItem xs="12" md="4">
         <MudTextField @bind-Value="Modelo.Instagram"
                       Label="Instagram"
                       Variant="Variant.Outlined"
-                      Margin="Margin.Dense" />
+                      Margin="Margin.Dense"
+                      Placeholder="usuario" />
     </MudItem>
     <MudItem xs="12" md="4">
         <MudTextField @bind-Value="Modelo.Facebook"
@@ -36,16 +40,16 @@
                       Variant="Variant.Outlined"
                       Margin="Margin.Dense" />
     </MudItem>
-    <MudItem xs="12" md="4">
+    <MudItem xs="12" md="6">
         <MudTextField T="string"
-                      Value="ProfissoesTexto"
-                      ValueChanged="EventCallback.Factory.Create<string>(this, AtualizarProfissoes)"
-                      Label="Profissões (separe por vírgula)"
+                      Value="_profissaoTexto"
+                      ValueChanged="EventCallback.Factory.Create<string>(this, AtualizarProfissao)"
+                      Label="Profissões (opcional, separe por vírgula)"
                       Variant="Variant.Outlined"
                       Margin="Margin.Dense"
                       Lines="2" />
     </MudItem>
-    <MudItem xs="12" md="4">
+    <MudItem xs="12" md="3">
         <MudDatePicker @bind-Date="Modelo.DataNascimento"
                        Label="Data de nascimento"
                        Variant="Variant.Outlined"
@@ -59,7 +63,6 @@
                       Label="Endereço"
                       Variant="Variant.Outlined"
                       Margin="Margin.Dense"
-                      Lines="2"
                       Required="true"
                       Error="@TemErro(nameof(Modelo.Endereco))"
                       ErrorText="@MsgErro(nameof(Modelo.Endereco))" />
@@ -70,19 +73,15 @@
     [Parameter, EditorRequired] public ClienteCadastroDto Modelo { get; set; } = new();
     [Parameter] public Dictionary<string, string> Erros { get; set; } = new();
 
-    private string ProfissoesTexto { get; set; } = string.Empty;
+    private string _profissaoTexto = string.Empty;
 
     protected override void OnParametersSet() =>
-        ProfissoesTexto = string.Join(", ", Modelo.Profissoes ?? new List<string>());
+        _profissaoTexto = ProfissoesHelper.ParaTexto(Modelo.Profissao);
 
-    private void AtualizarProfissoes(string valor)
+    private void AtualizarProfissao(string valor)
     {
-        ProfissoesTexto = valor;
-        Modelo.Profissoes = valor?
-            .Split(',')
-            .Select(x => x.Trim())
-            .Where(x => !string.IsNullOrWhiteSpace(x))
-            .ToList() ?? new List<string>();
+        _profissaoTexto = valor;
+        Modelo.Profissao = ProfissoesHelper.Parse(valor);
     }
 
     private bool TemErro(string campo) => Erros.ContainsKey(campo);

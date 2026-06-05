@@ -1,8 +1,7 @@
 @page "/"
 @layout AdminLayout
 
-<CabecalhoPagina Titulo="Painel administrativo"
-                 Subtitulo="Bem-vindo ao Salão Admin — gestão do salão de beleza" />
+<CabecalhoPagina Titulo="Painel administrativo - Bella Estética" />
 
 <MudGrid Spacing="3">
     <MudItem xs="12" sm="6" md="4">
@@ -40,7 +39,7 @@
                     <MudIcon Icon="@Icons.Material.Filled.ContentCut" />
                 </MudAvatar>
                 <div>
-                    <MudText Typo="Typo.h6">Serviços</MudText>
+                    <MudText Typo="Typo.h6">Serviços e Categorias</MudText>
                     <MudText Typo="Typo.body2" Color="Color.Secondary">Catálogo do salão</MudText>
                 </div>
                 <MudButton Href="/servicos" Variant="Variant.Text" Color="Color.Primary" Class="ml-auto">Acessar</MudButton>
@@ -49,8 +48,8 @@
     </MudItem>
 </MudGrid>
 
-<MudGrid Spacing="3" Class="mt-1">
-    <MudItem xs="12" sm="6" md="6">
+<MudGrid Spacing="2" Class="mt-1">
+    <MudItem xs="12" sm="6" md="4">
         <MudCard Elevation="2" Class="pa-4">
             <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
                 <MudAvatar Color="Color.Info" Variant="Variant.Filled">
@@ -64,7 +63,7 @@
             </MudStack>
         </MudCard>
     </MudItem>
-    <MudItem xs="12" sm="6" md="6">
+    <MudItem xs="12" sm="6" md="4">
         <MudCard Elevation="2" Class="pa-4">
             <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
                 <MudAvatar Color="Color.Success" Variant="Variant.Filled">
@@ -75,6 +74,20 @@
                     <MudText Typo="Typo.body2" Color="Color.Secondary">Produtos e serviços</MudText>
                 </div>
                 <MudButton Href="/vendas" Variant="Variant.Text" Color="Color.Primary" Class="ml-auto">Acessar</MudButton>
+            </MudStack>
+        </MudCard>
+    </MudItem>
+      <MudItem xs="12" sm="6" md="4">
+        <MudCard Elevation="2" Class="pa-4">
+            <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+                <MudAvatar Color="Color.Success" Variant="Variant.Filled">
+                    <MudIcon Icon="@Icons.Material.Filled.PointOfSale" />
+                </MudAvatar>
+                <div>
+                    <MudText Typo="Typo.h6">Historico de vendas</MudText>
+                    <MudText Typo="Typo.body2" Color="Color.Secondary">Historico das vendas de produtos e serviços</MudText>
+                </div>
+                <MudButton Href="/vendas/historico" Variant="Variant.Text" Color="Color.Primary" Class="ml-auto">Acessar</MudButton>
             </MudStack>
         </MudCard>
     </MudItem>

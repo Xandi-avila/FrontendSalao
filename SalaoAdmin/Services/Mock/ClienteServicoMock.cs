@@ -3,6 +3,7 @@ using SalaoAdmin.Contratos;
 using SalaoAdmin.DadosMock;
 using SalaoAdmin.Dtos.Clientes;
 using SalaoAdmin.Servicos.Base;
+using SalaoAdmin.Utilitarios;
 
 namespace SalaoAdmin.Servicos.Mock;
 
@@ -10,18 +11,18 @@ public class ClienteServicoMock(ArmazenamentoLocal dados) : ServicoMockBase<Clie
 {
     public async Task<Resultado<ListaPaginada<ClienteDto>>> ListarAsync(FiltroPaginacao filtro, CancellationToken cancelamento = default)
     {
-        var busca = filtro.Busca?.Trim().ToLowerInvariant();
+        var busca = filtro.Busca?.Trim();
         return await PaginarAsync(
             dados.Clientes,
             filtro,
             c => string.IsNullOrEmpty(busca) ||
-                 c.NomeCompleto.ToLowerInvariant().Contains(busca) ||
-                 c.WhatsApp.Contains(busca) ||
-                 c.Email?.ToLowerInvariant().Contains(busca) == true ||
-                 c.Instagram?.ToLowerInvariant().Contains(busca) == true ||
-                 c.Facebook?.ToLowerInvariant().Contains(busca) == true ||
-                 c.Profissoes.Any(p => p.ToLowerInvariant().Contains(busca)) ||
-                 c.Endereco.ToLowerInvariant().Contains(busca),
+                 c.NomeCompleto.Contains(busca, StringComparison.OrdinalIgnoreCase) ||
+                 c.WhatsApp.Contains(busca, StringComparison.OrdinalIgnoreCase) ||
+                 c.Email?.Contains(busca, StringComparison.OrdinalIgnoreCase) == true ||
+                 c.Instagram?.Contains(busca, StringComparison.OrdinalIgnoreCase) == true ||
+                 c.Facebook?.Contains(busca, StringComparison.OrdinalIgnoreCase) == true ||
+                 ProfissoesHelper.ContemBusca(c.Profissao, busca) ||
+                 c.Endereco.Contains(busca, StringComparison.OrdinalIgnoreCase),
             c => c.NomeCompleto);
     }
 
@@ -37,18 +38,7 @@ public class ClienteServicoMock(ArmazenamentoLocal dados) : ServicoMockBase<Clie
     public async Task<Resultado<ClienteDto>> CriarAsync(ClienteCadastroDto dto, CancellationToken cancelamento = default)
     {
         await SimularEspera();
-        var novo = new ClienteDto
-        {
-            Id = Guid.NewGuid(),
-            NomeCompleto = dto.NomeCompleto,
-            WhatsApp = dto.WhatsApp,
-            Email = dto.Email,
-            Instagram = dto.Instagram,
-            Facebook = dto.Facebook,
-            Profissoes = dto.Profissoes,
-            DataNascimento = dto.DataNascimento,
-            Endereco = dto.Endereco
-        };
+        var novo = Mapear(dto, Guid.NewGuid());
         dados.Clientes.Add(novo);
         return Resultado<ClienteDto>.Ok(novo, "Cliente cadastrado.");
     }
@@ -60,18 +50,7 @@ public class ClienteServicoMock(ArmazenamentoLocal dados) : ServicoMockBase<Clie
         if (indice < 0)
             return Resultado<ClienteDto>.Falha("Cliente não encontrado.");
 
-        dados.Clientes[indice] = new ClienteDto
-        {
-            Id = dto.Id,
-            NomeCompleto = dto.NomeCompleto,
-            WhatsApp = dto.WhatsApp,
-            Email = dto.Email,
-            Instagram = dto.Instagram,
-            Facebook = dto.Facebook,
-            Profissoes = dto.Profissoes,
-            DataNascimento = dto.DataNascimento,
-            Endereco = dto.Endereco
-        };
+        dados.Clientes[indice] = Mapear(dto, dto.Id);
         return Resultado<ClienteDto>.Ok(dados.Clientes[indice], "Cliente atualizado.");
     }
 
@@ -83,4 +62,17 @@ public class ClienteServicoMock(ArmazenamentoLocal dados) : ServicoMockBase<Clie
             ? Resultado.Ok("Cliente excluído.")
             : Resultado.Falha("Cliente não encontrado.");
     }
+
+    private static ClienteDto Mapear(ClienteCadastroDto dto, Guid id) => new()
+    {
+        Id = id,
+        NomeCompleto = dto.NomeCompleto.Trim(),
+        WhatsApp = FormatacaoCampos.Telefone(dto.WhatsApp),
+        Email = string.IsNullOrWhiteSpace(dto.Email) ? null : dto.Email.Trim(),
+        Instagram = string.IsNullOrWhiteSpace(dto.Instagram) ? null : dto.Instagram.Trim(),
+        Facebook = string.IsNullOrWhiteSpace(dto.Facebook) ? null : dto.Facebook.Trim(),
+        Profissao = ProfissoesHelper.Limpar(dto.Profissao),
+        DataNascimento = dto.DataNascimento,
+        Endereco = dto.Endereco.Trim()
+    };
 }
