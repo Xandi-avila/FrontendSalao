@@ -16,7 +16,7 @@
 
 <MudPaper Class="pa-4 mb-4" Elevation="1">
     <MudTextField @bind-Value="_busca"
-                      Placeholder="Buscar por nome, WhatsApp, e-mail ou endereço..."
+                      Placeholder="Buscar por nome, WhatsApp, e-mail, redes ou profissão..."
                   DebounceInterval="400"
                   OnDebounceIntervalElapsed="Carregar"
                   Variant="Variant.Outlined"
@@ -53,9 +53,9 @@
             </HeaderContent>
             <RowTemplate>
                 <MudTd DataLabel="Nome">@context.NomeCompleto</MudTd>
-                <MudTd DataLabel="WhatsApp">@context.WhatsApp</MudTd>
+                <MudTd DataLabel="WhatsApp">@FormatacaoCampos.Telefone(context.WhatsApp)</MudTd>
                 <MudTd DataLabel="E-mail">@context.Email ?? "—"</MudTd>
-                <MudTd DataLabel="Profissões">@(context.Profissoes is null || !context.Profissoes.Any() ? "—" : string.Join(", ", context.Profissoes))</MudTd>
+                <MudTd DataLabel="Profissões">@ProfissoesHelper.Exibir(context.Profissao)</MudTd>
                 <MudTd DataLabel="Nascimento">@(context.DataNascimento?.ToString("dd/MM/yyyy") ?? "—")</MudTd>
                 <MudTd DataLabel="Endereço">@context.Endereco</MudTd>
                 <MudTd>
