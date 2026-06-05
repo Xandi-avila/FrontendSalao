@@ -1,6 +1,7 @@
 using SalaoAdmin.Comum;
 using SalaoAdmin.Contratos;
 using SalaoAdmin.Dtos.Funcionarios;
+using SalaoAdmin.Utilitarios;
 
 namespace SalaoAdmin.Servicos.Api;
 
@@ -29,8 +30,8 @@ public class FuncionarioApiService(
                     x.NomeCompleto.ToLowerInvariant().Contains(busca) ||
                     x.Email.ToLowerInvariant().Contains(busca) ||
                     x.Celular?.ToLowerInvariant().Contains(busca) == true ||
-                    x.CPF?.ToLowerInvariant().Contains(busca) == true ||
-                    x.Profissoes.Any(p => p.ToLowerInvariant().Contains(busca)))
+                    x.CPF?.Contains(busca, StringComparison.OrdinalIgnoreCase) == true ||
+                    ProfissoesHelper.ContemBusca(x.Profissoes, busca))
                 .ToList();
         }
 
@@ -51,44 +52,14 @@ public class FuncionarioApiService(
 
     public async Task<Resultado<FuncionarioDto>> CriarAsync(FuncionarioCadastroDto dto, CancellationToken cancelamento = default)
     {
-        var payload = new FuncionarioCadastroDto
-        {
-            NomeCompleto = dto.NomeCompleto,
-            Endereco = dto.Endereco,
-            Telefone = dto.Telefone,
-            Celular = dto.Celular,
-            CPF = string.IsNullOrWhiteSpace(dto.CPF) ? null : new string(dto.CPF.Where(char.IsDigit).ToArray()),
-            DataAdmissao = dto.DataAdmissao,
-            Profissoes = dto.Profissoes,
-            Email = dto.Email,
-            Senha = dto.Senha,
-            DataNascimento = dto.DataNascimento,
-            NivelPermissao = dto.NivelPermissao,
-            Status = dto.Status
-        };
-
+        var payload = NormalizarCadastro(dto, edicao: false);
         var api = await PostAsync<FuncionarioCadastroDto, FuncionarioDto>("funcionarios", payload, cancelamento);
         return api.ParaResultado();
     }
 
     public async Task<Resultado<FuncionarioDto>> AtualizarAsync(FuncionarioEdicaoDto dto, CancellationToken cancelamento = default)
     {
-        var payload = new FuncionarioCadastroDto
-        {
-            NomeCompleto = dto.NomeCompleto,
-            Endereco = dto.Endereco,
-            Telefone = dto.Telefone,
-            Celular = dto.Celular,
-            CPF = string.IsNullOrWhiteSpace(dto.CPF) ? null : new string(dto.CPF.Where(char.IsDigit).ToArray()),
-            DataAdmissao = dto.DataAdmissao,
-            Profissoes = dto.Profissoes,
-            Email = dto.Email,
-            Senha = dto.Senha,
-            DataNascimento = dto.DataNascimento,
-            NivelPermissao = dto.NivelPermissao,
-            Status = dto.Status
-        };
-
+        var payload = NormalizarCadastro(dto, edicao: true);
         var api = await PutAsync<FuncionarioCadastroDto, FuncionarioDto>($"funcionarios/{dto.Id}", payload, cancelamento);
         return api.ParaResultado();
     }
@@ -97,5 +68,23 @@ public class FuncionarioApiService(
     {
         var api = await DeleteAsync<object>($"funcionarios/{id}", cancelamento);
         return api.ParaResultadoBase();
+    }
+
+    private static FuncionarioCadastroDto NormalizarCadastro(FuncionarioCadastroDto dto, bool edicao)
+    {
+        dto.NomeCompleto = dto.NomeCompleto.Trim();
+        dto.Email = dto.Email.Trim();
+        dto.Endereco = dto.Endereco.Trim();
+        dto.Telefone = FormatacaoCampos.Telefone(dto.Telefone);
+        dto.Celular = string.IsNullOrWhiteSpace(dto.Celular) ? null : FormatacaoCampos.Telefone(dto.Celular);
+        dto.CPF = FormatacaoCampos.CpfSomenteDigitos(dto.CPF);
+        dto.DataNascimento = ApiDateTimeHelper.NormalizarDataNascimento(dto.DataNascimento);
+        dto.DataAdmissao = ApiDateTimeHelper.NormalizarDataNascimento(dto.DataAdmissao);
+        dto.Profissoes = ProfissoesHelper.Limpar(dto.Profissoes);
+
+        if (edicao && string.IsNullOrWhiteSpace(dto.Senha))
+            dto.Senha = null;
+
+        return dto;
     }
 }

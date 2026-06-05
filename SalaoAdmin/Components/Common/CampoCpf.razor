@@ -1,0 +1,32 @@
+<MudTextField Value="_exibicao"
+              ValueChanged="@(async (string? v) => await AoDigitar(v))"
+              Label="@Rotulo"
+              Variant="Variant.Outlined"
+              Margin="Margin.Dense"
+              Required="@Obrigatorio"
+              Error="@ComErro"
+              ErrorText="@TextoErro"
+              Adornment="Adornment.Start"
+              AdornmentIcon="@Icons.Material.Filled.Badge"
+              MaxLength="14"
+              Immediate="true" />
+
+@code {
+    [Parameter] public string Rotulo { get; set; } = "CPF";
+    [Parameter] public string? Valor { get; set; }
+    [Parameter] public EventCallback<string?> ValorChanged { get; set; }
+    [Parameter] public bool Obrigatorio { get; set; }
+    [Parameter] public bool ComErro { get; set; }
+    [Parameter] public string? TextoErro { get; set; }
+
+    private string? _exibicao;
+
+    protected override void OnParametersSet() =>
+        _exibicao = FormatacaoCampos.Cpf(Valor);
+
+    private async Task AoDigitar(string? texto)
+    {
+        _exibicao = FormatacaoCampos.Cpf(texto);
+        await ValorChanged.InvokeAsync(_exibicao);
+    }
+}
