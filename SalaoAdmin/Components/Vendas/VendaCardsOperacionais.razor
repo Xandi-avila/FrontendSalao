@@ -9,6 +9,18 @@
     </MudItem>
     <MudItem xs="6" sm="4" md="2">
         <MudPaper Class="pa-3 venda-card-op" Outlined="true">
+            <MudText Typo="Typo.caption" Color="Color.Secondary">Produtos hoje</MudText>
+            <MudText Typo="Typo.h5">@Indicadores.QuantidadeProdutosHoje</MudText>
+        </MudPaper>
+    </MudItem>
+    <MudItem xs="6" sm="4" md="2">
+        <MudPaper Class="pa-3 venda-card-op" Outlined="true">
+            <MudText Typo="Typo.caption" Color="Color.Secondary">Serviços hoje</MudText>
+            <MudText Typo="Typo.h5">@Indicadores.QuantidadeServicosHoje</MudText>
+        </MudPaper>
+    </MudItem>
+    <MudItem xs="6" sm="4" md="2">
+        <MudPaper Class="pa-3 venda-card-op" Outlined="true">
             <MudText Typo="Typo.caption" Color="Color.Secondary">Valor hoje</MudText>
             <MudText Typo="Typo.h5" Color="Color.Success">@FormatacaoCampos.Moeda(Indicadores.ValorVendidoHoje)</MudText>
         </MudPaper>
@@ -19,6 +31,8 @@
     public sealed class IndicadoresVenda
     {
         public int QuantidadeVendasHoje { get; init; }
+        public int QuantidadeProdutosHoje { get; init; }
+        public int QuantidadeServicosHoje { get; init; }
         public decimal ValorVendidoHoje { get; init; }
     }
 

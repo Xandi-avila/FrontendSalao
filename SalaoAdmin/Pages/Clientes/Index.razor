@@ -46,6 +46,7 @@
                 <MudTh>Nome</MudTh>
                 <MudTh>WhatsApp</MudTh>
                 <MudTh>E-mail</MudTh>
+                <MudTh>Rede social</MudTh>
                 <MudTh>Profissões</MudTh>
                 <MudTh>Nascimento</MudTh>
                 <MudTh>Endereço</MudTh>
@@ -54,7 +55,8 @@
             <RowTemplate>
                 <MudTd DataLabel="Nome">@context.NomeCompleto</MudTd>
                 <MudTd DataLabel="WhatsApp">@FormatacaoCampos.Telefone(context.WhatsApp)</MudTd>
-                <MudTd DataLabel="E-mail">@context.Email ?? "—"</MudTd>
+                <MudTd DataLabel="E-mail">@(context.Email ?? "—")</MudTd>
+                <MudTd DataLabel="Rede social">@(context.Instagram ?? "—")</MudTd>
                 <MudTd DataLabel="Profissões">@ProfissoesHelper.Exibir(context.Profissao)</MudTd>
                 <MudTd DataLabel="Nascimento">@(context.DataNascimento?.ToString("dd/MM/yyyy") ?? "—")</MudTd>
                 <MudTd DataLabel="Endereço">@context.Endereco</MudTd>

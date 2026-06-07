@@ -4,9 +4,6 @@ using System.Text.Json.Serialization;
 
 namespace SalaoAdmin.Utilitarios;
 
-/// <summary>
-/// Garante ISO 8601 UTC com sufixo Z na serialização para a API (ex.: 1998-02-08T00:00:00Z).
-/// </summary>
 public class ApiDateTimeJsonConverter : JsonConverter<DateTime>
 {
     public override DateTime Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
