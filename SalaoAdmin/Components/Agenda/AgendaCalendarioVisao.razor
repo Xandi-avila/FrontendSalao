@@ -8,9 +8,15 @@
             <MudText Typo="Typo.caption" Color="Color.Secondary">@SubtituloCalendario()</MudText>
         </div>
         <MudStack Row="true" Spacing="1" AlignItems="AlignItems.Center" Wrap="Wrap.Wrap">
-            <MudIconButton Icon="@Icons.Material.Filled.ChevronLeft" OnClick="Retroceder" />
+            @if (Modo == ModoCalendario.Mes)
+            {
+                <MudIconButton Icon="@Icons.Material.Filled.ChevronLeft" OnClick="Retroceder" />
+            }
             <MudButton Variant="Variant.Text" Size="Size.Small" OnClick="IrParaHoje">Hoje</MudButton>
-            <MudIconButton Icon="@Icons.Material.Filled.ChevronRight" OnClick="Avancar" />
+            @if (Modo == ModoCalendario.Mes)
+            {
+                <MudIconButton Icon="@Icons.Material.Filled.ChevronRight" OnClick="Avancar" />
+            }
             <MudButtonGroup Variant="Variant.Outlined" Class="ml-sm-2">
                 <MudButton OnClick="@(() => AlterarModo(ModoCalendario.Dia))"
                            Color="@(Modo == ModoCalendario.Dia ? Color.Primary : Color.Default)">Dia</MudButton>
@@ -18,9 +24,25 @@
                            Color="@(Modo == ModoCalendario.Semana ? Color.Primary : Color.Default)">Semana</MudButton>
                 <MudButton OnClick="@(() => AlterarModo(ModoCalendario.Mes))"
                            Color="@(Modo == ModoCalendario.Mes ? Color.Primary : Color.Default)">Mês</MudButton>
+                <MudButton OnClick="@(() => AlterarModo(ModoCalendario.Personalizado))"
+                           Color="@(Modo == ModoCalendario.Personalizado ? Color.Primary : Color.Default)">Personalizado</MudButton>
             </MudButtonGroup>
         </MudStack>
     </MudStack>
+
+    @if (Modo == ModoCalendario.Personalizado)
+    {
+        <MudGrid Spacing="2" Class="mb-3">
+            <MudItem xs="12" sm="6">
+                <MudDatePicker Label="Data inicial" Variant="Variant.Outlined" Margin="Margin.Dense"
+                               Date="PeriodoInicio" DateChanged="AoAlterarInicioPersonalizado" />
+            </MudItem>
+            <MudItem xs="12" sm="6">
+                <MudDatePicker Label="Data final" Variant="Variant.Outlined" Margin="Margin.Dense"
+                               Date="PeriodoFim" DateChanged="AoAlterarFimPersonalizado" />
+            </MudItem>
+        </MudGrid>
+    }
 
     <MudStack Row="true" Spacing="2" Wrap="Wrap.Wrap" Class="mb-3 agenda-legenda">
         <span class="agenda-legenda-item agenda-ev-confirmado">Confirmado</span>
@@ -174,7 +196,7 @@
     private static readonly System.Globalization.CultureInfo CulturaBr = new("pt-BR");
     private static readonly string[] RotulosDiasSemana = ["Seg", "Ter", "Qua", "Qui", "Sex", "Sáb", "Dom"];
 
-    public enum ModoCalendario { Dia, Semana, Mes }
+    public enum ModoCalendario { Dia, Semana, Mes, Personalizado }
 
     public sealed class EventoCalendario
     {
@@ -190,10 +212,13 @@
         public bool TemConflito { get; init; }
     }
 
-    [Parameter] public ModoCalendario Modo { get; set; } = ModoCalendario.Semana;
+    [Parameter] public ModoCalendario Modo { get; set; } = ModoCalendario.Dia;
     [Parameter] public EventCallback<ModoCalendario> ModoChanged { get; set; }
     [Parameter] public DateTime DataReferencia { get; set; } = DateTime.Today;
     [Parameter] public EventCallback<DateTime> DataReferenciaChanged { get; set; }
+    [Parameter] public DateTime? PeriodoInicio { get; set; }
+    [Parameter] public DateTime? PeriodoFim { get; set; }
+    [Parameter] public EventCallback<(DateTime? Inicio, DateTime? Fim)> PeriodoPersonalizadoChanged { get; set; }
     [Parameter] public Guid? FuncionarioFiltroId { get; set; }
     [Parameter] public IReadOnlyList<FuncionarioDto> Funcionarios { get; set; } = [];
     [Parameter] public IReadOnlyList<EventoCalendario> Eventos { get; set; } = [];
@@ -203,6 +228,21 @@
     [Parameter] public EventCallback<(Guid AgendamentoId, DateTime NovoInicio, Guid FuncionarioId)> OnReagendar { get; set; }
 
     private EventoCalendario? _arrastando;
+    private Dictionary<DateTime, List<EventoCalendario>> _eventosPorDia = new();
+    private Dictionary<(DateTime Data, Guid FuncionarioId, int Hora), List<EventoCalendario>> _eventosPorCelula = new();
+
+    protected override void OnParametersSet()
+    {
+        _eventosPorDia = Eventos
+            .GroupBy(e => e.Inicio.Date)
+            .ToDictionary(
+                g => g.Key,
+                g => g.OrderBy(e => e.Inicio).ThenBy(e => e.FuncionarioId).ToList());
+
+        _eventosPorCelula = Eventos
+            .GroupBy(e => (e.Inicio.Date, e.FuncionarioId, e.Inicio.Hour))
+            .ToDictionary(g => g.Key, g => g.ToList());
+    }
 
     private IEnumerable<int> HorasGrade =>
         Enumerable.Range(AgendaCalculoHelper.HoraCalendarioInicio, AgendaCalculoHelper.HoraCalendarioFim - AgendaCalculoHelper.HoraCalendarioInicio);
@@ -212,34 +252,52 @@
             ? Funcionarios.Where(f => f.Id == FuncionarioFiltroId.Value)
             : Funcionarios;
 
-    private IEnumerable<DateTime> DiasParaExibir => Modo switch
+    private IEnumerable<DateTime> DiasParaExibir
     {
-        ModoCalendario.Dia => [DataReferencia.Date],
-        _ => AgendaCalculoHelper.DiasDaSemana(DataReferencia)
-    };
+        get
+        {
+            var inicio = (PeriodoInicio ?? DataReferencia).Date;
+            var fim = (PeriodoFim ?? inicio).Date;
+            return Modo switch
+            {
+                ModoCalendario.Dia => [inicio],
+                ModoCalendario.Semana => AgendaCalculoHelper.DiasProximos(inicio),
+                ModoCalendario.Personalizado => AgendaCalculoHelper.DiasNoIntervalo(inicio, fim),
+                _ => AgendaCalculoHelper.DiasProximos(inicio)
+            };
+        }
+    }
 
-    private string TituloCalendario() => Modo switch
+    private string TituloCalendario()
     {
-        ModoCalendario.Dia => DataReferencia.ToString("dddd, dd 'de' MMMM", CulturaBr),
-        ModoCalendario.Mes => DataReferencia.ToString("MMMM yyyy", CulturaBr),
-        _ => $"Semana {AgendaCalculoHelper.ObterInicioSemana(DataReferencia):dd/MM} – {AgendaCalculoHelper.ObterInicioSemana(DataReferencia).AddDays(6):dd/MM/yyyy}"
-    };
+        var inicio = (PeriodoInicio ?? DataReferencia).Date;
+        var fim = (PeriodoFim ?? inicio).Date;
+        return Modo switch
+        {
+            ModoCalendario.Dia => inicio.ToString("dddd, dd 'de' MMMM", CulturaBr),
+            ModoCalendario.Mes => DataReferencia.ToString("MMMM yyyy", CulturaBr),
+            ModoCalendario.Personalizado => $"Período {inicio:dd/MM/yyyy} – {fim:dd/MM/yyyy}",
+            _ => $"Próximos 7 dias {inicio:dd/MM} – {AgendaCalculoHelper.ObterFimProximosDias(inicio):dd/MM/yyyy}"
+        };
+    }
 
     private string SubtituloCalendario() => Modo switch
     {
         ModoCalendario.Dia => "Grade por profissional — clique na célula ou arraste blocos para reagendar",
         ModoCalendario.Mes => "Clique em um dia para abrir a visão diária",
-        _ => "Grade horária por profissional"
+        ModoCalendario.Personalizado => "Escolha o intervalo — inclui dias anteriores",
+        _ => "Grade horária por profissional — hoje e próximos 6 dias"
     };
 
     private IEnumerable<EventoCalendario> EventosDoDia(DateTime dia) =>
-        Eventos.Where(e => e.Inicio.Date == dia.Date).OrderBy(e => e.Inicio).ThenBy(e => e.FuncionarioId);
+        _eventosPorDia.TryGetValue(dia.Date, out var lista)
+            ? lista
+            : Enumerable.Empty<EventoCalendario>();
 
     private IEnumerable<EventoCalendario> EventosIniciandoNaHora(DateTime dia, Guid funcionarioId, int hora) =>
-        Eventos.Where(e =>
-            e.FuncionarioId == funcionarioId &&
-            e.Inicio.Date == dia.Date &&
-            e.Inicio.Hour == hora);
+        _eventosPorCelula.TryGetValue((dia.Date, funcionarioId, hora), out var lista)
+            ? lista
+            : Enumerable.Empty<EventoCalendario>();
 
     private string NomeFuncionario(Guid id) =>
         NomeFuncionarioResolver?.Invoke(id) ?? "—";
@@ -325,13 +383,31 @@
             await ModoChanged.InvokeAsync(modo);
     }
 
+    private async Task AoAlterarInicioPersonalizado(DateTime? data)
+    {
+        var fim = PeriodoFim ?? data ?? DateTime.Today;
+        var inicio = data?.Date ?? fim.Date;
+        if (inicio > fim) fim = inicio;
+        if (PeriodoPersonalizadoChanged.HasDelegate)
+            await PeriodoPersonalizadoChanged.InvokeAsync((inicio, fim));
+    }
+
+    private async Task AoAlterarFimPersonalizado(DateTime? data)
+    {
+        var inicio = PeriodoInicio ?? data ?? DateTime.Today;
+        var fim = data?.Date ?? inicio.Date;
+        if (fim < inicio) inicio = fim;
+        if (PeriodoPersonalizadoChanged.HasDelegate)
+            await PeriodoPersonalizadoChanged.InvokeAsync((inicio, fim));
+    }
+
     private async Task Retroceder()
     {
         DataReferencia = Modo switch
         {
             ModoCalendario.Dia => DataReferencia.AddDays(-1),
             ModoCalendario.Mes => DataReferencia.AddMonths(-1),
-            _ => DataReferencia.AddDays(-7)
+            _ => DataReferencia
         };
         await NotificarData();
     }
@@ -342,7 +418,7 @@
         {
             ModoCalendario.Dia => DataReferencia.AddDays(1),
             ModoCalendario.Mes => DataReferencia.AddMonths(1),
-            _ => DataReferencia.AddDays(7)
+            _ => DataReferencia
         };
         await NotificarData();
     }
@@ -350,6 +426,8 @@
     private async Task IrParaHoje()
     {
         DataReferencia = DateTime.Today;
+        if (ModoChanged.HasDelegate)
+            await ModoChanged.InvokeAsync(ModoCalendario.Dia);
         await NotificarData();
     }
 

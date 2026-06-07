@@ -1,9 +1,5 @@
 namespace SalaoAdmin.Dtos.Agenda;
 
-/// <summary>
-/// Payload de janela para PUT /agenda/funcionarios/{id} (DefinirAgenda).
-/// A API exige diaSemana, horaInicio e horaFim — id é gerenciado pelo servidor.
-/// </summary>
 public class JanelaAgendaEnvioDto
 {
     public int DiaSemana { get; set; }
