@@ -6,62 +6,73 @@
 @inject NavigationManager Navegacao
 @inject AuthenticationStateProvider AuthStateProvider
 
-<PageTitle>Entrar — Salão Admin</PageTitle>
+<PageTitle>Entrar — Bella Estética</PageTitle>
 
-<MudPaper Class="login-card" Elevation="8">
-    <div class="login-header">
-        <div class="login-brand">
-            <MudIcon Icon="@Icons.Material.Filled.ContentCut" Size="Size.Large" />
+<div class="login-page">
+    <div class="login-brand-panel">
+        <div class="login-brand-content">
+            <img src="/brandlogo-white.png"
+                 alt="Bella Estética"
+                 class="login-logo" />
+            <MudText Typo="Typo.h4" Class="login-title">Bella Estética</MudText>
+            <MudText Typo="Typo.body1" Class="login-tagline">
+                Beleza, cuidado e gestão do salão em um só lugar.
+            </MudText>
         </div>
-        <MudText Typo="Typo.h5" Color="Color.Primary"><b>Salão Admin</b></MudText>
-        <MudText Typo="Typo.body2" Color="Color.Secondary" Class="mt-1">
-            Entre com seu e-mail e senha para acessar o painel
-        </MudText>
     </div>
 
-    <div class="login-form">
-        <EditForm Model="_request" OnValidSubmit="Entrar">
-            <MudStack Spacing="3">
-                <MudTextField @bind-Value="_request.Email"
-                              Label="E-mail"
-                              Variant="Variant.Outlined"
-                              InputType="InputType.Email"
-                              Adornment="Adornment.Start"
-                              AdornmentIcon="@Icons.Material.Filled.Email"
-                              Disabled="_carregando"
-                              Required="true" />
+    <div class="login-form-panel">
+        <div class="login-form-content">
+            <MudText Typo="Typo.h5" Class="login-form-title">Acesso ao painel</MudText>
+            <MudText Typo="Typo.body2" Color="Color.Secondary" Class="mb-4">
+                Entre com seu e-mail e senha para continuar.
+            </MudText>
 
-                <MudTextField @bind-Value="_request.Senha"
-                              Label="Senha"
-                              Variant="Variant.Outlined"
-                              InputType="@(_mostrarSenha ? InputType.Text : InputType.Password)"
-                              Adornment="Adornment.End"
-                              AdornmentIcon="@(_mostrarSenha ? Icons.Material.Filled.VisibilityOff : Icons.Material.Filled.Visibility)"
-                              OnAdornmentClick="() => _mostrarSenha = !_mostrarSenha"
-                              Disabled="_carregando"
-                              Required="true" />
+            <EditForm Model="_request" OnValidSubmit="Entrar">
+                <MudStack Spacing="3">
+                    <MudTextField @bind-Value="_request.Email"
+                                  Label="E-mail"
+                                  Variant="Variant.Outlined"
+                                  Margin="Margin.Dense"
+                                  InputType="InputType.Email"
+                                  Adornment="Adornment.Start"
+                                  AdornmentIcon="@Icons.Material.Filled.Email"
+                                  Disabled="_carregando"
+                                  Required="true" />
 
-                <MudButton ButtonType="ButtonType.Submit"
-                           Variant="Variant.Filled"
-                           Color="Color.Primary"
-                           FullWidth="true"
-                           Size="Size.Large"
-                           Disabled="_carregando"
-                           Class="mt-2">
-                    @if (_carregando)
-                    {
-                        <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2" />
-                        <span>Entrando...</span>
-                    }
-                    else
-                    {
-                        <span>Entrar</span>
-                    }
-                </MudButton>
-            </MudStack>
-        </EditForm>
+                    <MudTextField @bind-Value="_request.Senha"
+                                  Label="Senha"
+                                  Variant="Variant.Outlined"
+                                  Margin="Margin.Dense"
+                                  InputType="@(_mostrarSenha ? InputType.Text : InputType.Password)"
+                                  Adornment="Adornment.End"
+                                  AdornmentIcon="@(_mostrarSenha ? Icons.Material.Filled.VisibilityOff : Icons.Material.Filled.Visibility)"
+                                  OnAdornmentClick="() => _mostrarSenha = !_mostrarSenha"
+                                  Disabled="_carregando"
+                                  Required="true" />
+
+                    <MudButton ButtonType="ButtonType.Submit"
+                               Variant="Variant.Filled"
+                               Color="Color.Primary"
+                               FullWidth="true"
+                               Size="Size.Large"
+                               Disabled="_carregando"
+                               Class="mt-2 login-submit">
+                        @if (_carregando)
+                        {
+                            <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2" />
+                            <span>Entrando...</span>
+                        }
+                        else
+                        {
+                            <span>Entrar</span>
+                        }
+                    </MudButton>
+                </MudStack>
+            </EditForm>
+        </div>
     </div>
-</MudPaper>
+</div>
 
 @code {
     private readonly LoginRequestDto _request = new();

@@ -8,7 +8,7 @@ public static class VendaCalculoHelper
         itens.Sum(i => i.Subtotal);
 
     public static decimal CalcularTotal(IEnumerable<ItemCarrinhoVenda> itens) =>
-        CalcularSubtotal(itens) - itens.Sum(i => i.Desconto);
+        CalcularSubtotal(itens);
 
     public static int ContarItensPorTipo(IEnumerable<VendaDto> vendas, string tipo) =>
         vendas.SelectMany(v => v.Itens).Where(i => string.Equals(i.Tipo, tipo, StringComparison.OrdinalIgnoreCase)).Sum(i => i.Quantidade);
@@ -55,9 +55,5 @@ public sealed class ItemCarrinhoVenda
     public string Categoria { get; init; } = string.Empty;
     public decimal ValorUnitario { get; set; }
     public int Quantidade { get; set; } = 1;
-    public decimal Desconto { get; set; }
-    public string? Cupom { get; set; }
-    public string? Observacao { get; set; }
-    public decimal? ComissaoPercentual { get; set; }
     public decimal Subtotal => ValorUnitario * Quantidade;
 }

@@ -31,7 +31,6 @@ public class ClienteApiService(
                     x.WhatsApp.Contains(busca) ||
                     x.Email?.ToLowerInvariant().Contains(busca) == true ||
                     x.Instagram?.ToLowerInvariant().Contains(busca) == true ||
-                    x.Facebook?.ToLowerInvariant().Contains(busca) == true ||
                     ProfissoesHelper.ContemBusca(x.Profissao, busca) ||
                     x.Endereco.ToLowerInvariant().Contains(busca))
                 .ToList();
@@ -79,7 +78,6 @@ public class ClienteApiService(
         dto.WhatsApp = FormatacaoCampos.Telefone(dto.WhatsApp);
         dto.Email = string.IsNullOrWhiteSpace(dto.Email) ? null : dto.Email.Trim();
         dto.Instagram = string.IsNullOrWhiteSpace(dto.Instagram) ? null : dto.Instagram.Trim();
-        dto.Facebook = string.IsNullOrWhiteSpace(dto.Facebook) ? null : dto.Facebook.Trim();
         dto.Profissao = ProfissoesHelper.Limpar(dto.Profissao);
         dto.DataNascimento = ApiDateTimeHelper.NormalizarDataNascimento(dto.DataNascimento);
         return dto;
