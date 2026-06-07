@@ -1,0 +1,62 @@
+<MudTextField Value="_exibicao"
+              ValueChanged="@(async (string? v) => await AoDigitar(v))"
+              Label="@Rotulo"
+              Variant="Variant.Outlined"
+              Margin="Margin.Dense"
+              Required="@Obrigatorio"
+              Error="@ComErro"
+              ErrorText="@TextoErro"
+              Placeholder="dd/MM/aaaa"
+              MaxLength="10"
+              InputMode="InputMode.numeric"
+              Immediate="true"
+              @onfocusin="AoFocar"
+              @onfocusout="AoDesfocar" />
+
+@code {
+    [Parameter] public string Rotulo { get; set; } = "Data";
+    [Parameter] public DateTime? Valor { get; set; }
+    [Parameter] public EventCallback<DateTime?> ValorChanged { get; set; }
+    [Parameter] public bool Obrigatorio { get; set; }
+    [Parameter] public bool ComErro { get; set; }
+    [Parameter] public string? TextoErro { get; set; }
+
+    private string _exibicao = string.Empty;
+    private bool _focado;
+
+    protected override void OnParametersSet()
+    {
+        if (_focado)
+            return;
+
+        _exibicao = FormatacaoCampos.DataParaCampo(Valor);
+    }
+
+    private void AoFocar(FocusEventArgs _) => _focado = true;
+
+    private void AoDesfocar(FocusEventArgs _)
+    {
+        _focado = false;
+
+        if (string.IsNullOrWhiteSpace(_exibicao))
+            return;
+
+        if (FormatacaoCampos.SoNumeros(_exibicao).Length is > 0 and < 8)
+            _exibicao = FormatacaoCampos.DataParaCampo(Valor);
+    }
+
+    private async Task AoDigitar(string? texto)
+    {
+        _exibicao = FormatacaoCampos.Data(texto);
+
+        if (string.IsNullOrWhiteSpace(_exibicao))
+        {
+            await ValorChanged.InvokeAsync(null);
+            return;
+        }
+
+        var data = FormatacaoCampos.DataDeTexto(_exibicao);
+        if (data.HasValue)
+            await ValorChanged.InvokeAsync(data);
+    }
+}

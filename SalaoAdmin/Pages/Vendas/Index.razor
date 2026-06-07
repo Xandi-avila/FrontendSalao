@@ -28,7 +28,6 @@ else
     {
         <VendaConfirmacao Venda="_vendaRegistrada"
                           NomeCliente="@NomeCliente(_vendaRegistrada.ClienteId)"
-                          FormaPagamentoExibicao="@TextoFormaPagamento(_formaPagamento)"
                           ResolverNomeItem="ResolverNomeItemVenda"
                           OnNovaVenda="ReiniciarVenda" />
     }
@@ -76,7 +75,7 @@ else
         else if (_etapa == EtapaVenda.Checkout)
         {
             <VendaCheckoutResumo ClienteSelecionado="_clienteSelecionado"
-                                 NomeFuncionario="_nomeFuncionario"
+                                 NomeFuncionario="@_nomeFuncionario"
                                  Itens="_carrinho" Total="_totalCarrinho" />
             <MudStack Row="true" Spacing="2" Class="mt-4">
                 <MudButton Variant="Variant.Outlined" OnClick="VoltarPdv">Voltar</MudButton>
@@ -87,9 +86,7 @@ else
         }
         else if (_etapa == EtapaVenda.Pagamento)
         {
-            <VendaPagamentoFicticio Total="_totalCarrinho"
-                                    FormaPagamento="_formaPagamento"
-                                    FormaPagamentoChanged="v => _formaPagamento = v" />
+            <VendaPagamentoFicticio Total="_totalCarrinho" />
             <MudStack Row="true" Spacing="2" Class="mt-4">
                 <MudButton Variant="Variant.Outlined" OnClick="VoltarCheckout" Disabled="_salvando">Voltar</MudButton>
                 <MudButton Variant="Variant.Filled" Color="Color.Success" OnClick="FinalizarVenda"
@@ -117,7 +114,6 @@ else
     private List<ClienteDto> _clientes = [];
     private List<VendaDto> _vendasRecentes = [];
     private VendaDto? _vendaRegistrada;
-    private string _formaPagamento = "DINHEIRO";
     private VendaCardsOperacionais.IndicadoresVenda _indicadores = new();
 
     private decimal _totalCarrinho => VendaCalculoHelper.CalcularTotal(_carrinho);
@@ -169,15 +165,14 @@ else
     {
         _vendasRecentes = await ListarTodasVendasAsync();
         var hoje = DateTime.Today;
-        var vendasHoje = _vendasRecentes.Where(v => v.DataHora.Date == hoje).ToList();
+        var vendasHoje = _vendasRecentes
+            .Where(v => v.DataHora.ToLocalTime().Date == hoje)
+            .ToList();
 
         _indicadores = new VendaCardsOperacionais.IndicadoresVenda
         {
             QuantidadeVendasHoje = vendasHoje.Count,
-            ValorVendidoHoje = vendasHoje.Sum(v => v.Total),
-            QuantidadeTotal = _vendasRecentes.Count,
-            ProdutosVendidos = VendaCalculoHelper.ContarItensPorTipo(_vendasRecentes, TipoItemVenda.Produto),
-            ServicosVendidos = VendaCalculoHelper.ContarItensPorTipo(_vendasRecentes, TipoItemVenda.Servico)
+            ValorVendidoHoje = vendasHoje.Sum(v => v.Total)
         };
     }
 
@@ -280,7 +275,6 @@ else
         _carrinho = [];
         _clienteSelecionado = null;
         _vendaRegistrada = null;
-        _formaPagamento = "DINHEIRO";
         _etapa = EtapaVenda.Pdv;
         _indiceEtapa = 0;
         await CarregarIndicadoresAsync();
@@ -297,13 +291,4 @@ else
             return _servicos.FirstOrDefault(s => s.Id == item.ServicoId)?.Nome ?? "Serviço";
         return VendaExibicaoHelper.TextoTipoItem(item.Tipo);
     }
-
-    private static string TextoFormaPagamento(string id) => id switch
-    {
-        "DINHEIRO" => "Dinheiro",
-        "PIX" => "PIX",
-        "DEBITO" => "Cartão débito",
-        "CREDITO" => "Cartão crédito",
-        _ => "Registro interno"
-    };
 }

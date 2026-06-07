@@ -1,7 +1,7 @@
 @using SalaoAdmin.Dtos.Clientes
 
 <MudGrid Spacing="2">
-    <MudItem xs="12" md="8">
+    <MudItem xs="12" md="6 ">
         <MudTextField @bind-Value="Modelo.NomeCompleto"
                       Label="Nome completo"
                       Variant="Variant.Outlined"
@@ -10,15 +10,15 @@
                       Error="@TemErro(nameof(Modelo.NomeCompleto))"
                       ErrorText="@MsgErro(nameof(Modelo.NomeCompleto))" />
     </MudItem>
-    <MudItem xs="12" md="4">
+    <MudItem xs="12" md="6">
         <CampoTelefone Valor="@Modelo.WhatsApp"
                        ValorChanged="@(v => Modelo.WhatsApp = v ?? string.Empty)"
-                       Rotulo="WhatsApp"
+                       Rotulo="Telefone / WhatsApp"
                        Obrigatorio="true"
                        ComErro="@TemErro(nameof(Modelo.WhatsApp))"
                        TextoErro="@MsgErro(nameof(Modelo.WhatsApp))" />
     </MudItem>
-    <MudItem xs="12" md="4">
+    <MudItem xs="12" md="6">
         <MudTextField @bind-Value="Modelo.Email"
                       Label="E-mail"
                       Variant="Variant.Outlined"
@@ -27,18 +27,13 @@
                       Error="@TemErro(nameof(Modelo.Email))"
                       ErrorText="@MsgErro(nameof(Modelo.Email))" />
     </MudItem>
-    <MudItem xs="12" md="4">
+    <MudItem xs="12" md="6">
         <MudTextField @bind-Value="Modelo.Instagram"
-                      Label="Instagram"
+                      Label="Redes Social"
                       Variant="Variant.Outlined"
                       Margin="Margin.Dense"
-                      Placeholder="usuario" />
-    </MudItem>
-    <MudItem xs="12" md="4">
-        <MudTextField @bind-Value="Modelo.Facebook"
-                      Label="Facebook"
-                      Variant="Variant.Outlined"
-                      Margin="Margin.Dense" />
+                      Error="@TemErro(nameof(Modelo.Instagram))"
+                      ErrorText="@MsgErro(nameof(Modelo.Instagram))"            />
     </MudItem>
     <MudItem xs="12" md="6">
         <MudTextField T="string"
@@ -46,17 +41,14 @@
                       ValueChanged="EventCallback.Factory.Create<string>(this, AtualizarProfissao)"
                       Label="Profissões (opcional, separe por vírgula)"
                       Variant="Variant.Outlined"
-                      Margin="Margin.Dense"
-                      Lines="2" />
+                      Margin="Margin.Dense"/>
     </MudItem>
-    <MudItem xs="12" md="3">
-        <MudDatePicker @bind-Date="Modelo.DataNascimento"
-                       Label="Data de nascimento"
-                       Variant="Variant.Outlined"
-                       Margin="Margin.Dense"
-                       DateFormat="dd/MM/yyyy"
-                       Editable="true"
-                       Clearable="true" />
+    <MudItem xs="12" md="6">
+        <CampoData Valor="@Modelo.DataNascimento"
+                   ValorChanged="@(v => Modelo.DataNascimento = v)"
+                   Rotulo="Data de nascimento"
+                   ComErro="@TemErro(nameof(Modelo.DataNascimento))"
+                   TextoErro="@MsgErro(nameof(Modelo.DataNascimento))" />
     </MudItem>
     <MudItem xs="12">
         <MudTextField @bind-Value="Modelo.Endereco"
