@@ -1,9 +1,15 @@
+using SalaoAdmin.Dtos.Vendas;
+
 namespace SalaoAdmin.Utilitarios;
 
 public static class VendaExibicaoHelper
 {
-    public static string NumeroAmigavel(Guid id) =>
-        $"#{id.ToString("N")[..8].ToUpperInvariant()}";
+    public static string NumeroAmigavel(VendaDto venda) => VendaNumeroHelper.Formatar(venda);
+
+    public static string NumeroAmigavel(int numero) => $"#{numero}";
+
+    [Obsolete("Use NumeroAmigavel(VendaDto) ou NumeroAmigavel(int).")]
+    public static string NumeroAmigavel(Guid id) => VendaNumeroHelper.Formatar(null, id);
 
     public static string TextoStatus() => "Registrada";
 

@@ -25,3 +25,9 @@ public class AnaliseFaturamentoDto
     public decimal Faturamento { get; set; }
     public decimal Valor { get; set; }
 }
+
+public class ResumoFaturamentoVenda
+{
+    public int Quantidade { get; init; }
+    public decimal Valor { get; init; }
+}

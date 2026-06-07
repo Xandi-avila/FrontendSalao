@@ -9,7 +9,7 @@
 @inject IServicoNotificacao Notificacoes
 
 <CabecalhoPagina Titulo="Agenda e Agendamentos"
-                 Subtitulo="Assistente operacional flexível — alertas inteligentes, sem bloqueio rígido de horários" />
+                 Subtitulo="Agenda inteligente e flexivel." />
 
 <MudPaper Class="pa-4 mb-4">
     <MudGrid Spacing="2">
@@ -43,7 +43,6 @@
             </MudSelect>
         </MudItem>
         <MudItem xs="12" md="8">
-            <MudText Typo="Typo.caption" Color="Color.Secondary" Class="mb-1">Período da lista e do calendário</MudText>
             <MudButtonGroup Variant="Variant.Outlined" Class="mb-2">
                 <MudButton OnClick="@(() => AplicarPeriodo(PeriodoAgenda.Hoje))"
                            Color="@CorBotaoPeriodo(PeriodoAgenda.Hoje)">Hoje</MudButton>
@@ -81,7 +80,7 @@
 }
 else
 {
-    <MudTabs @bind-ActivePanelIndex="_abaAtiva" Class="mb-4">
+    <MudTabs ActivePanelIndex="_abaAtiva" ActivePanelIndexChanged="AoMudarAba" Class="mb-4">
         <MudTabPanel Text="Agenda operacional" Icon="@Icons.Material.Filled.Event">
             <MudGrid Spacing="2" Class="mt-2 mb-3">
                 <MudItem xs="6" sm="4" md="2">
@@ -98,7 +97,7 @@ else
                 </MudItem>
                 <MudItem xs="6" sm="4" md="2">
                     <MudPaper Class="pa-3 agenda-card-op" Outlined="true">
-                        <MudText Typo="Typo.caption" Color="Color.Secondary">Profissionais</MudText>
+                        <MudText Typo="Typo.caption" Color="Color.Secondary">Profissionais ativos</MudText>
                         <MudText Typo="Typo.h5">@_funcionarios.Count</MudText>
                     </MudPaper>
                 </MudItem>
@@ -142,10 +141,13 @@ else
                 <MudExpansionPanel Text="Consultar horários livres" Icon="@Icons.Material.Filled.Schedule">
                     <MudGrid Spacing="2">
                         <MudItem xs="12" sm="5">
-                            <MudSelect T="Guid" Label="Serviço" Variant="Variant.Outlined" Margin="Margin.Dense" @bind-Value="_servicoHorariosLivresId">
+                            <MudSelect T="Guid?" Label="Serviço" Variant="Variant.Outlined" Margin="Margin.Dense"
+                                       Value="_servicoHorariosLivresId" ValueChanged="v => _servicoHorariosLivresId = v"
+                                       ToStringFunc="TextoServicoHorariosLivres">
+                                <MudSelectItem T="Guid?" Value="@((Guid?)null)">Selecione o serviço</MudSelectItem>
                                 @foreach (var servico in _servicos)
                                 {
-                                    <MudSelectItem T="Guid" Value="@servico.Id">@($"{servico.Nome} ({servico.DuracaoMinutos} min)")</MudSelectItem>
+                                    <MudSelectItem T="Guid?" Value="@((Guid?)servico.Id)">@($"{servico.Nome} ({servico.DuracaoMinutos} min)")</MudSelectItem>
                                 }
                             </MudSelect>
                         </MudItem>
@@ -154,7 +156,7 @@ else
                         </MudItem>
                         <MudItem xs="12" sm="3" Class="d-flex align-end">
                             <MudButton Variant="Variant.Filled" Color="Color.Info" FullWidth="true"
-                                       OnClick="AbrirHorariosLivresGeral" Disabled="@(_servicoHorariosLivresId == Guid.Empty)">
+                                       OnClick="AbrirHorariosLivresGeral" Disabled="@(!_servicoHorariosLivresId.HasValue || _servicoHorariosLivresId == Guid.Empty)">
                                 Ver horários
                             </MudButton>
                         </MudItem>
@@ -166,6 +168,9 @@ else
                                    ModoChanged="AoAlterarModoCalendario"
                                    DataReferencia="_dataCalendario"
                                    DataReferenciaChanged="AoAlterarDataCalendario"
+                                   PeriodoInicio="_filtroInicio"
+                                   PeriodoFim="_filtroFim"
+                                   PeriodoPersonalizadoChanged="AoAlterarPeriodoPersonalizadoCalendario"
                                    FuncionarioFiltroId="_funcionarioSelecionadoId"
                                    Funcionarios="_funcionarios"
                                    Eventos="_eventosCalendario"
@@ -235,7 +240,7 @@ else
             @if (!ModoTodosFuncionarios && _funcionarioSelecionadoId.HasValue)
             {
                 <MudAlert Severity="Severity.Info" Dense="true" Class="mt-3 mb-3">
-                    Opcional: janelas sugeridas para busca de horários. Não bloqueiam agendamentos — o salão pode flexibilizar.
+                    janelas sugeridas para busca de horários, bloqueiam agendamento se o funcionario não tiver horarios.
                 </MudAlert>
                 <MudPaper Class="pa-4 mb-4 mt-3">
                     <MudText Typo="Typo.h6" Class="mb-1">Adicionar disponibilidade — @NomeFuncionario(_funcionarioSelecionadoId.Value)</MudText>
@@ -310,16 +315,6 @@ else
                 <MudStack Row="true" Justify="Justify.FlexEnd" Class="mt-4">
                     <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="SalvarAgenda">Salvar preferências</MudButton>
                 </MudStack>
-
-                <MudPaper Class="pa-4 mt-4" Outlined="true">
-                    <MudText Typo="Typo.h6" Class="mb-1">Pausas, almoço e exceções</MudText>
-                    <MudText Typo="Typo.caption" Color="Color.Secondary" Class="mb-2">
-                        Estrutura preparada para cadastro futuro de pausas, horário de almoço, feriados e dias especiais.
-                    </MudText>
-                    <MudAlert Severity="Severity.Info" Dense="true">
-                        Em breve: bloqueios opcionais de horário (almoço, pausa) e exceções por data — sem bloquear agendamentos manualmente.
-                    </MudAlert>
-                </MudPaper>
             }
         </MudTabPanel>
 
@@ -337,7 +332,8 @@ else
                 @if (ModoTodosFuncionarios)
                 {
                     <MudSelect T="Guid?" Label="Funcionário" Variant="Variant.Outlined" Margin="Margin.Dense"
-                               Value="_formFuncionarioId" ValueChanged="AoAlterarFormFuncionario">
+                               Value="_formFuncionarioId" ValueChanged="AoAlterarFormFuncionario"
+                               ToStringFunc="TextoFuncionarioFormulario">
                         <MudSelectItem T="Guid?" Value="@((Guid?)null)">Selecione o profissional</MudSelectItem>
                         @foreach (var f in _funcionarios)
                         {
@@ -353,7 +349,8 @@ else
             </MudItem>
             <MudItem xs="12">
                 <MudSelect T="Guid?" Label="Cliente" Variant="Variant.Outlined" Margin="Margin.Dense"
-                           Value="_formClienteId" ValueChanged="AoAlterarFormCliente">
+                           Value="_formClienteId" ValueChanged="AoAlterarFormCliente"
+                           ToStringFunc="TextoClienteFormulario">
                     <MudSelectItem T="Guid?" Value="@((Guid?)null)">Selecione o cliente</MudSelectItem>
                     @foreach (var cliente in _clientes)
                     {
@@ -363,7 +360,8 @@ else
             </MudItem>
             <MudItem xs="12">
                 <MudSelect T="Guid?" Label="Serviço" Variant="Variant.Outlined" Margin="Margin.Dense"
-                           Value="_formServicoId" ValueChanged="AoAlterarFormServico">
+                           Value="_formServicoId" ValueChanged="AoAlterarFormServico"
+                           ToStringFunc="TextoServicoFormulario">
                     <MudSelectItem T="Guid?" Value="@((Guid?)null)">Selecione o serviço</MudSelectItem>
                     @foreach (var servico in _servicos)
                     {
@@ -458,17 +456,19 @@ else
         }
         else
         {
-            <MudStack Spacing="1" Style="max-height:400px;overflow-y:auto">
+            <MudStack Spacing="2" Style="max-height:420px;overflow-y:auto; padding-right:4px;">
                 @foreach (var slot in _slotsLivres)
                 {
-                    <MudButton Variant="Variant.Outlined" FullWidth="true" Class="justify-start"
-                               OnClick="@(() => SelecionarSlot(slot))">
-                        @if (ModoTodosFuncionarios || _funcionarioSelecionadoId is null)
-                        {
-                            <span><strong>@slot.NomeFuncionario</strong> — </span>
-                        }
-                        <span>@slot.Inicio.ToString("dd/MM HH:mm") até @slot.Fim.ToString("HH:mm")</span>
-                    </MudButton>
+                    <MudPaper Class="pa-2 horario-livre-item" Outlined="true">
+                        <MudButton Variant="Variant.Text" FullWidth="true" Class="justify-start horario-livre-botao"
+                                   OnClick="@(() => SelecionarSlot(slot))">
+                            @if (ModoTodosFuncionarios || _funcionarioSelecionadoId is null)
+                            {
+                                <span><strong>@slot.NomeFuncionario</strong> — </span>
+                            }
+                            <span>@slot.Inicio.ToString("dd/MM HH:mm") até @slot.Fim.ToString("HH:mm")</span>
+                        </MudButton>
+                    </MudPaper>
                 }
             </MudStack>
         }
@@ -503,12 +503,12 @@ else
     private int _cardConflitosHoje;
     private string _cardProximoAtendimento = "—";
 
-    private PeriodoAgenda _periodo = PeriodoAgenda.Semana;
+    private PeriodoAgenda _periodo = PeriodoAgenda.Hoje;
     private DateTime? _filtroInicio;
     private DateTime? _filtroFim;
     private int _abaAtiva;
 
-    private AgendaCalendarioVisao.ModoCalendario _modoCalendario = AgendaCalendarioVisao.ModoCalendario.Semana;
+    private AgendaCalendarioVisao.ModoCalendario _modoCalendario = AgendaCalendarioVisao.ModoCalendario.Dia;
     private DateTime _dataCalendario = DateTime.Today;
 
     private bool _carregandoInicial = true;
@@ -527,7 +527,7 @@ else
 
     private AgendaPainelGerencial.IndicadoresGerenciais _indicadoresGerenciais = new();
 
-    private Guid _servicoHorariosLivresId;
+    private Guid? _servicoHorariosLivresId;
     private DateTime? _dataHorariosLivres = DateTime.Today;
 
     private int _diaSelecionado = ObterDiaSemanaPadrao();
@@ -547,7 +547,7 @@ else
     protected override async Task OnInitializedAsync()
     {
         await CarregarCatalogosAsync();
-        DefinirIntervaloPeriodo(PeriodoAgenda.Semana);
+        DefinirIntervaloPeriodo(PeriodoAgenda.Hoje);
         await CarregarDadosAgendaAsync();
         AtualizarEventosCalendario();
         _carregandoInicial = false;
@@ -555,18 +555,23 @@ else
 
     private async Task CarregarCatalogosAsync()
     {
-        var funcionarios = await FuncionarioServico.ListarAsync(new FiltroPaginacao { Pagina = 1, ItensPorPagina = 100 });
+        var funcionariosTask = FuncionarioServico.ListarAsync(new FiltroPaginacao { Pagina = 1, ItensPorPagina = 100 });
+        var clientesTask = ClienteServico.ListarAsync(new FiltroPaginacao { Pagina = 1, ItensPorPagina = 200 });
+        var servicosTask = ServicoCatalogoServico.ListarAsync(new FiltroPaginacao { Pagina = 1, ItensPorPagina = 200 });
+        await Task.WhenAll(funcionariosTask, clientesTask, servicosTask);
+
+        var funcionarios = await funcionariosTask;
         if (funcionarios.Sucesso && funcionarios.Dados is not null)
             _funcionarios = funcionarios.Dados.Itens
                 .Where(f => f.Status == StatusRegistro.Ativo)
                 .OrderBy(f => f.NomeCompleto)
                 .ToList();
 
-        var clientes = await ClienteServico.ListarAsync(new FiltroPaginacao { Pagina = 1, ItensPorPagina = 200 });
+        var clientes = await clientesTask;
         if (clientes.Sucesso && clientes.Dados is not null)
             _clientes = clientes.Dados.Itens.OrderBy(c => c.NomeCompleto).ToList();
 
-        var servicos = await ServicoCatalogoServico.ListarAsync(new FiltroPaginacao { Pagina = 1, ItensPorPagina = 200 });
+        var servicos = await servicosTask;
         if (servicos.Sucesso && servicos.Dados is not null)
         {
             _servicos = servicos.Dados.Itens.OrderBy(s => s.Nome).ToList();
@@ -578,8 +583,7 @@ else
     private async Task CarregarDadosAgendaAsync()
     {
         _carregandoDados = true;
-        await CarregarAgendamentosGlobaisAsync();
-        await CarregarTodasJanelasAsync();
+        await Task.WhenAll(CarregarAgendamentosGlobaisAsync(), CarregarTodasJanelasAsync());
 
         if (_funcionarioSelecionadoId.HasValue)
             await CarregarAgendaFuncionarioAsync(_funcionarioSelecionadoId.Value);
@@ -592,7 +596,7 @@ else
     private async Task CarregarAgendamentosGlobaisAsync()
     {
         if (!_filtroInicio.HasValue || !_filtroFim.HasValue)
-            DefinirIntervaloPeriodo(PeriodoAgenda.Semana);
+            DefinirIntervaloPeriodo(PeriodoAgenda.Hoje);
 
         var todos = new List<AgendamentoDto>();
         var pagina = 1;
@@ -654,9 +658,9 @@ else
             : $"{proximo.DataHoraInicio:HH:mm} — {NomeCliente(proximo.ClienteId)} ({NomeFuncionario(proximo.FuncionarioId)})";
 
         _cardHorariosLivresHoje = 0;
-        if (_servicoHorariosLivresId != Guid.Empty)
+        if (_servicoHorariosLivresId.HasValue && _servicoHorariosLivresId != Guid.Empty)
         {
-            var duracao = ObterDuracaoServico(_servicoHorariosLivresId);
+            var duracao = ObterDuracaoServico(_servicoHorariosLivresId.Value);
             foreach (var f in _funcionarios)
             {
                 _janelasPorFuncionario.TryGetValue(f.Id, out var janelas);
@@ -669,17 +673,23 @@ else
 
     private async Task CarregarTodasJanelasAsync()
     {
-        var dict = new Dictionary<Guid, List<JanelaAgendaDto>>();
-        foreach (var funcionario in _funcionarios)
+        if (_funcionarios.Count == 0)
         {
-            var resultado = await AgendaServico.ListarPorFuncionarioAsync(funcionario.Id);
-            if (resultado.Sucesso && resultado.Dados is not null)
-                dict[funcionario.Id] = resultado.Dados.Select(NormalizarJanelaDiaSemana).ToList();
-            else
-                dict[funcionario.Id] = [];
+            _janelasPorFuncionario = new Dictionary<Guid, List<JanelaAgendaDto>>();
+            return;
         }
 
-        _janelasPorFuncionario = dict;
+        var tarefas = _funcionarios.Select(async funcionario =>
+        {
+            var resultado = await AgendaServico.ListarPorFuncionarioAsync(funcionario.Id);
+            var janelas = resultado.Sucesso && resultado.Dados is not null
+                ? resultado.Dados.Select(NormalizarJanelaDiaSemana).ToList()
+                : [];
+            return (funcionario.Id, janelas);
+        });
+
+        var resultados = await Task.WhenAll(tarefas);
+        _janelasPorFuncionario = resultados.ToDictionary(x => x.Id, x => x.janelas);
     }
 
     private async Task AoSelecionarFuncionario(Guid? id)
@@ -743,7 +753,16 @@ else
         }
 
         _agendamentosExibidos = query.OrderBy(a => a.DataHoraInicio).ToList();
-        _ = CarregarIndicadoresGerenciaisAsync();
+        if (_abaAtiva == 2)
+            _ = CarregarIndicadoresGerenciaisAsync();
+    }
+
+    private Task AoMudarAba(int indice)
+    {
+        _abaAtiva = indice;
+        if (indice == 2)
+            _ = CarregarIndicadoresGerenciaisAsync();
+        return Task.CompletedTask;
     }
 
     private async Task CarregarIndicadoresGerenciaisAsync()
@@ -798,8 +817,8 @@ else
 
     private (DateTime Inicio, DateTime Fim) ObterIntervaloCalendario()
     {
-        if (_modoCalendario == AgendaCalendarioVisao.ModoCalendario.Dia)
-            return (_dataCalendario.Date, _dataCalendario.Date);
+        if (_filtroInicio.HasValue && _filtroFim.HasValue)
+            return (_filtroInicio.Value.Date, _filtroFim.Value.Date);
 
         if (_modoCalendario == AgendaCalendarioVisao.ModoCalendario.Mes)
         {
@@ -807,8 +826,7 @@ else
             return (ini, ini.AddMonths(1).AddDays(-1));
         }
 
-        var inicio = AgendaCalculoHelper.ObterInicioSemana(_dataCalendario);
-        return (inicio, inicio.AddDays(6));
+        return (DateTime.Today, DateTime.Today);
     }
 
     private Task AoAlterarFiltroStatus(string? status)
@@ -916,10 +934,16 @@ else
         _dialogoAgendamentoAberto = true;
     }
 
-    private void AbrirHorariosLivresGeral() => CalcularEMostrarSlots(
-        _servicoHorariosLivresId,
-        _dataHorariosLivres ?? DateTime.Today,
-        _funcionarioSelecionadoId);
+    private void AbrirHorariosLivresGeral()
+    {
+        if (!_servicoHorariosLivresId.HasValue || _servicoHorariosLivresId == Guid.Empty)
+            return;
+
+        CalcularEMostrarSlots(
+            _servicoHorariosLivresId.Value,
+            _dataHorariosLivres ?? DateTime.Today,
+            _funcionarioSelecionadoId);
+    }
 
     private void AbrirHorariosLivresDoDialogo() => CalcularEMostrarSlots(
         _formServicoId ?? Guid.Empty,
@@ -968,7 +992,9 @@ else
 
     private string TextoHorariosLivres()
     {
-        var servicoId = _dialogoAgendamentoAberto ? _agendamentoCadastro.ServicoId : _servicoHorariosLivresId;
+        var servicoId = _dialogoAgendamentoAberto
+            ? _agendamentoCadastro.ServicoId
+            : (_servicoHorariosLivresId ?? Guid.Empty);
         var data = _dialogoAgendamentoAberto ? (_agendamentoData ?? DateTime.Today) : (_dataHorariosLivres ?? DateTime.Today);
         var nome = _servicos.FirstOrDefault(s => s.Id == servicoId)?.Nome ?? "serviço";
         return $"Clique em um horário para agendar {nome} em {data:dd/MM/yyyy}.";
@@ -988,47 +1014,80 @@ else
             case PeriodoAgenda.Hoje:
                 _filtroInicio = hoje; _filtroFim = hoje; break;
             case PeriodoAgenda.Semana:
-                _filtroInicio = AgendaCalculoHelper.ObterInicioSemana(hoje);
-                _filtroFim = _filtroInicio.Value.AddDays(6); break;
+                _filtroInicio = hoje;
+                _filtroFim = AgendaCalculoHelper.ObterFimProximosDias(hoje); break;
             case PeriodoAgenda.Mes:
-                _filtroInicio = new DateTime(hoje.Year, hoje.Month, 1);
-                _filtroFim = _filtroInicio.Value.AddMonths(1).AddDays(-1); break;
+                _filtroInicio = hoje;
+                _filtroFim = new DateTime(hoje.Year, hoje.Month, DateTime.DaysInMonth(hoje.Year, hoje.Month)); break;
             case PeriodoAgenda.Personalizado:
-                _filtroInicio ??= hoje; _filtroFim ??= hoje.AddDays(7); break;
+                _filtroInicio ??= hoje.AddDays(-6);
+                _filtroFim ??= hoje;
+                if (_filtroInicio == _filtroFim)
+                {
+                    _filtroInicio = hoje.AddDays(-6);
+                    _filtroFim = hoje;
+                }
+                break;
         }
+
+        _modoCalendario = periodo switch
+        {
+            PeriodoAgenda.Hoje => AgendaCalendarioVisao.ModoCalendario.Dia,
+            PeriodoAgenda.Semana => AgendaCalendarioVisao.ModoCalendario.Semana,
+            PeriodoAgenda.Mes => AgendaCalendarioVisao.ModoCalendario.Mes,
+            PeriodoAgenda.Personalizado => AgendaCalendarioVisao.ModoCalendario.Personalizado,
+            _ => _modoCalendario
+        };
     }
 
     private async Task AplicarPeriodo(PeriodoAgenda periodo)
     {
         DefinirIntervaloPeriodo(periodo);
+        _dataCalendario = DateTime.Today;
         await CarregarAgendamentosGlobaisAsync();
         AtualizarAgendamentosExibidos();
         AtualizarEventosCalendario();
+        if (_abaAtiva == 2)
+            await CarregarIndicadoresGerenciaisAsync();
     }
 
     private async Task AoAlterarFiltroInicio(DateTime? data)
     {
+        _periodo = PeriodoAgenda.Personalizado;
+        _modoCalendario = AgendaCalendarioVisao.ModoCalendario.Personalizado;
         _filtroInicio = data?.Date;
         if (_filtroInicio > _filtroFim) _filtroFim = _filtroInicio;
         await CarregarAgendamentosGlobaisAsync();
         AtualizarAgendamentosExibidos();
         AtualizarEventosCalendario();
+        if (_abaAtiva == 2)
+            await CarregarIndicadoresGerenciaisAsync();
     }
 
     private async Task AoAlterarFiltroFim(DateTime? data)
     {
+        _periodo = PeriodoAgenda.Personalizado;
+        _modoCalendario = AgendaCalendarioVisao.ModoCalendario.Personalizado;
         _filtroFim = data?.Date;
         if (_filtroFim < _filtroInicio) _filtroInicio = _filtroFim;
         await CarregarAgendamentosGlobaisAsync();
         AtualizarAgendamentosExibidos();
         AtualizarEventosCalendario();
+        if (_abaAtiva == 2)
+            await CarregarIndicadoresGerenciaisAsync();
     }
 
-    private Task AoAlterarModoCalendario(AgendaCalendarioVisao.ModoCalendario modo)
+    private async Task AoAlterarModoCalendario(AgendaCalendarioVisao.ModoCalendario modo)
     {
-        _modoCalendario = modo;
-        AtualizarEventosCalendario();
-        return Task.CompletedTask;
+        var periodo = modo switch
+        {
+            AgendaCalendarioVisao.ModoCalendario.Dia => PeriodoAgenda.Hoje,
+            AgendaCalendarioVisao.ModoCalendario.Semana => PeriodoAgenda.Semana,
+            AgendaCalendarioVisao.ModoCalendario.Mes => PeriodoAgenda.Mes,
+            AgendaCalendarioVisao.ModoCalendario.Personalizado => PeriodoAgenda.Personalizado,
+            _ => _periodo
+        };
+        await AplicarPeriodo(periodo);
     }
 
     private Task AoAlterarDataCalendario(DateTime data)
@@ -1036,6 +1095,23 @@ else
         _dataCalendario = data;
         AtualizarEventosCalendario();
         return Task.CompletedTask;
+    }
+
+    private async Task AoAlterarPeriodoPersonalizadoCalendario((DateTime? Inicio, DateTime? Fim) intervalo)
+    {
+        _periodo = PeriodoAgenda.Personalizado;
+        _modoCalendario = AgendaCalendarioVisao.ModoCalendario.Personalizado;
+        if (intervalo.Inicio.HasValue)
+            _filtroInicio = intervalo.Inicio.Value.Date;
+        if (intervalo.Fim.HasValue)
+            _filtroFim = intervalo.Fim.Value.Date;
+        if (_filtroInicio > _filtroFim)
+            _filtroFim = _filtroInicio;
+        await CarregarAgendamentosGlobaisAsync();
+        AtualizarAgendamentosExibidos();
+        AtualizarEventosCalendario();
+        if (_abaAtiva == 2)
+            await CarregarIndicadoresGerenciaisAsync();
     }
 
     private Color CorBotaoPeriodo(PeriodoAgenda periodo) => _periodo == periodo ? Color.Primary : Color.Default;
@@ -1323,6 +1399,23 @@ else
     private string NomeCliente(Guid id) => _clientes.FirstOrDefault(x => x.Id == id)?.NomeCompleto ?? "—";
     private string NomeFuncionario(Guid id) => _funcionarios.FirstOrDefault(x => x.Id == id)?.NomeCompleto ?? "—";
     private string NomeServico(Guid id) => _servicos.FirstOrDefault(x => x.Id == id)?.Nome ?? "—";
+
+    private string TextoFuncionarioFormulario(Guid? id) =>
+        id is null || id == Guid.Empty ? "Selecione o profissional" : NomeFuncionario(id.Value);
+
+    private string TextoClienteFormulario(Guid? id) =>
+        id is null || id == Guid.Empty ? "Selecione o cliente" : NomeCliente(id.Value);
+
+    private string TextoServicoFormulario(Guid? id)
+    {
+        if (id is null || id == Guid.Empty)
+            return "Selecione o serviço";
+
+        var servico = _servicos.FirstOrDefault(s => s.Id == id);
+        return servico is null ? "Serviço não encontrado" : $"{servico.Nome} ({servico.DuracaoMinutos} min)";
+    }
+
+    private string TextoServicoHorariosLivres(Guid? id) => TextoServicoFormulario(id);
     private static string ResumoNome(string nome) => string.IsNullOrWhiteSpace(nome) ? "—" : nome.Split(' ')[0];
 
     private static string TextoStatusAgendamento(string status, Guid id) => status.ToUpperInvariant() switch

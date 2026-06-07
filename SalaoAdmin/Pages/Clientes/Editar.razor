@@ -45,7 +45,10 @@ else
             {
                 Id = c.Id,
                 NomeCompleto = c.NomeCompleto,
-                WhatsApp = c.WhatsApp,
+                WhatsApp = FormatacaoCampos.Telefone(c.WhatsApp),
+                Email = c.Email,
+                Instagram = c.Instagram,
+                Profissao = c.Profissao ?? [],
                 DataNascimento = c.DataNascimento,
                 Endereco = c.Endereco
             };

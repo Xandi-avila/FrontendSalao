@@ -2,7 +2,7 @@
     <MudItem xs="12">
         <MudText Typo="Typo.h6" Class="mb-1">Visão gerencial</MudText>
         <MudText Typo="Typo.caption" Color="Color.Secondary">
-            Indicadores do período selecionado — @TextoPeriodo
+          @TextoPeriodo
         </MudText>
     </MudItem>
 
@@ -50,7 +50,25 @@
             }
         </MudPaper>
     </MudItem>
-
+    <MudItem xs="12" md="6">
+        <MudPaper Class="pa-4" Outlined="true">
+            <MudText Typo="Typo.subtitle1" Class="mb-3">Cancelamentos por profissional</MudText>
+            @if (Indicadores.CancelamentosPorFuncionario.Count == 0)
+            {
+                <MudText Typo="Typo.body2" Color="Color.Secondary">Nenhum cancelamento no período.</MudText>
+            }
+            @foreach (var item in Indicadores.CancelamentosPorFuncionario)
+            {
+                <div class="agenda-barra-linha">
+                    <span class="agenda-barra-label">@item.Nome</span>
+                    <div class="agenda-barra-track">
+                        <div class="agenda-barra-fill agenda-barra-erro" style="width:@($"{item.Percentual:0.#}")%"></div>
+                    </div>
+                    <span class="agenda-barra-valor">@item.Quantidade</span>
+                </div>
+            }
+        </MudPaper>
+    </MudItem>
     <MudItem xs="12" md="6">
         <MudPaper Class="pa-4" Outlined="true">
             <MudText Typo="Typo.subtitle1" Class="mb-3">Serviços mais realizados</MudText>
@@ -91,25 +109,7 @@
         </MudPaper>
     </MudItem>
 
-    <MudItem xs="12" md="6">
-        <MudPaper Class="pa-4" Outlined="true">
-            <MudText Typo="Typo.subtitle1" Class="mb-3">Cancelamentos por profissional</MudText>
-            @if (Indicadores.CancelamentosPorFuncionario.Count == 0)
-            {
-                <MudText Typo="Typo.body2" Color="Color.Secondary">Nenhum cancelamento no período.</MudText>
-            }
-            @foreach (var item in Indicadores.CancelamentosPorFuncionario)
-            {
-                <div class="agenda-barra-linha">
-                    <span class="agenda-barra-label">@item.Nome</span>
-                    <div class="agenda-barra-track">
-                        <div class="agenda-barra-fill agenda-barra-erro" style="width:@($"{item.Percentual:0.#}")%"></div>
-                    </div>
-                    <span class="agenda-barra-valor">@item.Quantidade</span>
-                </div>
-            }
-        </MudPaper>
-    </MudItem>
+    
 </MudGrid>
 
 @code {

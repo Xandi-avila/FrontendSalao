@@ -1,8 +1,8 @@
 @using SalaoAdmin.Dtos.Funcionarios
 @using SalaoAdmin.Enums
 
-<MudGrid Spacing="3">
-    <MudItem xs="12" md="8">
+<MudGrid Spacing="2">
+    <MudItem xs="12" md="6">
         <MudTextField @bind-Value="Modelo.NomeCompleto"
                       Label="Nome completo"
                       Variant="Variant.Outlined"
@@ -11,9 +11,9 @@
                       Error="@TemErro(nameof(Modelo.NomeCompleto))"
                       ErrorText="@MsgErro(nameof(Modelo.NomeCompleto))" />
     </MudItem>
-    <MudItem xs="12" md="4">
+    <MudItem xs="12" md="6">
         <MudSelect @bind-Value="Modelo.NivelPermissao"
-                   Label="Função de acesso"
+                   Label="Permissão de acesso"
                    Variant="Variant.Outlined"
                    Margin="Margin.Dense"
                    Required="true">
@@ -30,6 +30,8 @@
                       Margin="Margin.Dense"
                       InputType="InputType.Email"
                       Required="true"
+                      Immediate="true"
+                      @bind-Value:after="NormalizarEmail"
                       Error="@TemErro(nameof(Modelo.Email))"
                       ErrorText="@MsgErro(nameof(Modelo.Email))" />
     </MudItem>
@@ -44,36 +46,50 @@
                       ErrorText="@MsgErro(nameof(Modelo.Senha))" />
     </MudItem>
     <MudItem xs="12" md="6">
-        <MudTextField @bind-Value="Modelo.Telefone"
-                       Rotulo="Telefone / WhatsApp"
+        <CampoTelefone Valor="@Modelo.Telefone"
+                       ValorChanged="@(v => Modelo.Telefone = v ?? string.Empty)"
+                       Rotulo="Telefone / WhastApp"
                        Obrigatorio="true"
                        ComErro="@TemErro(nameof(Modelo.Telefone))"
                        TextoErro="@MsgErro(nameof(Modelo.Telefone))" />
     </MudItem>
     <MudItem xs="12" md="6">
-        <MudTextField @bind-Value="Modelo.ProfissaoCargo"
-                      Label="Profissão / Cargo"
+        <CampoCpf Valor="@Modelo.CPF"
+                  ValorChanged="@(v => Modelo.CPF = v)"
+                  ComErro="@TemErro(nameof(Modelo.CPF))"
+                  TextoErro="@MsgErro(nameof(Modelo.CPF))" />
+    </MudItem>
+    <MudItem xs="12" md="6">
+        <MudTextField T="string"
+                      Value="_profissoesTexto"
+                      ValueChanged="EventCallback.Factory.Create<string>(this, AtualizarProfissoes)"
+                      Label="Profissões (separe por vírgula)"
                       Variant="Variant.Outlined"
                       Margin="Margin.Dense"
                       Required="true"
-                      Error="@TemErro(nameof(Modelo.ProfissaoCargo))"
-                      ErrorText="@MsgErro(nameof(Modelo.ProfissaoCargo))" />
+                      Error="@TemErro(nameof(Modelo.Profissoes))"
+                      ErrorText="@MsgErro(nameof(Modelo.Profissoes))" />
     </MudItem>
     <MudItem xs="12" md="6">
-        <MudDatePicker @bind-Date="Modelo.DataNascimento"
-                       Label="Data de nascimento"
-                       Variant="Variant.Outlined"
-                       Margin="Margin.Dense"
-                       DateFormat="dd/MM/yyyy"
-                       Editable="true"
-                       Clearable="true" />
+        <CampoData Valor="@Modelo.DataAdmissao"
+                   ValorChanged="@(v => Modelo.DataAdmissao = v)"
+                   Rotulo="Data de admissão"
+                   Obrigatorio="true"
+                   ComErro="@TemErro(nameof(Modelo.DataAdmissao))"
+                   TextoErro="@MsgErro(nameof(Modelo.DataAdmissao))" />
+    </MudItem>
+    <MudItem xs="12" md="6">
+        <CampoData Valor="@Modelo.DataNascimento"
+                   ValorChanged="@(v => Modelo.DataNascimento = v)"
+                   Rotulo="Data de nascimento"
+                   ComErro="@TemErro(nameof(Modelo.DataNascimento))"
+                   TextoErro="@MsgErro(nameof(Modelo.DataNascimento))" />
     </MudItem>
     <MudItem xs="12">
         <MudTextField @bind-Value="Modelo.Endereco"
                       Label="Endereço"
                       Variant="Variant.Outlined"
                       Margin="Margin.Dense"
-                      Lines="2"
                       Required="true"
                       Error="@TemErro(nameof(Modelo.Endereco))"
                       ErrorText="@MsgErro(nameof(Modelo.Endereco))" />
@@ -89,14 +105,26 @@
     [Parameter] public bool Edicao { get; set; }
 
     private bool _ativo = true;
+    private string _profissoesTexto = string.Empty;
 
-    protected override void OnParametersSet() =>
+    protected override void OnParametersSet()
+    {
         _ativo = Modelo.Status == StatusRegistro.Ativo;
+        _profissoesTexto = ProfissoesHelper.ParaTexto(Modelo.Profissoes);
+    }
 
     protected override void OnAfterRender(bool firstRender) =>
         Modelo.Status = _ativo ? StatusRegistro.Ativo : StatusRegistro.Inativo;
 
+    private void AtualizarProfissoes(string valor)
+    {
+        _profissoesTexto = valor;
+        Modelo.Profissoes = ProfissoesHelper.Parse(valor);
+    }
+
+    private void NormalizarEmail() =>
+        Modelo.Email = Modelo.Email.Trim();
+
     private bool TemErro(string campo) => Erros.ContainsKey(campo);
     private string? MsgErro(string campo) => Erros.TryGetValue(campo, out var msg) ? msg : null;
 }
-
