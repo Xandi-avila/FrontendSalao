@@ -23,7 +23,6 @@ public static partial class FormatacaoCampos
         if (d.Length <= 10)
             return $"({d[..2]}) {d[2..6]}-{d[6..]}";
 
-        // Celular: no máximo 11 dígitos (DDD + 9 números)
         d = d.Length > 11 ? d[..11] : d;
         return $"({d[..2]}) {d[2..7]}-{d[7..]}";
     }

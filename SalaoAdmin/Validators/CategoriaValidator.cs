@@ -10,9 +10,6 @@ public class ValidadorCategoriaCadastro : AbstractValidator<CategoriaCadastroDto
         RuleFor(x => x.Nome)
             .NotEmpty().WithMessage("Nome da categoria é obrigatório.")
             .MaximumLength(100);
-
-        RuleFor(x => x.ServicoIds)
-            .NotEmpty().WithMessage("Selecione ao menos um serviço vinculado.");
     }
 }
 
