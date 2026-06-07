@@ -348,6 +348,9 @@ public static class AgendaCalculoHelper
         return data.Date.AddDays(-diff);
     }
 
+    public static DateTime ObterFimSemana(DateTime data) =>
+        ObterInicioSemana(data).AddDays(6);
+
     public static DateTime ObterInicioMes(DateTime data) => new(data.Year, data.Month, 1);
 
     public static IEnumerable<DateTime> DiasDaSemana(DateTime dataReferencia)
