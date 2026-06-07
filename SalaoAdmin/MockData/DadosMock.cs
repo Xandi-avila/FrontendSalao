@@ -79,7 +79,6 @@ public class ArmazenamentoLocal
             WhatsApp = "(51) 99999-9999",
             Email = "cliente1@teste.com",
             Instagram = "@cliente1",
-            Facebook = "cliente1.page",
             Profissao = new List<string> { "Maquiadora", "Esteticista" },
             DataNascimento = new DateTime(1988, 12, 5),
             Endereco = "R. Cel. Genuíno, 130 - Centro Histórico, Porto Alegre - RS"
@@ -91,7 +90,6 @@ public class ArmazenamentoLocal
             WhatsApp = "(51) 99999-9999",
             Email = "cliente2@teste.com",
             Instagram = "@cliente2",
-            Facebook = "cliente2.page",
             Profissao = new List<string> { "Designer de sobrancelhas" },
             DataNascimento = new DateTime(1992, 7, 18),
             Endereco = "R. Cel. Genuíno, 130 - Centro Histórico, Porto Alegre - RS"
@@ -103,7 +101,6 @@ public class ArmazenamentoLocal
             WhatsApp = "(51) 99999-9999",
             Email = "cliente3@teste.com",
             Instagram = "@cliente3",
-            Facebook = "cliente3.page",
             Profissao = new List<string> { "Manicure" },
             DataNascimento = new DateTime(1980, 1, 30),
             Endereco = "R. Cel. Genuíno, 130 - Centro Histórico, Porto Alegre - RS"

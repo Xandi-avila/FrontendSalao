@@ -9,7 +9,6 @@ public class ClienteDto
     public string WhatsApp { get; set; } = string.Empty;
     public string? Email { get; set; }
     public string? Instagram { get; set; }
-    public string? Facebook { get; set; }
 
     [JsonPropertyName("profissao")]
     public List<string> Profissao { get; set; } = [];
@@ -24,7 +23,6 @@ public class ClienteCadastroDto
     public string WhatsApp { get; set; } = string.Empty;
     public string? Email { get; set; }
     public string? Instagram { get; set; }
-    public string? Facebook { get; set; }
 
     [JsonPropertyName("profissao")]
     public List<string> Profissao { get; set; } = [];

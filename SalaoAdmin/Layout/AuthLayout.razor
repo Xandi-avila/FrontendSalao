@@ -1,19 +1,14 @@
 @inherits LayoutComponentBase
 @inject IPreferenciaTemaServico PreferenciaTema
 
-<MudThemeProvider Theme="_theme" />
-<MudPopoverProvider />
+<MudThemeProvider Theme="_theme" IsDarkMode="_modoEscuro" />
 <MudSnackbarProvider />
 
-<MudLayout> <div class="auth-shell">
-        <MudContainer MaxWidth="MaxWidth.Small" Class="auth-container">
-            @Body
-        </MudContainer>
-    </div>
-</MudLayout>
+<div class="auth-shell">
+    @Body
+</div>
 
 @code {
-    private bool _drawerOpen = true;
     private bool _modoEscuro;
     private bool _preferenciaCarregada;
 
@@ -26,17 +21,11 @@
             Tertiary = "#96D7DB",
             Background = "#F2F5F5",
             Surface = "#FFFFFF",
-            AppbarBackground = "#398E97", // Atualizado para garantir o preenchimento verde no tema claro
+            AppbarBackground = "#398E97",
             AppbarText = "#FFFFFF",
-            DrawerBackground = "#FFFFFF",
-            DrawerText = "#141C1E",
-            DrawerIcon = "rgba(20,28,30,0.54)",
             TextPrimary = "#141C1E",
             TextSecondary = "#4A5557",
             Divider = "#D1E2E4",
-            TableLines = "#D1E2E4",
-            LinesDefault = "#D1E2E4",
-            Info = "#96D7DB",
             Success = "#1A8245",
             Warning = "#B27000",
             Error = "#D32F2F"
@@ -45,27 +34,18 @@
         {
             Primary = "#4CD2EC",
             Secondary = "#3D9EB4",
-            Tertiary = "#003541",
             Background = "#0F1416",
             Surface = "#192224",
-            AppbarBackground = "#398E97", // Mantido o tom verde na barra superior conforme sua imagem de exemplo
-            AppbarText = "#FFFFFF",
-            DrawerBackground = "#192224",
-            DrawerText = "#E1E8E9",
-            DrawerIcon = "rgba(225,232,233,0.54)",
             TextPrimary = "#E1E8E9",
             TextSecondary = "#9AA7A9",
             Divider = "#334549",
-            TableLines = "#334549",
-            LinesDefault = "#334549",
-            Info = "#4CD2EC",
             Success = "#4CE18B",
             Warning = "#FFC457",
             Error = "#FF8985"
         },
         LayoutProperties = new LayoutProperties
         {
-            DefaultBorderRadius = "8px"
+            DefaultBorderRadius = "12px"
         }
     };
 
@@ -77,24 +57,5 @@
         _modoEscuro = await PreferenciaTema.ObterModoEscuroAsync();
         _preferenciaCarregada = true;
         StateHasChanged();
-    }
-
-    private void AlternarDrawer()
-    {
-        _drawerOpen = !_drawerOpen;
-    }
-
-    private async Task AlternarTemaAsync()
-    {
-        await AoAlterarModoEscuroAsync(!_modoEscuro);
-    }
-
-    private async Task AoAlterarModoEscuroAsync(bool modoEscuro)
-    {
-        if (_modoEscuro == modoEscuro && _preferenciaCarregada)
-            return;
-
-        _modoEscuro = modoEscuro;
-        await PreferenciaTema.SalvarModoEscuroAsync(modoEscuro);
     }
 }

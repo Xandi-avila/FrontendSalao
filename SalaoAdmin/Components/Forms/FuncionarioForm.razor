@@ -2,7 +2,7 @@
 @using SalaoAdmin.Enums
 
 <MudGrid Spacing="2">
-    <MudItem xs="12" md="8">
+    <MudItem xs="12" md="6">
         <MudTextField @bind-Value="Modelo.NomeCompleto"
                       Label="Nome completo"
                       Variant="Variant.Outlined"
@@ -11,9 +11,9 @@
                       Error="@TemErro(nameof(Modelo.NomeCompleto))"
                       ErrorText="@MsgErro(nameof(Modelo.NomeCompleto))" />
     </MudItem>
-    <MudItem xs="12" md="4">
+    <MudItem xs="12" md="6">
         <MudSelect @bind-Value="Modelo.NivelPermissao"
-                   Label="Função de acesso"
+                   Label="Permissão de acesso"
                    Variant="Variant.Outlined"
                    Margin="Margin.Dense"
                    Required="true">
@@ -45,23 +45,15 @@
                       Error="@TemErro(nameof(Modelo.Senha))"
                       ErrorText="@MsgErro(nameof(Modelo.Senha))" />
     </MudItem>
-    <MudItem xs="12" md="4">
+    <MudItem xs="12" md="6">
         <CampoTelefone Valor="@Modelo.Telefone"
                        ValorChanged="@(v => Modelo.Telefone = v ?? string.Empty)"
-                       Rotulo="Telefone"
+                       Rotulo="Telefone / WhastApp"
                        Obrigatorio="true"
                        ComErro="@TemErro(nameof(Modelo.Telefone))"
                        TextoErro="@MsgErro(nameof(Modelo.Telefone))" />
     </MudItem>
-    <MudItem xs="12" md="4">
-        <CampoTelefone Valor="@Modelo.Celular"
-                       ValorChanged="@(v => Modelo.Celular = v)"
-                       Rotulo="Celular"
-                       Obrigatorio="false"
-                       ComErro="@TemErro(nameof(Modelo.Celular))"
-                       TextoErro="@MsgErro(nameof(Modelo.Celular))" />
-    </MudItem>
-    <MudItem xs="12" md="4">
+    <MudItem xs="12" md="6">
         <CampoCpf Valor="@Modelo.CPF"
                   ValorChanged="@(v => Modelo.CPF = v)"
                   ComErro="@TemErro(nameof(Modelo.CPF))"
@@ -74,28 +66,24 @@
                       Label="Profissões (separe por vírgula)"
                       Variant="Variant.Outlined"
                       Margin="Margin.Dense"
-                      Lines="2"
                       Required="true"
                       Error="@TemErro(nameof(Modelo.Profissoes))"
                       ErrorText="@MsgErro(nameof(Modelo.Profissoes))" />
     </MudItem>
-    <MudItem xs="12" md="3">
-        <MudDatePicker @bind-Date="Modelo.DataAdmissao"
-                       Label="Data de admissão"
-                       Variant="Variant.Outlined"
-                       Margin="Margin.Dense"
-                       DateFormat="dd/MM/yyyy"
-                       Editable="true"
-                       Clearable="true" />
+    <MudItem xs="12" md="6">
+        <CampoData Valor="@Modelo.DataAdmissao"
+                   ValorChanged="@(v => Modelo.DataAdmissao = v)"
+                   Rotulo="Data de admissão"
+                   Obrigatorio="true"
+                   ComErro="@TemErro(nameof(Modelo.DataAdmissao))"
+                   TextoErro="@MsgErro(nameof(Modelo.DataAdmissao))" />
     </MudItem>
-    <MudItem xs="12" md="3">
-        <MudDatePicker @bind-Date="Modelo.DataNascimento"
-                       Label="Data de nascimento"
-                       Variant="Variant.Outlined"
-                       Margin="Margin.Dense"
-                       DateFormat="dd/MM/yyyy"
-                       Editable="true"
-                       Clearable="true" />
+    <MudItem xs="12" md="6">
+        <CampoData Valor="@Modelo.DataNascimento"
+                   ValorChanged="@(v => Modelo.DataNascimento = v)"
+                   Rotulo="Data de nascimento"
+                   ComErro="@TemErro(nameof(Modelo.DataNascimento))"
+                   TextoErro="@MsgErro(nameof(Modelo.DataNascimento))" />
     </MudItem>
     <MudItem xs="12">
         <MudTextField @bind-Value="Modelo.Endereco"
