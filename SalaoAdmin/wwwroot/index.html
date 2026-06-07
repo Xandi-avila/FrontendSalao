@@ -17,40 +17,6 @@
             }
         })();
     </script>
-   <style>
-    /* Inline debug overrides to ensure login layout + input color apply immediately */
-    .auth-shell { padding: 0 !important; width: 100% !important; min-height: 100vh !important; }
-    
-    /* Remove a largura máxima do container para ele tocar as bordas da tela */
-    .auth-container { 
-        width: 100% !important; 
-        max-width: 100% !important; 
-        padding: 0 !important;
-        height: 100vh !important; 
-        display: flex !important; 
-        align-items: stretch !important; 
-        justify-content: stretch !important; 
-    }
-    
-    /* Faz o card ocupar 100% da largura e altura disponível */
-    .login-card { 
-        width: 100% !important; 
-        max-width: 100% !important;
-        height: 100vh !important; 
-        border-radius: 0 !important; 
-        overflow: hidden !important; 
-        display: flex !important; 
-        flex-direction: column !important; 
-    }
-    
-    .login-form { flex: 1 !important; display: flex !important; align-items: center !important; justify-content: center !important; padding: 0 2rem 2rem !important; }
-    .login-form .mud-stack { width: 100% !important; max-width: 520px !important; }
-    
-    html.mud-theme-dark .auth-shell { background: #0F1416 !important; }
-    html.mud-theme-dark .auth-shell .login-card { background: linear-gradient(90deg, #0F1416 0%, #102226 50%, #0F1416 100%) !important; }
-    html.mud-theme-dark input, html.mud-theme-dark .mud-input-input, html.mud-theme-dark .mud-input-control { color: #E1E8E9 !important; -webkit-text-fill-color: #E1E8E9 !important; caret-color: #E1E8E9 !important; }
-    html.mud-theme-dark input::placeholder, html.mud-theme-dark .mud-input-input::placeholder { color: rgba(225,232,233,0.7) !important; }
-</style>
 </head>
 <body>
     <div id="app">

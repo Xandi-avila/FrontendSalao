@@ -23,7 +23,8 @@
     @if (_aba == 1)
     {
         <MudSelect T="Guid?" Label="Categoria" Variant="Variant.Outlined" Margin="Margin.Dense"
-                   Value="_categoriaId" ValueChanged="v => _categoriaId = v" Clearable="true" Class="mb-2">
+                   Value="_categoriaId" ValueChanged="v => _categoriaId = v" Clearable="true" Class="mb-2"
+                   ToStringFunc="NomeCategoriaFiltro">
             <MudSelectItem T="Guid?" Value="@((Guid?)null)">Todas</MudSelectItem>
             @foreach (var cat in CategoriasServico.DistinctBy(c => c.CategoriaId).OrderBy(c => c.NomeCategoria))
             {
@@ -130,4 +131,9 @@
             Quantidade = 1
         });
     }
+
+    private string NomeCategoriaFiltro(Guid? id) =>
+        id is null || id == Guid.Empty
+            ? "Todas"
+            : CategoriasServico.FirstOrDefault(c => c.CategoriaId == id)?.NomeCategoria ?? "Categoria não encontrada";
 }

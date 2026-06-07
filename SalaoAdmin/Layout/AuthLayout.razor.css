@@ -1,130 +1,29 @@
-/* Garante que o degradê fique estritamente contido na casca de autenticação */
 .auth-shell {
     min-height: 100vh;
     width: 100%;
     display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 0; /* removed centered padding so card can fill screen */
-    background: linear-gradient(135deg, #f5f3f7 0%, #e8d5f0 45%, #f5e8ef 100%);
+    flex-direction: column;
+    padding: 0;
+    margin: 0;
     box-sizing: border-box;
 }
 
-.auth-container {
+.auth-shell > * {
+    flex: 1;
     width: 100%;
-    height: 100vh; /* ensure container fills viewport */
-    display: flex;
-    align-items: stretch;
-    justify-content: stretch;
 }
 
-.login-card {
-    width: 100%;
-    height: 100%;
-    border-radius: 0 !important; /* full-screen look */
-    overflow: hidden;
-    display: flex;
-    flex-direction: column;
-}
-
-.login-header {
-    text-align: center;
-    padding: 2.5rem 2rem 1rem; /* keep breathing space */
-    background: linear-gradient(180deg, rgba(123, 75, 148, 0.08) 0%, transparent 100%);
-}
-
-html.mud-theme-dark .auth-shell {
-    background: linear-gradient(135deg, #0B1215 0%, #111B1F 45%, #15262B 100%);
-}
-
-html.mud-theme-dark .login-card {
-    background: #192224;
-    border: 0; /* remove floating card border for full-screen */
-    box-shadow: none;
-}
-
-html.mud-theme-dark .login-card .mud-input-root .mud-input-slot {
-    background: #162126;
-}
-
-html.mud-theme-dark .login-card .mud-input-root .mud-input-input,
-html.mud-theme-dark .login-card .mud-input-root .mud-input-label,
-html.mud-theme-dark .login-card .mud-input-root .mud-input-slot {
-    color: #E1E8E9;
-}
-
-html.mud-theme-dark .login-card .mud-input-root .mud-input-input::placeholder {
-    color: rgba(225, 232, 233, 0.56);
-}
-
-html.mud-theme-dark .login-card .mud-input-root .mud-input-label {
-    color: #9AA7A9;
-}
-
-html.mud-theme-dark .login-card .mud-input-root.mud-focused .mud-input-slot {
-    border-color: rgba(76, 210, 236, 0.45);
-}
-
-html.mud-theme-dark .login-card .mud-input-root .mud-input-slot input,
-html.mud-theme-dark .login-card .mud-input-root .mud-input-slot .mud-input-input,
-html.mud-theme-dark .login-card .mud-input-root .mud-input-slot .mud-input-control {
-    color: #E1E8E9 !important;
-    -webkit-text-fill-color: #E1E8E9 !important;
-    caret-color: #E1E8E9 !important;
-}
-
-html.mud-theme-dark .login-card .mud-input-root .mud-input-slot .mud-input-input::placeholder,
-html.mud-theme-dark .login-card .mud-input-root .mud-input-slot input::placeholder {
-    color: rgba(225, 232, 233, 0.56) !important;
-}
-
-html.mud-theme-dark .login-header {
-    background: linear-gradient(180deg, rgba(76, 210, 236, 0.14) 0%, transparent 100%);
-}
-
-.login-form {
-    flex: 1; /* make form area expand to fill the card */
+.auth-loading {
+    flex: 1;
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 0 2rem 2rem;
+    min-height: 100vh;
+    background: var(--mud-palette-background, #F2F5F5);
 }
 
-.login-form .mud-stack {
-    width: 100%;
-    max-width: 520px; /* keep inputs readable and centered */
-}
-
-/* On small screens keep a bit of rounded corners for aesthetics */
-@media (max-width: 640px) {
-    .login-card {
-        border-radius: 12px !important;
-    }
-}
-
-/* Ensure inputs and controls are visible in dark theme (extra specificity) */
-html.mud-theme-dark .login-card .mud-input-root input,
-html.mud-theme-dark .login-card .mud-input-root .mud-input-input,
-html.mud-theme-dark .login-card .mud-input-root .mud-input-control {
-    color: #E1E8E9 !important;
-    -webkit-text-fill-color: #E1E8E9 !important;
-    caret-color: #E1E8E9 !important;
-}
-
-html.mud-theme-dark .login-card .mud-input-root .mud-input-input::placeholder,
-html.mud-theme-dark .login-card .mud-input-root .mud-input-slot input::placeholder {
-    color: rgba(225, 232, 233, 0.56) !important;
-}
-
-.login-brand {
-    width: 72px;
-    height: 72px;
-    margin: 0 auto 1rem;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: linear-gradient(135deg, #7B4B94, #B88FD4);
-    color: white;
-    box-shadow: 0 8px 24px rgba(123, 75, 148, 0.25);
+.auth-loading p {
+    margin: 0;
+    color: var(--mud-palette-text-secondary, #4A5557);
+    font-size: 1rem;
 }

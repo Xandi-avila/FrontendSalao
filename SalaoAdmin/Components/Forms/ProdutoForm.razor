@@ -1,5 +1,6 @@
 @using SalaoAdmin.Dtos.Produtos
 @using SalaoAdmin.Enums
+@inject IDialogService Dialogos
 
 <MudGrid Spacing="3">
     <MudItem xs="12" md="8">
@@ -24,18 +25,17 @@
                    Color="Color.Primary"
                    StartIcon="@Icons.Material.Filled.CloudUpload"
                    for="produto-foto-input">
-            Enviar foto (mock)
+            Anexar imagem do produto
         </MudButton>
         <InputFile id="produto-foto-input" OnChange="AoSelecionarImagem" accept="image/*" class="d-none" />
         <MudText Typo="Typo.caption" Color="Color.Secondary" Class="mt-1">
-            Upload simulado — arquivo não é enviado ao servidor.
         </MudText>
     </MudItem>
     <MudItem xs="12" md="6">
         @if (!string.IsNullOrWhiteSpace(_previewUrl))
         {
-            <MudPaper Class="pa-2" Outlined="true">
-                <MudText Typo="Typo.caption" Class="mb-2">Pré-visualização</MudText>
+            <MudPaper Class="pa-2 produto-preview-imagem" Outlined="true" Style="cursor: pointer;" @onclick="AbrirPreviewModal">
+                <MudText Typo="Typo.caption" Class="mb-2">Pré-visualização — clique para ampliar</MudText>
                 <MudImage Src="@_previewUrl" Alt="Preview" Height="120" ObjectFit="ObjectFit.Contain" />
             </MudPaper>
         }
@@ -73,6 +73,29 @@
         var base64 = Convert.ToBase64String(ms.ToArray());
         _previewUrl = $"data:{file.ContentType};base64,{base64}";
         Modelo.CaminhoImagem = _previewUrl;
+    }
+
+    private async Task AbrirPreviewModal()
+    {
+        if (string.IsNullOrWhiteSpace(_previewUrl)) return;
+
+        var opcoes = new DialogOptions
+        {
+            MaxWidth = MaxWidth.Medium,
+            FullWidth = true,
+            CloseOnEscapeKey = true
+        };
+
+        var parametros = new DialogParameters<DialogoImagemProduto>
+        {
+            { x => x.Nome, string.IsNullOrWhiteSpace(Modelo.Nome) ? "Produto" : Modelo.Nome },
+            { x => x.UrlImagem, _previewUrl }
+        };
+
+        await Dialogos.ShowAsync<DialogoImagemProduto>(
+            string.IsNullOrWhiteSpace(Modelo.Nome) ? "Produto" : Modelo.Nome,
+            parametros,
+            opcoes);
     }
 
     private bool TemErro(string campo) => Erros.ContainsKey(campo);

@@ -20,7 +20,6 @@ public class ClienteServicoMock(ArmazenamentoLocal dados) : ServicoMockBase<Clie
                  c.WhatsApp.Contains(busca, StringComparison.OrdinalIgnoreCase) ||
                  c.Email?.Contains(busca, StringComparison.OrdinalIgnoreCase) == true ||
                  c.Instagram?.Contains(busca, StringComparison.OrdinalIgnoreCase) == true ||
-                 c.Facebook?.Contains(busca, StringComparison.OrdinalIgnoreCase) == true ||
                  ProfissoesHelper.ContemBusca(c.Profissao, busca) ||
                  c.Endereco.Contains(busca, StringComparison.OrdinalIgnoreCase),
             c => c.NomeCompleto);
@@ -70,7 +69,6 @@ public class ClienteServicoMock(ArmazenamentoLocal dados) : ServicoMockBase<Clie
         WhatsApp = FormatacaoCampos.Telefone(dto.WhatsApp),
         Email = string.IsNullOrWhiteSpace(dto.Email) ? null : dto.Email.Trim(),
         Instagram = string.IsNullOrWhiteSpace(dto.Instagram) ? null : dto.Instagram.Trim(),
-        Facebook = string.IsNullOrWhiteSpace(dto.Facebook) ? null : dto.Facebook.Trim(),
         Profissao = ProfissoesHelper.Limpar(dto.Profissao),
         DataNascimento = dto.DataNascimento,
         Endereco = dto.Endereco.Trim()
