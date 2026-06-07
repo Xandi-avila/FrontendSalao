@@ -6,9 +6,6 @@ public static class TipoItemVenda
     public const string Servico = "SERVICO";
 }
 
-/// <summary>
-/// Status exibido no front — a API não expõe campo status em Venda.
-/// </summary>
 public static class StatusVendaExibicao
 {
     public const string Registrada = "REGISTRADA";
@@ -28,6 +25,7 @@ public class ItemVendaDto
 public class VendaDto
 {
     public Guid Id { get; set; }
+    public int? Numero { get; set; }
     public DateTime DataHora { get; set; }
     public decimal Total { get; set; }
     public Guid FuncionarioId { get; set; }

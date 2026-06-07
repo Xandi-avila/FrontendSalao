@@ -351,6 +351,29 @@ public static class AgendaCalculoHelper
     public static DateTime ObterFimSemana(DateTime data) =>
         ObterInicioSemana(data).AddDays(6);
 
+    public const int QuantidadeDiasJanelaSemana = 7;
+
+    public static DateTime ObterFimProximosDias(DateTime inicio, int quantidadeDias = QuantidadeDiasJanelaSemana) =>
+        inicio.Date.AddDays(quantidadeDias - 1);
+
+    public static IEnumerable<DateTime> DiasProximos(DateTime dataInicio, int quantidadeDias = QuantidadeDiasJanelaSemana)
+    {
+        var inicio = dataInicio.Date;
+        for (var i = 0; i < quantidadeDias; i++)
+            yield return inicio.AddDays(i);
+    }
+
+    public static IEnumerable<DateTime> DiasNoIntervalo(DateTime inicio, DateTime fim)
+    {
+        var dia = inicio.Date;
+        var ultimo = fim.Date;
+        while (dia <= ultimo)
+        {
+            yield return dia;
+            dia = dia.AddDays(1);
+        }
+    }
+
     public static DateTime ObterInicioMes(DateTime data) => new(data.Year, data.Month, 1);
 
     public static IEnumerable<DateTime> DiasDaSemana(DateTime dataReferencia)

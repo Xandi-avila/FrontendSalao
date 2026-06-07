@@ -4,6 +4,7 @@
 @inject IProdutoServico ProdutoServico
 @inject IServicoCatalogoServico ServicoCatalogoServico
 @inject IClienteServico ClienteServico
+@inject IAnaliseServico AnaliseServico
 @inject TokenStorageService TokenStorage
 @inject ConfiguracaoApi Configuracao
 @inject IServicoNotificacao Notificacoes
@@ -27,7 +28,8 @@ else
     @if (_etapa == EtapaVenda.Confirmacao && _vendaRegistrada is not null)
     {
         <VendaConfirmacao Venda="_vendaRegistrada"
-                          NomeCliente="@NomeCliente(_vendaRegistrada.ClienteId)"
+                          NomeCliente="@_nomeClienteConfirmacao"
+                          NumeroVenda="@_numeroVendaConfirmacao"
                           ResolverNomeItem="ResolverNomeItemVenda"
                           OnNovaVenda="ReiniciarVenda" />
     }
@@ -47,6 +49,7 @@ else
                         <MudAutocomplete T="ClienteDto" Label="Cliente (opcional)" Variant="Variant.Outlined"
                                          Margin="Margin.Dense" SearchFunc="BuscarClientes" ToStringFunc="@(c => c?.NomeCompleto ?? "")"
                                          Value="_clienteSelecionado" ValueChanged="AoSelecionarCliente"
+                                         CompareWith="CompararClientes"
                                          Clearable="true" ResetValueOnEmptyText="true" CoerceText="true"
                                          Placeholder="Digite o nome do cliente..." />
                     </MudItem>
@@ -112,8 +115,9 @@ else
     private List<ProdutoDto> _produtos = [];
     private List<ServicoDto> _servicos = [];
     private List<ClienteDto> _clientes = [];
-    private List<VendaDto> _vendasRecentes = [];
     private VendaDto? _vendaRegistrada;
+    private string _nomeClienteConfirmacao = string.Empty;
+    private int? _numeroVendaConfirmacao;
     private VendaCardsOperacionais.IndicadoresVenda _indicadores = new();
 
     private decimal _totalCarrinho => VendaCalculoHelper.CalcularTotal(_carrinho);
@@ -141,63 +145,124 @@ else
             _nomeFuncionario = usuario.NomeCompleto;
         }
 
-        await CarregarCatalogosAsync();
-        await CarregarIndicadoresAsync();
+        await Task.WhenAll(CarregarCatalogosAsync(), CarregarClientesAsync(), CarregarIndicadoresAsync());
         _carregando = false;
+    }
+
+    private async Task CarregarClientesAsync()
+    {
+        var todos = new List<ClienteDto>();
+        var pagina = 1;
+
+        while (true)
+        {
+            var resposta = await ClienteServico.ListarAsync(new FiltroPaginacao
+            {
+                Pagina = pagina,
+                ItensPorPagina = 100
+            });
+
+            if (!resposta.Sucesso || resposta.Dados is null || resposta.Dados.Itens.Count == 0)
+                break;
+
+            todos.AddRange(resposta.Dados.Itens);
+            if (todos.Count >= resposta.Dados.Total)
+                break;
+
+            pagina++;
+        }
+
+        _clientes = todos.OrderBy(c => c.NomeCompleto).ToList();
     }
 
     private async Task CarregarCatalogosAsync()
     {
-        var produtos = await ProdutoServico.ListarAsync(new FiltroPaginacao { Pagina = 1, ItensPorPagina = 200 });
+        var produtosTask = ProdutoServico.ListarAsync(new FiltroPaginacao { Pagina = 1, ItensPorPagina = 200 });
+        var servicosTask = ServicoCatalogoServico.ListarAsync(new FiltroPaginacao { Pagina = 1, ItensPorPagina = 200 });
+        await Task.WhenAll(produtosTask, servicosTask);
+
+        var produtos = await produtosTask;
         if (produtos.Sucesso && produtos.Dados is not null)
             _produtos = produtos.Dados.Itens.Where(p => p.Status == StatusRegistro.Ativo).OrderBy(p => p.Nome).ToList();
 
-        var servicos = await ServicoCatalogoServico.ListarAsync(new FiltroPaginacao { Pagina = 1, ItensPorPagina = 200 });
+        var servicos = await servicosTask;
         if (servicos.Sucesso && servicos.Dados is not null)
             _servicos = servicos.Dados.Itens.Where(s => s.Status == StatusRegistro.Ativo).OrderBy(s => s.Nome).ToList();
-
-        var clientes = await ClienteServico.ListarAsync(new FiltroPaginacao { Pagina = 1, ItensPorPagina = 300 });
-        if (clientes.Sucesso && clientes.Dados is not null)
-            _clientes = clientes.Dados.Itens.OrderBy(c => c.NomeCompleto).ToList();
     }
 
     private async Task CarregarIndicadoresAsync()
     {
-        _vendasRecentes = await ListarTodasVendasAsync();
         var hoje = DateTime.Today;
-        var vendasHoje = _vendasRecentes
-            .Where(v => v.DataHora.ToLocalTime().Date == hoje)
-            .ToList();
+        var vendas = await ListarVendasHojeAsync(hoje);
+
+        var produtos = VendaCalculoHelper.ContarItensPorTipo(vendas, TipoItemVenda.Produto);
+        var servicos = VendaCalculoHelper.ContarItensPorTipo(vendas, TipoItemVenda.Servico);
+        var quantidade = produtos + servicos;
+
+        var valor = vendas.Sum(v => v.Total);
+        if (vendas.Count == 0)
+        {
+            var faturamento = await AnaliseServico.ObterFaturamentoAsync(hoje, hoje);
+            if (faturamento.Sucesso && faturamento.Dados is not null && faturamento.Dados.Valor > 0)
+                valor = faturamento.Dados.Valor;
+        }
 
         _indicadores = new VendaCardsOperacionais.IndicadoresVenda
         {
-            QuantidadeVendasHoje = vendasHoje.Count,
-            ValorVendidoHoje = vendasHoje.Sum(v => v.Total)
+            QuantidadeVendasHoje = quantidade,
+            QuantidadeProdutosHoje = produtos,
+            QuantidadeServicosHoje = servicos,
+            ValorVendidoHoje = valor
         };
     }
 
-    private async Task<List<VendaDto>> ListarTodasVendasAsync()
+    private async Task<List<VendaDto>> ListarVendasHojeAsync(DateTime dia)
     {
         var todos = new List<VendaDto>();
         var pagina = 1;
+
         while (true)
         {
-            var resposta = await VendaServico.ListarAsync(new FiltroVenda { Pagina = pagina, ItensPorPagina = 100 });
-            if (!resposta.Sucesso || resposta.Dados is null) break;
+            var resposta = await VendaServico.ListarAsync(new FiltroVenda
+            {
+                Inicio = dia,
+                Fim = dia,
+                Pagina = pagina,
+                ItensPorPagina = 100
+            });
+
+            if (!resposta.Sucesso || resposta.Dados is null || resposta.Dados.Itens.Count == 0)
+                break;
+
             todos.AddRange(resposta.Dados.Itens);
-            if (todos.Count >= resposta.Dados.Total || resposta.Dados.Itens.Count < 100) break;
+            if (todos.Count >= resposta.Dados.Total)
+                break;
+
             pagina++;
         }
-        return todos.OrderByDescending(v => v.DataHora).ToList();
+
+        return todos;
     }
 
     private Task<IEnumerable<ClienteDto>> BuscarClientes(string texto, CancellationToken _)
     {
+        if (_clientes.Count == 0)
+            return Task.FromResult(Enumerable.Empty<ClienteDto>());
+
         if (string.IsNullOrWhiteSpace(texto))
             return Task.FromResult(_clientes.Take(20).AsEnumerable());
-        var b = texto.Trim().ToLowerInvariant();
-        return Task.FromResult(_clientes.Where(c => c.NomeCompleto.ToLowerInvariant().Contains(b)).Take(20));
+
+        var busca = texto.Trim().ToLowerInvariant();
+        return Task.FromResult(_clientes.Where(c =>
+                c.NomeCompleto.ToLowerInvariant().Contains(busca) ||
+                c.WhatsApp.Contains(busca) ||
+                c.Email?.ToLowerInvariant().Contains(busca) == true ||
+                ProfissoesHelper.ContemBusca(c.Profissao, busca))
+            .Take(20));
     }
+
+    private static bool CompararClientes(ClienteDto? a, ClienteDto? b) =>
+        a?.Id == b?.Id;
 
     private void AoSelecionarCliente(ClienteDto? cliente) => _clienteSelecionado = cliente;
 
@@ -265,6 +330,15 @@ else
         }
 
         _vendaRegistrada = resultado.Dados;
+        _nomeClienteConfirmacao = await ResolverNomeClienteAsync(_vendaRegistrada.ClienteId);
+        _numeroVendaConfirmacao = _vendaRegistrada.Numero;
+        if (!_numeroVendaConfirmacao.HasValue || _numeroVendaConfirmacao <= 0)
+        {
+            var mapa = await VendaNumeroHelper.MontarMapaGlobalAsync(VendaServico);
+            if (mapa.TryGetValue(_vendaRegistrada.Id, out var numero))
+                _numeroVendaConfirmacao = numero;
+        }
+
         _etapa = EtapaVenda.Confirmacao;
         await CarregarIndicadoresAsync();
         Notificacoes.Sucesso(resultado.Mensagem ?? "Venda registrada com sucesso.");
@@ -275,13 +349,30 @@ else
         _carrinho = [];
         _clienteSelecionado = null;
         _vendaRegistrada = null;
+        _nomeClienteConfirmacao = string.Empty;
+        _numeroVendaConfirmacao = null;
         _etapa = EtapaVenda.Pdv;
         _indiceEtapa = 0;
-        await CarregarIndicadoresAsync();
+        await Task.WhenAll(CarregarClientesAsync(), CarregarIndicadoresAsync());
     }
 
-    private string NomeCliente(Guid? id) =>
-        id is null ? string.Empty : _clientes.FirstOrDefault(c => c.Id == id)?.NomeCompleto ?? "Cliente";
+    private async Task<string> ResolverNomeClienteAsync(Guid? id)
+    {
+        if (!id.HasValue)
+            return string.Empty;
+
+        if (_clienteSelecionado?.Id == id.Value)
+            return _clienteSelecionado.NomeCompleto;
+
+        var local = _clientes.FirstOrDefault(c => c.Id == id.Value);
+        if (local is not null)
+            return local.NomeCompleto;
+
+        var resposta = await ClienteServico.ObterPorIdAsync(id.Value);
+        return resposta.Sucesso && resposta.Dados is not null
+            ? resposta.Dados.NomeCompleto
+            : "Cliente";
+    }
 
     private string ResolverNomeItemVenda(ItemVendaDto item)
     {

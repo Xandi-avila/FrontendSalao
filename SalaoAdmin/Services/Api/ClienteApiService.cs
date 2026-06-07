@@ -12,37 +12,78 @@ public class ClienteApiService(
 {
     public async Task<Resultado<ListaPaginada<ClienteDto>>> ListarAsync(FiltroPaginacao filtro, CancellationToken cancelamento = default)
     {
-        var query = MontarQuery(new Dictionary<string, string?>
-        {
-            ["pagina"] = filtro.Pagina.ToString(),
-            ["tamanho"] = filtro.ItensPorPagina.ToString()
-        });
+        var tamanho = Math.Clamp(filtro.ItensPorPagina, 1, 100);
 
-        var api = await GetAsync<PaginacaoApi<ClienteDto>>($"clientes{query}", cancelamento);
-        if (!api.Sucesso || api.Dados is null)
-            return Resultado<ListaPaginada<ClienteDto>>.Falha(api.Erros.Count > 0 ? api.Erros : [api.Mensagem ?? "Falha ao listar clientes."]);
-
-        var itens = api.Dados.Itens;
         if (!string.IsNullOrWhiteSpace(filtro.Busca))
         {
+            var todos = await BuscarTodasPaginasAsync(cancelamento);
             var busca = filtro.Busca.Trim().ToLowerInvariant();
-            itens = itens.Where(x =>
+            var filtrados = todos.Where(x =>
                     x.NomeCompleto.ToLowerInvariant().Contains(busca) ||
                     x.WhatsApp.Contains(busca) ||
                     x.Email?.ToLowerInvariant().Contains(busca) == true ||
                     x.Instagram?.ToLowerInvariant().Contains(busca) == true ||
                     ProfissoesHelper.ContemBusca(x.Profissao, busca) ||
                     x.Endereco.ToLowerInvariant().Contains(busca))
+                .OrderBy(x => x.NomeCompleto)
                 .ToList();
+
+            var pagina = Math.Max(1, filtro.Pagina);
+            var itens = filtrados.Skip((pagina - 1) * tamanho).Take(tamanho).ToList();
+
+            return Resultado<ListaPaginada<ClienteDto>>.Ok(new ListaPaginada<ClienteDto>
+            {
+                Itens = itens,
+                Total = filtrados.Count,
+                Pagina = pagina,
+                ItensPorPagina = tamanho
+            });
         }
+
+        var query = MontarQuery(new Dictionary<string, string?>
+        {
+            ["pagina"] = filtro.Pagina.ToString(),
+            ["tamanho"] = tamanho.ToString()
+        });
+
+        var api = await GetAsync<PaginacaoApi<ClienteDto>>($"clientes{query}", cancelamento);
+        if (!api.Sucesso || api.Dados is null)
+            return Resultado<ListaPaginada<ClienteDto>>.Falha(api.Erros.Count > 0 ? api.Erros : [api.Mensagem ?? "Falha ao listar clientes."]);
 
         return Resultado<ListaPaginada<ClienteDto>>.Ok(new ListaPaginada<ClienteDto>
         {
-            Itens = itens,
-            Total = string.IsNullOrWhiteSpace(filtro.Busca) ? api.Dados.Total : itens.Count,
+            Itens = api.Dados.Itens,
+            Total = api.Dados.Total,
             Pagina = api.Dados.Pagina,
             ItensPorPagina = api.Dados.Tamanho
         });
+    }
+
+    private async Task<List<ClienteDto>> BuscarTodasPaginasAsync(CancellationToken cancelamento)
+    {
+        var todos = new List<ClienteDto>();
+        var pagina = 1;
+
+        while (true)
+        {
+            var query = MontarQuery(new Dictionary<string, string?>
+            {
+                ["pagina"] = pagina.ToString(),
+                ["tamanho"] = "100"
+            });
+
+            var api = await GetAsync<PaginacaoApi<ClienteDto>>($"clientes{query}", cancelamento);
+            if (!api.Sucesso || api.Dados is null || api.Dados.Itens.Count == 0)
+                break;
+
+            todos.AddRange(api.Dados.Itens);
+            if (todos.Count >= api.Dados.Total || api.Dados.Itens.Count < 100)
+                break;
+
+            pagina++;
+        }
+
+        return todos;
     }
 
     public async Task<Resultado<ClienteDto>> ObterPorIdAsync(Guid id, CancellationToken cancelamento = default)

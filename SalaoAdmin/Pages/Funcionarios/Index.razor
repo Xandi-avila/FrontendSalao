@@ -57,7 +57,7 @@
                 <MudTd DataLabel="Nome">@context.NomeCompleto</MudTd>
                 <MudTd DataLabel="E-mail">@context.Email</MudTd>
                 <MudTd DataLabel="CPF">@(string.IsNullOrWhiteSpace(context.CPF) ? "—" : FormatacaoCampos.Cpf(context.CPF))</MudTd>
-                <MudTd DataLabel="Celular">@(string.IsNullOrWhiteSpace(context.Celular) ? "—" : FormatacaoCampos.Telefone(context.Celular))</MudTd>
+                <MudTd DataLabel="Celular">@(string.IsNullOrWhiteSpace(context.Celular) && string.IsNullOrWhiteSpace(context.Telefone) ? "—" : FormatacaoCampos.Telefone(context.Celular ?? context.Telefone))</MudTd>
                 <MudTd DataLabel="Admissão">@(context.DataAdmissao?.ToString("dd/MM/yyyy") ?? "—")</MudTd>
                 <MudTd DataLabel="Profissões">@ProfissoesHelper.Exibir(context.Profissoes)</MudTd>
                 <MudTd DataLabel="Permissão">@context.NivelPermissao.Descricao()</MudTd>

@@ -80,7 +80,7 @@
 }
 else
 {
-    <MudTabs @bind-ActivePanelIndex="_abaAtiva" Class="mb-4">
+    <MudTabs ActivePanelIndex="_abaAtiva" ActivePanelIndexChanged="AoMudarAba" Class="mb-4">
         <MudTabPanel Text="Agenda operacional" Icon="@Icons.Material.Filled.Event">
             <MudGrid Spacing="2" Class="mt-2 mb-3">
                 <MudItem xs="6" sm="4" md="2">
@@ -168,6 +168,9 @@ else
                                    ModoChanged="AoAlterarModoCalendario"
                                    DataReferencia="_dataCalendario"
                                    DataReferenciaChanged="AoAlterarDataCalendario"
+                                   PeriodoInicio="_filtroInicio"
+                                   PeriodoFim="_filtroFim"
+                                   PeriodoPersonalizadoChanged="AoAlterarPeriodoPersonalizadoCalendario"
                                    FuncionarioFiltroId="_funcionarioSelecionadoId"
                                    Funcionarios="_funcionarios"
                                    Eventos="_eventosCalendario"
@@ -237,7 +240,7 @@ else
             @if (!ModoTodosFuncionarios && _funcionarioSelecionadoId.HasValue)
             {
                 <MudAlert Severity="Severity.Info" Dense="true" Class="mt-3 mb-3">
-                    Opcional: janelas sugeridas para busca de horários. Não bloqueiam agendamentos — o salão pode flexibilizar.
+                    janelas sugeridas para busca de horários, bloqueiam agendamento se o funcionario não tiver horarios.
                 </MudAlert>
                 <MudPaper Class="pa-4 mb-4 mt-3">
                     <MudText Typo="Typo.h6" Class="mb-1">Adicionar disponibilidade — @NomeFuncionario(_funcionarioSelecionadoId.Value)</MudText>
@@ -312,16 +315,6 @@ else
                 <MudStack Row="true" Justify="Justify.FlexEnd" Class="mt-4">
                     <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="SalvarAgenda">Salvar preferências</MudButton>
                 </MudStack>
-
-                <MudPaper Class="pa-4 mt-4" Outlined="true">
-                    <MudText Typo="Typo.h6" Class="mb-1">Pausas, almoço e exceções</MudText>
-                    <MudText Typo="Typo.caption" Color="Color.Secondary" Class="mb-2">
-                        Estrutura preparada para cadastro futuro de pausas, horário de almoço, feriados e dias especiais.
-                    </MudText>
-                    <MudAlert Severity="Severity.Info" Dense="true">
-                        Em breve: bloqueios opcionais de horário (almoço, pausa) e exceções por data — sem bloquear agendamentos manualmente.
-                    </MudAlert>
-                </MudPaper>
             }
         </MudTabPanel>
 
@@ -510,12 +503,12 @@ else
     private int _cardConflitosHoje;
     private string _cardProximoAtendimento = "—";
 
-    private PeriodoAgenda _periodo = PeriodoAgenda.Semana;
+    private PeriodoAgenda _periodo = PeriodoAgenda.Hoje;
     private DateTime? _filtroInicio;
     private DateTime? _filtroFim;
     private int _abaAtiva;
 
-    private AgendaCalendarioVisao.ModoCalendario _modoCalendario = AgendaCalendarioVisao.ModoCalendario.Semana;
+    private AgendaCalendarioVisao.ModoCalendario _modoCalendario = AgendaCalendarioVisao.ModoCalendario.Dia;
     private DateTime _dataCalendario = DateTime.Today;
 
     private bool _carregandoInicial = true;
@@ -554,7 +547,7 @@ else
     protected override async Task OnInitializedAsync()
     {
         await CarregarCatalogosAsync();
-        DefinirIntervaloPeriodo(PeriodoAgenda.Semana);
+        DefinirIntervaloPeriodo(PeriodoAgenda.Hoje);
         await CarregarDadosAgendaAsync();
         AtualizarEventosCalendario();
         _carregandoInicial = false;
@@ -562,18 +555,23 @@ else
 
     private async Task CarregarCatalogosAsync()
     {
-        var funcionarios = await FuncionarioServico.ListarAsync(new FiltroPaginacao { Pagina = 1, ItensPorPagina = 100 });
+        var funcionariosTask = FuncionarioServico.ListarAsync(new FiltroPaginacao { Pagina = 1, ItensPorPagina = 100 });
+        var clientesTask = ClienteServico.ListarAsync(new FiltroPaginacao { Pagina = 1, ItensPorPagina = 200 });
+        var servicosTask = ServicoCatalogoServico.ListarAsync(new FiltroPaginacao { Pagina = 1, ItensPorPagina = 200 });
+        await Task.WhenAll(funcionariosTask, clientesTask, servicosTask);
+
+        var funcionarios = await funcionariosTask;
         if (funcionarios.Sucesso && funcionarios.Dados is not null)
             _funcionarios = funcionarios.Dados.Itens
                 .Where(f => f.Status == StatusRegistro.Ativo)
                 .OrderBy(f => f.NomeCompleto)
                 .ToList();
 
-        var clientes = await ClienteServico.ListarAsync(new FiltroPaginacao { Pagina = 1, ItensPorPagina = 200 });
+        var clientes = await clientesTask;
         if (clientes.Sucesso && clientes.Dados is not null)
             _clientes = clientes.Dados.Itens.OrderBy(c => c.NomeCompleto).ToList();
 
-        var servicos = await ServicoCatalogoServico.ListarAsync(new FiltroPaginacao { Pagina = 1, ItensPorPagina = 200 });
+        var servicos = await servicosTask;
         if (servicos.Sucesso && servicos.Dados is not null)
         {
             _servicos = servicos.Dados.Itens.OrderBy(s => s.Nome).ToList();
@@ -585,8 +583,7 @@ else
     private async Task CarregarDadosAgendaAsync()
     {
         _carregandoDados = true;
-        await CarregarAgendamentosGlobaisAsync();
-        await CarregarTodasJanelasAsync();
+        await Task.WhenAll(CarregarAgendamentosGlobaisAsync(), CarregarTodasJanelasAsync());
 
         if (_funcionarioSelecionadoId.HasValue)
             await CarregarAgendaFuncionarioAsync(_funcionarioSelecionadoId.Value);
@@ -599,7 +596,7 @@ else
     private async Task CarregarAgendamentosGlobaisAsync()
     {
         if (!_filtroInicio.HasValue || !_filtroFim.HasValue)
-            DefinirIntervaloPeriodo(PeriodoAgenda.Semana);
+            DefinirIntervaloPeriodo(PeriodoAgenda.Hoje);
 
         var todos = new List<AgendamentoDto>();
         var pagina = 1;
@@ -676,17 +673,23 @@ else
 
     private async Task CarregarTodasJanelasAsync()
     {
-        var dict = new Dictionary<Guid, List<JanelaAgendaDto>>();
-        foreach (var funcionario in _funcionarios)
+        if (_funcionarios.Count == 0)
         {
-            var resultado = await AgendaServico.ListarPorFuncionarioAsync(funcionario.Id);
-            if (resultado.Sucesso && resultado.Dados is not null)
-                dict[funcionario.Id] = resultado.Dados.Select(NormalizarJanelaDiaSemana).ToList();
-            else
-                dict[funcionario.Id] = [];
+            _janelasPorFuncionario = new Dictionary<Guid, List<JanelaAgendaDto>>();
+            return;
         }
 
-        _janelasPorFuncionario = dict;
+        var tarefas = _funcionarios.Select(async funcionario =>
+        {
+            var resultado = await AgendaServico.ListarPorFuncionarioAsync(funcionario.Id);
+            var janelas = resultado.Sucesso && resultado.Dados is not null
+                ? resultado.Dados.Select(NormalizarJanelaDiaSemana).ToList()
+                : [];
+            return (funcionario.Id, janelas);
+        });
+
+        var resultados = await Task.WhenAll(tarefas);
+        _janelasPorFuncionario = resultados.ToDictionary(x => x.Id, x => x.janelas);
     }
 
     private async Task AoSelecionarFuncionario(Guid? id)
@@ -750,7 +753,16 @@ else
         }
 
         _agendamentosExibidos = query.OrderBy(a => a.DataHoraInicio).ToList();
-        _ = CarregarIndicadoresGerenciaisAsync();
+        if (_abaAtiva == 2)
+            _ = CarregarIndicadoresGerenciaisAsync();
+    }
+
+    private Task AoMudarAba(int indice)
+    {
+        _abaAtiva = indice;
+        if (indice == 2)
+            _ = CarregarIndicadoresGerenciaisAsync();
+        return Task.CompletedTask;
     }
 
     private async Task CarregarIndicadoresGerenciaisAsync()
@@ -805,8 +817,8 @@ else
 
     private (DateTime Inicio, DateTime Fim) ObterIntervaloCalendario()
     {
-        if (_modoCalendario == AgendaCalendarioVisao.ModoCalendario.Dia)
-            return (_dataCalendario.Date, _dataCalendario.Date);
+        if (_filtroInicio.HasValue && _filtroFim.HasValue)
+            return (_filtroInicio.Value.Date, _filtroFim.Value.Date);
 
         if (_modoCalendario == AgendaCalendarioVisao.ModoCalendario.Mes)
         {
@@ -814,8 +826,7 @@ else
             return (ini, ini.AddMonths(1).AddDays(-1));
         }
 
-        var inicio = AgendaCalculoHelper.ObterInicioSemana(_dataCalendario);
-        return (inicio, inicio.AddDays(6));
+        return (DateTime.Today, DateTime.Today);
     }
 
     private Task AoAlterarFiltroStatus(string? status)
@@ -1004,46 +1015,79 @@ else
                 _filtroInicio = hoje; _filtroFim = hoje; break;
             case PeriodoAgenda.Semana:
                 _filtroInicio = hoje;
-                _filtroFim = AgendaCalculoHelper.ObterFimSemana(hoje); break;
+                _filtroFim = AgendaCalculoHelper.ObterFimProximosDias(hoje); break;
             case PeriodoAgenda.Mes:
                 _filtroInicio = hoje;
                 _filtroFim = new DateTime(hoje.Year, hoje.Month, DateTime.DaysInMonth(hoje.Year, hoje.Month)); break;
             case PeriodoAgenda.Personalizado:
-                _filtroInicio ??= hoje; _filtroFim ??= hoje.AddDays(7); break;
+                _filtroInicio ??= hoje.AddDays(-6);
+                _filtroFim ??= hoje;
+                if (_filtroInicio == _filtroFim)
+                {
+                    _filtroInicio = hoje.AddDays(-6);
+                    _filtroFim = hoje;
+                }
+                break;
         }
+
+        _modoCalendario = periodo switch
+        {
+            PeriodoAgenda.Hoje => AgendaCalendarioVisao.ModoCalendario.Dia,
+            PeriodoAgenda.Semana => AgendaCalendarioVisao.ModoCalendario.Semana,
+            PeriodoAgenda.Mes => AgendaCalendarioVisao.ModoCalendario.Mes,
+            PeriodoAgenda.Personalizado => AgendaCalendarioVisao.ModoCalendario.Personalizado,
+            _ => _modoCalendario
+        };
     }
 
     private async Task AplicarPeriodo(PeriodoAgenda periodo)
     {
         DefinirIntervaloPeriodo(periodo);
+        _dataCalendario = DateTime.Today;
         await CarregarAgendamentosGlobaisAsync();
         AtualizarAgendamentosExibidos();
         AtualizarEventosCalendario();
+        if (_abaAtiva == 2)
+            await CarregarIndicadoresGerenciaisAsync();
     }
 
     private async Task AoAlterarFiltroInicio(DateTime? data)
     {
+        _periodo = PeriodoAgenda.Personalizado;
+        _modoCalendario = AgendaCalendarioVisao.ModoCalendario.Personalizado;
         _filtroInicio = data?.Date;
         if (_filtroInicio > _filtroFim) _filtroFim = _filtroInicio;
         await CarregarAgendamentosGlobaisAsync();
         AtualizarAgendamentosExibidos();
         AtualizarEventosCalendario();
+        if (_abaAtiva == 2)
+            await CarregarIndicadoresGerenciaisAsync();
     }
 
     private async Task AoAlterarFiltroFim(DateTime? data)
     {
+        _periodo = PeriodoAgenda.Personalizado;
+        _modoCalendario = AgendaCalendarioVisao.ModoCalendario.Personalizado;
         _filtroFim = data?.Date;
         if (_filtroFim < _filtroInicio) _filtroInicio = _filtroFim;
         await CarregarAgendamentosGlobaisAsync();
         AtualizarAgendamentosExibidos();
         AtualizarEventosCalendario();
+        if (_abaAtiva == 2)
+            await CarregarIndicadoresGerenciaisAsync();
     }
 
-    private Task AoAlterarModoCalendario(AgendaCalendarioVisao.ModoCalendario modo)
+    private async Task AoAlterarModoCalendario(AgendaCalendarioVisao.ModoCalendario modo)
     {
-        _modoCalendario = modo;
-        AtualizarEventosCalendario();
-        return Task.CompletedTask;
+        var periodo = modo switch
+        {
+            AgendaCalendarioVisao.ModoCalendario.Dia => PeriodoAgenda.Hoje,
+            AgendaCalendarioVisao.ModoCalendario.Semana => PeriodoAgenda.Semana,
+            AgendaCalendarioVisao.ModoCalendario.Mes => PeriodoAgenda.Mes,
+            AgendaCalendarioVisao.ModoCalendario.Personalizado => PeriodoAgenda.Personalizado,
+            _ => _periodo
+        };
+        await AplicarPeriodo(periodo);
     }
 
     private Task AoAlterarDataCalendario(DateTime data)
@@ -1051,6 +1095,23 @@ else
         _dataCalendario = data;
         AtualizarEventosCalendario();
         return Task.CompletedTask;
+    }
+
+    private async Task AoAlterarPeriodoPersonalizadoCalendario((DateTime? Inicio, DateTime? Fim) intervalo)
+    {
+        _periodo = PeriodoAgenda.Personalizado;
+        _modoCalendario = AgendaCalendarioVisao.ModoCalendario.Personalizado;
+        if (intervalo.Inicio.HasValue)
+            _filtroInicio = intervalo.Inicio.Value.Date;
+        if (intervalo.Fim.HasValue)
+            _filtroFim = intervalo.Fim.Value.Date;
+        if (_filtroInicio > _filtroFim)
+            _filtroFim = _filtroInicio;
+        await CarregarAgendamentosGlobaisAsync();
+        AtualizarAgendamentosExibidos();
+        AtualizarEventosCalendario();
+        if (_abaAtiva == 2)
+            await CarregarIndicadoresGerenciaisAsync();
     }
 
     private Color CorBotaoPeriodo(PeriodoAgenda periodo) => _periodo == periodo ? Color.Primary : Color.Default;

@@ -1,3 +1,4 @@
+using System.Text.Json.Serialization;
 using SalaoAdmin.Comum;
 using SalaoAdmin.Contratos;
 using SalaoAdmin.Dtos.Agendamentos;
@@ -29,6 +30,9 @@ public class AgendamentoApiService(
             return Resultado<ListaPaginada<AgendamentoDto>>.Falha(api.Erros.Count > 0 ? api.Erros : [api.Mensagem ?? "Falha ao listar agendamentos."]);
 
         var itens = api.Dados.Itens;
+        foreach (var item in itens)
+            NormalizarResposta(item);
+
         if (!string.IsNullOrWhiteSpace(filtro.Busca))
         {
             var busca = filtro.Busca.Trim().ToLowerInvariant();
@@ -51,41 +55,69 @@ public class AgendamentoApiService(
     public async Task<Resultado<AgendamentoDto>> ObterPorIdAsync(Guid id, CancellationToken cancelamento = default)
     {
         var api = await GetAsync<AgendamentoDto>($"agendamentos/{id}", cancelamento);
-        return api.ParaResultado();
+        var resultado = api.ParaResultado();
+        if (resultado.Sucesso && resultado.Dados is not null)
+            NormalizarResposta(resultado.Dados);
+        return resultado;
     }
 
     public async Task<Resultado<AgendamentoDto>> CriarAsync(AgendamentoCadastroDto dto, CancellationToken cancelamento = default)
     {
-        var api = await PostAsync<AgendamentoCadastroDto, AgendamentoDto>("agendamentos", NormalizarCadastro(dto), cancelamento);
-        return api.ParaResultado();
+        var api = await PostAsync<AgendamentoPayloadApi, AgendamentoDto>("agendamentos", MontarPayload(dto), cancelamento);
+        var resultado = api.ParaResultado();
+        if (resultado.Sucesso && resultado.Dados is not null)
+            NormalizarResposta(resultado.Dados);
+        return resultado;
     }
 
     public async Task<Resultado<AgendamentoDto>> AtualizarAsync(AgendamentoEdicaoDto dto, CancellationToken cancelamento = default)
     {
-        var payload = NormalizarCadastro(new AgendamentoCadastroDto
+        var payload = MontarPayload(new AgendamentoCadastroDto
         {
             ClienteId = dto.ClienteId,
             FuncionarioId = dto.FuncionarioId,
             ServicoId = dto.ServicoId,
             DataHoraInicio = dto.DataHoraInicio
         });
-        var api = await PutAsync<AgendamentoCadastroDto, AgendamentoDto>($"agendamentos/{dto.Id}", payload, cancelamento);
-        return api.ParaResultado();
+        var api = await PutAsync<AgendamentoPayloadApi, AgendamentoDto>($"agendamentos/{dto.Id}", payload, cancelamento);
+        var resultado = api.ParaResultado();
+        if (resultado.Sucesso && resultado.Dados is not null)
+            NormalizarResposta(resultado.Dados);
+        return resultado;
     }
 
-    private static AgendamentoCadastroDto NormalizarCadastro(AgendamentoCadastroDto dto)
+    private static AgendamentoPayloadApi MontarPayload(AgendamentoCadastroDto dto)
     {
         var inicio = dto.DataHoraInicio;
         if (inicio.Kind == DateTimeKind.Unspecified)
             inicio = DateTime.SpecifyKind(inicio, DateTimeKind.Local);
 
-        return new AgendamentoCadastroDto
+        return new AgendamentoPayloadApi
         {
             ClienteId = dto.ClienteId,
             FuncionarioId = dto.FuncionarioId,
-            ServicoId = dto.ServicoId,
+            ServicoIds = dto.ServicoId != Guid.Empty ? [dto.ServicoId] : [],
             DataHoraInicio = inicio.ToUniversalTime()
         };
+    }
+
+    private static void NormalizarResposta(AgendamentoDto dto)
+    {
+        if (dto.ServicoIds.Count > 0)
+            dto.ServicoId = dto.ServicoIds[0];
+        else if (dto.ServicoId != Guid.Empty)
+            dto.ServicoIds = [dto.ServicoId];
+    }
+
+    private sealed class AgendamentoPayloadApi
+    {
+        public Guid ClienteId { get; set; }
+        public Guid FuncionarioId { get; set; }
+
+        [JsonPropertyName("servicoIds")]
+        public List<Guid> ServicoIds { get; set; } = [];
+
+        public DateTime DataHoraInicio { get; set; }
     }
 
     public async Task<Resultado> ExcluirAsync(Guid id, CancellationToken cancelamento = default)
