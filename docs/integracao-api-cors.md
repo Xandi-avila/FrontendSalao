@@ -61,17 +61,37 @@ Opções (back-end / infra):
 {
   "nomeCompleto": "alexandre",
   "endereco": "teste",
-  "telefone": "997721371",
-  "profissaoCargo": "adm",
+  "telefone": "(51) 99772-1371",
+  "celular": "(51) 98888-7777",
+  "cpf": "12345678901",
+  "profissoes": ["Cabeleireira", "Colorista"],
   "email": "xandiipereiraa@outlook.com",
   "senha": "236412001",
   "dataNascimento": "1998-02-08T00:00:00Z",
+  "dataAdmissao": "2022-01-10T00:00:00Z",
   "nivelPermissao": 3,
   "status": 1
 }
 ```
 
-`dataNascimento` deve ser **ISO 8601** (`1998-02-08` ou com hora), não `08021998`.
+`dataNascimento` e `dataAdmissao` devem ser **ISO 8601 com Z** (ex.: `1998-02-08T00:00:00Z`).
+
+### Body cliente (POST/PUT)
+
+```json
+{
+  "nomeCompleto": "Maria",
+  "whatsApp": "(51) 99999-9999",
+  "email": "maria@email.com",
+  "instagram": "@maria",
+  "facebook": "maria.page",
+  "profissao": ["Manicure"],
+  "dataNascimento": "1990-05-15T00:00:00Z",
+  "endereco": "Rua Exemplo, 100"
+}
+```
+
+`profissao` é **array** e pode ser vazio `[]`.
 
 ### Testar API sem CORS (PowerShell — só servidor)
 
@@ -87,7 +107,7 @@ $token = $login.dados.token
 $headers = @{ Authorization = "Bearer $token" }
 Invoke-RestMethod -Uri "https://salao-beleza-service.onrender.com/funcionarios" `
   -Method POST -ContentType "application/json" -Headers $headers `
-  -Body '{"nomeCompleto":"...","email":"...","senha":"...","profissaoCargo":"adm","nivelPermissao":3,"status":1}'
+  -Body '{"nomeCompleto":"...","email":"...","senha":"...","profissoes":["Cabeleireira"],"nivelPermissao":3,"status":1}'
 ```
 
 ---

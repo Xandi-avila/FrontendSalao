@@ -4,6 +4,7 @@ using SalaoAdmin.DadosMock;
 using ArmazenamentoLocal = SalaoAdmin.DadosMock.ArmazenamentoLocal;
 using SalaoAdmin.Dtos.Funcionarios;
 using SalaoAdmin.Servicos.Base;
+using SalaoAdmin.Utilitarios;
 
 namespace SalaoAdmin.Servicos.Mock;
 
@@ -11,14 +12,16 @@ public class FuncionarioServicoMock(ArmazenamentoLocal dados) : ServicoMockBase<
 {
     public async Task<Resultado<ListaPaginada<FuncionarioDto>>> ListarAsync(FiltroPaginacao filtro, CancellationToken cancelamento = default)
     {
-        var busca = filtro.Busca?.Trim().ToLowerInvariant();
+        var busca = filtro.Busca?.Trim();
         return await PaginarAsync(
             dados.Funcionarios,
             filtro,
             f => string.IsNullOrEmpty(busca) ||
-                 f.NomeCompleto.ToLowerInvariant().Contains(busca) ||
-                 f.Email.ToLowerInvariant().Contains(busca) ||
-                 f.ProfissaoCargo.ToLowerInvariant().Contains(busca),
+                 f.NomeCompleto.Contains(busca, StringComparison.OrdinalIgnoreCase) ||
+                 f.Email.Contains(busca, StringComparison.OrdinalIgnoreCase) ||
+                 f.Celular?.Contains(busca, StringComparison.OrdinalIgnoreCase) == true ||
+                 f.CPF?.Contains(busca, StringComparison.OrdinalIgnoreCase) == true ||
+                 ProfissoesHelper.ContemBusca(f.Profissoes, busca),
             f => f.NomeCompleto);
     }
 
@@ -34,18 +37,7 @@ public class FuncionarioServicoMock(ArmazenamentoLocal dados) : ServicoMockBase<
     public async Task<Resultado<FuncionarioDto>> CriarAsync(FuncionarioCadastroDto dto, CancellationToken cancelamento = default)
     {
         await SimularEspera();
-        var novo = new FuncionarioDto
-        {
-            Id = Guid.NewGuid(),
-            NomeCompleto = dto.NomeCompleto,
-            Endereco = dto.Endereco,
-            Telefone = dto.Telefone,
-            ProfissaoCargo = dto.ProfissaoCargo,
-            Email = dto.Email,
-            DataNascimento = dto.DataNascimento,
-            NivelPermissao = dto.NivelPermissao,
-            Status = dto.Status
-        };
+        var novo = Mapear(dto, Guid.NewGuid());
         dados.Funcionarios.Add(novo);
         return Resultado<FuncionarioDto>.Ok(novo, "Funcionário cadastrado.");
     }
@@ -57,18 +49,7 @@ public class FuncionarioServicoMock(ArmazenamentoLocal dados) : ServicoMockBase<
         if (indice < 0)
             return Resultado<FuncionarioDto>.Falha("Funcionário não encontrado.");
 
-        dados.Funcionarios[indice] = new FuncionarioDto
-        {
-            Id = dto.Id,
-            NomeCompleto = dto.NomeCompleto,
-            Endereco = dto.Endereco,
-            Telefone = dto.Telefone,
-            ProfissaoCargo = dto.ProfissaoCargo,
-            Email = dto.Email,
-            DataNascimento = dto.DataNascimento,
-            NivelPermissao = dto.NivelPermissao,
-            Status = dto.Status
-        };
+        dados.Funcionarios[indice] = Mapear(dto, dto.Id);
         return Resultado<FuncionarioDto>.Ok(dados.Funcionarios[indice], "Dados atualizados.");
     }
 
@@ -80,6 +61,20 @@ public class FuncionarioServicoMock(ArmazenamentoLocal dados) : ServicoMockBase<
             ? Resultado.Ok("Funcionário excluído.")
             : Resultado.Falha("Funcionário não encontrado.");
     }
+
+    private static FuncionarioDto Mapear(FuncionarioCadastroDto dto, Guid id) => new()
+    {
+        Id = id,
+        NomeCompleto = dto.NomeCompleto.Trim(),
+        Endereco = dto.Endereco.Trim(),
+        Telefone = FormatacaoCampos.Telefone(dto.Telefone),
+        Celular = string.IsNullOrWhiteSpace(dto.Celular) ? null : FormatacaoCampos.Telefone(dto.Celular),
+        CPF = FormatacaoCampos.CpfSomenteDigitos(dto.CPF),
+        DataAdmissao = dto.DataAdmissao,
+        Profissoes = ProfissoesHelper.Limpar(dto.Profissoes),
+        Email = dto.Email.Trim(),
+        DataNascimento = dto.DataNascimento,
+        NivelPermissao = dto.NivelPermissao,
+        Status = dto.Status
+    };
 }
-
-

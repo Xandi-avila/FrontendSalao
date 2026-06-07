@@ -6,6 +6,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <RootNamespace>SalaoAdmin</RootNamespace>
     <AssemblyName>SalaoAdmin</AssemblyName>
+    <NoWarn>$(NoWarn);IDE0305;CA1862;MUD0002</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>

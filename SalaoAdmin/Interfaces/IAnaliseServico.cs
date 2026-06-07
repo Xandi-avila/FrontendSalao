@@ -1,10 +1,16 @@
 using SalaoAdmin.Comum;
 using SalaoAdmin.Components.Agenda;
+using SalaoAdmin.Dtos.Analise;
 
 namespace SalaoAdmin.Contratos;
 
 public interface IAnaliseServico
 {
+    Task<Resultado<ResumoFaturamentoVenda>> ObterFaturamentoAsync(
+        DateTime inicio,
+        DateTime fim,
+        CancellationToken cancelamento = default);
+
     Task<Resultado<AgendaPainelGerencial.IndicadoresGerenciais>> ObterIndicadoresAsync(
         DateTime inicio,
         DateTime fim,

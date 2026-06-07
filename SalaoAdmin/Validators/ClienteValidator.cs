@@ -15,6 +15,9 @@ public class ValidadorClienteCadastro : AbstractValidator<ClienteCadastroDto>
             .NotEmpty().WithMessage("WhatsApp é obrigatório.")
             .MinimumLength(14).WithMessage("WhatsApp inválido.");
 
+        RuleFor(x => x.Email)
+            .EmailAddress().When(x => !string.IsNullOrWhiteSpace(x.Email)).WithMessage("E-mail inválido.");
+
         RuleFor(x => x.Endereco)
             .NotEmpty().WithMessage("Endereço é obrigatório.");
     }
@@ -28,4 +31,3 @@ public class ValidadorClienteEdicao : AbstractValidator<ClienteEdicaoDto>
         RuleFor(x => x).SetValidator(new ValidadorClienteCadastro());
     }
 }
-
