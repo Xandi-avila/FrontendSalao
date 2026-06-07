@@ -3,6 +3,11 @@
         <Router AppAssembly="@typeof(App).Assembly">
             <Found Context="routeData">
                 <AuthorizeRouteView RouteData="@routeData" DefaultLayout="@typeof(AdminLayout)">
+                    <Authorizing>
+                        <div class="auth-shell auth-loading">
+                            <p>Carregando...</p>
+                        </div>
+                    </Authorizing>
                     <NotAuthorized>
                         <RedirectToLogin />
                     </NotAuthorized>
@@ -20,4 +25,3 @@
         </Router>
     </LimiteErros>
 </CascadingAuthenticationState>
-

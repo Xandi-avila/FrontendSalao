@@ -8,7 +8,7 @@
 @inject IServicoNotificacao Notificacoes
 @inject NavigationManager Navegacao
 
-<CabecalhoPagina Titulo="@($"Venda {VendaExibicaoHelper.NumeroAmigavel(Id)}")"
+<CabecalhoPagina Titulo="@($"Venda {_tituloNumeroVenda}")"
                  Subtitulo="Detalhamento da venda">
     <Acoes>
         <MudButton Variant="Variant.Outlined" StartIcon="@Icons.Material.Filled.ArrowBack"
@@ -35,7 +35,7 @@ else
                 <MudStack Spacing="2">
                     <div>
                         <MudText Typo="Typo.caption" Color="Color.Secondary">Número</MudText>
-                        <MudText Typo="Typo.body1">@VendaExibicaoHelper.NumeroAmigavel(_venda.Id)</MudText>
+                        <MudText Typo="Typo.body1">@_tituloNumeroVenda</MudText>
                     </div>
                     <div>
                         <MudText Typo="Typo.caption" Color="Color.Secondary">Data e hora</MudText>
@@ -93,6 +93,7 @@ else
 
     private bool _carregando = true;
     private VendaDto? _venda;
+    private string _tituloNumeroVenda = string.Empty;
     private string _nomeCliente = "—";
     private string _nomeFuncionario = "—";
     private List<LinhaDetalhe> _linhas = [];
@@ -123,6 +124,16 @@ else
         }
 
         _venda = resultado.Dados;
+
+        if (_venda.Numero is > 0)
+            _tituloNumeroVenda = VendaExibicaoHelper.NumeroAmigavel(_venda.Numero.Value);
+        else
+        {
+            var mapa = await VendaNumeroHelper.MontarMapaGlobalAsync(VendaServico);
+            _tituloNumeroVenda = mapa.TryGetValue(_venda.Id, out var numero)
+                ? VendaExibicaoHelper.NumeroAmigavel(numero)
+                : VendaExibicaoHelper.NumeroAmigavel(_venda);
+        }
 
         var produtos = await ProdutoServico.ListarAsync(new FiltroPaginacao { Pagina = 1, ItensPorPagina = 200 });
         var servicos = await ServicoCatalogoServico.ListarAsync(new FiltroPaginacao { Pagina = 1, ItensPorPagina = 200 });

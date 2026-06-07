@@ -1,0 +1,17 @@
+root = true
+
+[*]
+charset = utf-8
+insert_final_newline = true
+trim_trailing_whitespace = true
+
+[*.cs]
+# Sugestões de estilo (ícone azul ℹ no painel Problemas) — não exibir
+dotnet_analyzer_diagnostic.category-Style.severity = none
+
+# Code quality / performance informativos que não bloqueiam build
+dotnet_diagnostic.CA1862.severity = none
+dotnet_diagnostic.IDE0305.severity = none
+
+# MudBlazor (ex.: Linear/Icon no MudStepper)
+dotnet_diagnostic.MUD0002.severity = none

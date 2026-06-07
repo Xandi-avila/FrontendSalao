@@ -1,7 +1,9 @@
 using System.Net.Http.Json;
 using System.Text;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using SalaoAdmin.Comum;
+using SalaoAdmin.Utilitarios;
 
 namespace SalaoAdmin.Servicos.Api;
 
@@ -16,7 +18,13 @@ public abstract class BaseApiService(
 
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
-        PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+        DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
+        Converters =
+        {
+            new ApiNullableDateTimeJsonConverter(),
+            new ApiDateTimeJsonConverter()
+        }
     };
 
     protected async Task<ApiResult<TResposta>> GetAsync<TResposta>(string endpoint, CancellationToken cancelamento = default)

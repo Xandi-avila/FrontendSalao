@@ -2,7 +2,7 @@
 @using SalaoAdmin.Dtos.Servicos
 
 <MudGrid Spacing="3">
-    <MudItem xs="12" md="6">
+    <MudItem xs="12" md="8">
         <MudTextField @bind-Value="Modelo.Nome"
                       Label="Nome da categoria"
                       Variant="Variant.Outlined"
@@ -11,15 +11,15 @@
                       Error="@TemErro(nameof(Modelo.Nome))"
                       ErrorText="@MsgErro(nameof(Modelo.Nome))" />
     </MudItem>
-    <MudItem xs="12">
+    <MudItem xs="12" md="8">
         <MudSelect T="Guid"
-                   Label="Serviços vinculados"
+                   Label="Serviços vinculados (opcional)"
                    Variant="Variant.Outlined"
                    Margin="Margin.Dense"
                    MultiSelection="true"
                    SelectedValues="Modelo.ServicoIds"
                    SelectedValuesChanged="AoAlterarServicos"
-                   ToStringFunc="@(id => ServicosDisponiveis.FirstOrDefault(s => s.Id == id)?.Nome ?? id.ToString())">
+                   ToStringFunc="@(id => ServicosDisponiveis.FirstOrDefault(s => s.Id == id)?.Nome ?? "Serviço não encontrado")">
             @foreach (var servico in ServicosDisponiveis)
             {
                 <MudSelectItem T="Guid" Value="@servico.Id">@servico.Nome</MudSelectItem>

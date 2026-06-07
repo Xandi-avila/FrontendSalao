@@ -3,11 +3,6 @@
     height: 100%;
 }
 
-.venda-graficos-placeholder {
-    border-style: dashed;
-    opacity: 0.85;
-}
-
 .venda-pdv-layout {
     align-items: stretch;
 }

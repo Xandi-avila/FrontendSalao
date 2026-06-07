@@ -9,6 +9,6 @@ public class ConfiguracaoApi
 
     public bool UsarMocks { get; set; } = true;
 
-    public bool ExigirAutenticacao => !UsarMocks;
+    public bool ExigirAutenticacao => true;
 }
 

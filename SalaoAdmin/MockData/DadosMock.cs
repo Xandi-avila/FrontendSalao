@@ -29,8 +29,11 @@ public class ArmazenamentoLocal
             NomeCompleto = "alexandre tste",
             Endereco = "R. Cel. Genuíno, 130 - Centro Histórico, Porto Alegre - RS",
             Telefone = "(51) 99999-9999",
-            ProfissaoCargo = "Cabeleireira",
-            Email = "alexadre.teste@gmail.com",
+            Celular = "(51) 98888-8888",
+            CPF = "123.456.789-00",
+            DataAdmissao = new DateTime(2022, 1, 10),
+            Profissoes = new List<string> { "Cabeleireira" },
+            Email = "alexandre.teste@gmail.com",
             DataNascimento = new DateTime(1990, 5, 15),
             NivelPermissao = NivelPermissao.Profissional,
             Status = StatusRegistro.Ativo
@@ -41,8 +44,11 @@ public class ArmazenamentoLocal
             NomeCompleto = "alexandre tste",
             Endereco = "R. Cel. Genuíno, 130 - Centro Histórico, Porto Alegre - RS",
             Telefone = "(51) 99999-9999",
-            ProfissaoCargo = "Gerente",
-            Email = "alexadre.teste@gmail.com",
+            Celular = "(51) 97777-7777",
+            CPF = "234.567.890-11",
+            DataAdmissao = new DateTime(2021, 3, 1),
+            Profissoes = new List<string> { "Gerente" },
+            Email = "alexandre.teste@gmail.com",
             DataNascimento = new DateTime(1985, 8, 22),
             NivelPermissao = NivelPermissao.Gerente,
             Status = StatusRegistro.Ativo
@@ -53,8 +59,11 @@ public class ArmazenamentoLocal
             NomeCompleto = "alexandre tste",
             Endereco = "R. Cel. Genuíno, 130 - Centro Histórico, Porto Alegre - RS",
             Telefone = "(51) 99999-9999",
-            ProfissaoCargo = "Recepcionista",
-            Email = "alexadre.teste@gmail.com",
+            Celular = "(51) 96666-6666",
+            CPF = "345.678.901-22",
+            DataAdmissao = new DateTime(2023, 6, 15),
+            Profissoes = new List<string> { "Recepcionista" },
+            Email = "alexandre.teste@gmail.com",
             DataNascimento = new DateTime(1995, 3, 10),
             NivelPermissao = NivelPermissao.Recepcao,
             Status = StatusRegistro.Inativo
@@ -68,6 +77,9 @@ public class ArmazenamentoLocal
             Id = Guid.Parse("22222222-2222-2222-2222-222222222201"),
             NomeCompleto = "alexandre tste",
             WhatsApp = "(51) 99999-9999",
+            Email = "cliente1@teste.com",
+            Instagram = "@cliente1",
+            Profissao = new List<string> { "Maquiadora", "Esteticista" },
             DataNascimento = new DateTime(1988, 12, 5),
             Endereco = "R. Cel. Genuíno, 130 - Centro Histórico, Porto Alegre - RS"
         },
@@ -76,6 +88,9 @@ public class ArmazenamentoLocal
             Id = Guid.Parse("22222222-2222-2222-2222-222222222202"),
             NomeCompleto = "alexandre tste",
             WhatsApp = "(51) 99999-9999",
+            Email = "cliente2@teste.com",
+            Instagram = "@cliente2",
+            Profissao = new List<string> { "Designer de sobrancelhas" },
             DataNascimento = new DateTime(1992, 7, 18),
             Endereco = "R. Cel. Genuíno, 130 - Centro Histórico, Porto Alegre - RS"
         },
@@ -84,6 +99,9 @@ public class ArmazenamentoLocal
             Id = Guid.Parse("22222222-2222-2222-2222-222222222203"),
             NomeCompleto = "alexandre tste",
             WhatsApp = "(51) 99999-9999",
+            Email = "cliente3@teste.com",
+            Instagram = "@cliente3",
+            Profissao = new List<string> { "Manicure" },
             DataNascimento = new DateTime(1980, 1, 30),
             Endereco = "R. Cel. Genuíno, 130 - Centro Histórico, Porto Alegre - RS"
         }
@@ -193,20 +211,20 @@ public class ArmazenamentoLocal
         return
         [
             CriarCategoria("44444444-4444-4444-4444-444444444401", "Cabelo",
-                servicos.Where(s => s.NomeCategoria == "Cabelo").Select(s => s.Id).ToList(),
-                servicos.Where(s => s.NomeCategoria == "Cabelo").Select(s => s.Nome).ToList()),
+                [.. servicos.Where(s => s.NomeCategoria == "Cabelo").Select(s => s.Id)],
+                [.. servicos.Where(s => s.NomeCategoria == "Cabelo").Select(s => s.Nome)]),
             CriarCategoria("44444444-4444-4444-4444-444444444402", "Unhas",
-                servicos.Where(s => s.NomeCategoria == "Unhas").Select(s => s.Id).ToList(),
-                servicos.Where(s => s.NomeCategoria == "Unhas").Select(s => s.Nome).ToList()),
+                [.. servicos.Where(s => s.NomeCategoria == "Unhas").Select(s => s.Id)],
+                [.. servicos.Where(s => s.NomeCategoria == "Unhas").Select(s => s.Nome)]),
             CriarCategoria("44444444-4444-4444-4444-444444444403", "Estética",
-                servicos.Where(s => s.NomeCategoria == "Estética").Select(s => s.Id).ToList(),
-                servicos.Where(s => s.NomeCategoria == "Estética").Select(s => s.Nome).ToList()),
+                [.. servicos.Where(s => s.NomeCategoria == "Estética").Select(s => s.Id)],
+                [.. servicos.Where(s => s.NomeCategoria == "Estética").Select(s => s.Nome)]),
             CriarCategoria("44444444-4444-4444-4444-444444444404", "Maquiagem",
-                servicos.Where(s => s.NomeCategoria == "Maquiagem").Select(s => s.Id).ToList(),
-                servicos.Where(s => s.NomeCategoria == "Maquiagem").Select(s => s.Nome).ToList()),
+                [.. servicos.Where(s => s.NomeCategoria == "Maquiagem").Select(s => s.Id)],
+                [.. servicos.Where(s => s.NomeCategoria == "Maquiagem").Select(s => s.Nome)]),
             CriarCategoria("44444444-4444-4444-4444-444444444405", "Depilação",
-                servicos.Where(s => s.NomeCategoria == "Depilação").Select(s => s.Id).ToList(),
-                servicos.Where(s => s.NomeCategoria == "Depilação").Select(s => s.Nome).ToList())
+                [.. servicos.Where(s => s.NomeCategoria == "Depilação").Select(s => s.Id)],
+                [.. servicos.Where(s => s.NomeCategoria == "Depilação").Select(s => s.Nome)])
         ];
     }
 

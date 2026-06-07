@@ -12,6 +12,24 @@ public class AnaliseApiService(
     ErrorHandlerService errorHandler,
     ILogger<AnaliseApiService> logger) : BaseApiService(httpClient, errorHandler, logger), IAnaliseServico
 {
+    public async Task<Resultado<ResumoFaturamentoVenda>> ObterFaturamentoAsync(
+        DateTime inicio,
+        DateTime fim,
+        CancellationToken cancelamento = default)
+    {
+        var query = MontarQuery(new Dictionary<string, string?>
+        {
+            ["inicio"] = ApiDateTimeHelper.FormatarDataHoraApi(inicio.Date),
+            ["fim"] = ApiDateTimeHelper.FormatarDataHoraApi(fim.Date.AddDays(1).AddTicks(-1))
+        });
+
+        var api = await GetAsync<JsonElement>($"analise/faturamento{query}", cancelamento);
+        if (!api.Sucesso)
+            return Resultado<ResumoFaturamentoVenda>.Falha(api.Mensagem ?? "Falha ao obter faturamento.");
+
+        return Resultado<ResumoFaturamentoVenda>.Ok(ExtrairResumoFaturamento(api.Dados));
+    }
+
     public async Task<Resultado<AgendaPainelGerencial.IndicadoresGerenciais>> ObterIndicadoresAsync(
         DateTime inicio,
         DateTime fim,
@@ -33,8 +51,12 @@ public class AnaliseApiService(
             ["limite"] = "10"
         });
 
-        var funcApi = await GetAsync<JsonElement>($"analise/funcionarios{query}", cancelamento);
-        var servApi = await GetAsync<JsonElement>($"analise/servicos{queryServicos}", cancelamento);
+        var funcApiTask = GetAsync<JsonElement>($"analise/funcionarios{query}", cancelamento);
+        var servApiTask = GetAsync<JsonElement>($"analise/servicos{queryServicos}", cancelamento);
+        await Task.WhenAll(funcApiTask, servApiTask);
+
+        var funcApi = await funcApiTask;
+        var servApi = await servApiTask;
 
         if (!funcApi.Sucesso && !servApi.Sucesso)
             return Resultado<AgendaPainelGerencial.IndicadoresGerenciais>.Ok(
@@ -145,5 +167,28 @@ public class AnaliseApiService(
         if (el.TryGetProperty("qtd", out var q2) && q2.TryGetInt32(out var q2i))
             return q2i;
         return 0;
+    }
+
+    private static ResumoFaturamentoVenda ExtrairResumoFaturamento(JsonElement? el)
+    {
+        if (el is null || el.Value.ValueKind is JsonValueKind.Undefined or JsonValueKind.Null)
+            return new ResumoFaturamentoVenda();
+
+        var dados = el.Value;
+        var quantidade = 0;
+        if (dados.TryGetProperty("quantidade", out var qtdEl) && qtdEl.TryGetInt32(out var qtd))
+            quantidade = qtd;
+        else if (dados.TryGetProperty("qtd", out var qtd2El) && qtd2El.TryGetInt32(out var qtd2))
+            quantidade = qtd2;
+
+        decimal valor = 0;
+        if (dados.TryGetProperty("faturamento", out var fatEl) && fatEl.TryGetDecimal(out var fat))
+            valor = fat;
+        else if (dados.TryGetProperty("valor", out var valEl) && valEl.TryGetDecimal(out var val))
+            valor = val;
+        else if (dados.TryGetProperty("total", out var totalDecEl) && totalDecEl.ValueKind == JsonValueKind.Number && totalDecEl.TryGetDecimal(out var totalDec))
+            valor = totalDec;
+
+        return new ResumoFaturamentoVenda { Quantidade = quantidade, Valor = valor };
     }
 }

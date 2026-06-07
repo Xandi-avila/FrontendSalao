@@ -1,3 +1,5 @@
+using System.Text.Json.Serialization;
+
 namespace SalaoAdmin.Dtos.Clientes;
 
 public class ClienteDto
@@ -5,6 +7,12 @@ public class ClienteDto
     public Guid Id { get; set; }
     public string NomeCompleto { get; set; } = string.Empty;
     public string WhatsApp { get; set; } = string.Empty;
+    public string? Email { get; set; }
+    public string? Instagram { get; set; }
+
+    [JsonPropertyName("profissao")]
+    public List<string> Profissao { get; set; } = [];
+
     public DateTime? DataNascimento { get; set; }
     public string Endereco { get; set; } = string.Empty;
 }
@@ -13,6 +21,12 @@ public class ClienteCadastroDto
 {
     public string NomeCompleto { get; set; } = string.Empty;
     public string WhatsApp { get; set; } = string.Empty;
+    public string? Email { get; set; }
+    public string? Instagram { get; set; }
+
+    [JsonPropertyName("profissao")]
+    public List<string> Profissao { get; set; } = [];
+
     public DateTime? DataNascimento { get; set; }
     public string Endereco { get; set; } = string.Empty;
 }

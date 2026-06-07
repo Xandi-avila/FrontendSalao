@@ -21,12 +21,9 @@ public static class RegistroServicos
 
         servicos.AddAuthorizationCore(options =>
         {
-            if (config.ExigirAutenticacao)
-            {
-                options.FallbackPolicy = new AuthorizationPolicyBuilder()
-                    .RequireAuthenticatedUser()
-                    .Build();
-            }
+            options.FallbackPolicy = new AuthorizationPolicyBuilder()
+                .RequireAuthenticatedUser()
+                .Build();
         });
         servicos.AddScoped<JwtAuthenticationStateProvider>();
         servicos.AddScoped<AuthenticationStateProvider>(sp => sp.GetRequiredService<JwtAuthenticationStateProvider>());

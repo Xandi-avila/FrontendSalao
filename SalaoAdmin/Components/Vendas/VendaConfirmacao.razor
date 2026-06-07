@@ -5,55 +5,51 @@
     <MudStack AlignItems="AlignItems.Center" Spacing="2" Class="mb-4">
         <MudIcon Icon="@Icons.Material.Filled.CheckCircle" Color="Color.Success" Size="Size.Large" Style="font-size: 4rem;" />
         <MudText Typo="Typo.h5">Venda realizada!</MudText>
-        <MudText Typo="Typo.body2" Color="Color.Secondary">@VendaExibicaoHelper.NumeroAmigavel(Venda.Id)</MudText>
+        <MudText Typo="Typo.body2" Color="Color.Secondary">@TextoNumeroVenda()</MudText>
     </MudStack>
 
-    <MudGrid Spacing="3">
-        <MudItem xs="12" sm="6">
+    <MudGrid Spacing="3" Class="venda-confirmacao-dados mb-4">
+        <MudItem xs="6" sm="3" Class="text-center">
             <MudText Typo="Typo.caption" Color="Color.Secondary">Cliente</MudText>
             <MudText Typo="Typo.body1">@(string.IsNullOrWhiteSpace(NomeCliente) ? "Sem cliente" : NomeCliente)</MudText>
         </MudItem>
-        <MudItem xs="12" sm="6">
+        <MudItem xs="6" sm="3" Class="text-center">
             <MudText Typo="Typo.caption" Color="Color.Secondary">Data e hora</MudText>
             <MudText Typo="Typo.body1">@Venda.DataHora.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</MudText>
         </MudItem>
-        <MudItem xs="12" sm="6">
+        <MudItem xs="6" sm="3" Class="text-center">
             <MudText Typo="Typo.caption" Color="Color.Secondary">Status</MudText>
-            <MudChip T="string" Size="Size.Small" Color="Color.Success">@VendaExibicaoHelper.TextoStatus()</MudChip>
-        </MudItem>
-        <MudItem xs="12" sm="6">
-            <MudText Typo="Typo.caption" Color="Color.Secondary">Pagamento (registro)</MudText>
-            <MudText Typo="Typo.body1">@FormaPagamentoExibicao</MudText>
-        </MudItem>
-        <MudItem xs="12">
-            <MudText Typo="Typo.subtitle2" Class="mb-2">Itens vendidos</MudText>
-            <MudTable Items="Venda.Itens" Dense="true" Hover="true" Outlined="true">
-                <HeaderContent>
-                    <MudTh>Item</MudTh>
-                    <MudTh>Qtd</MudTh>
-                    <MudTh Style="text-align:right">Valor</MudTh>
-                </HeaderContent>
-                <RowTemplate>
-                    <MudTd>
-                        <MudText Typo="Typo.body2">@ResolverNome(context)</MudText>
-                        <MudText Typo="Typo.caption" Color="Color.Secondary">@VendaExibicaoHelper.TextoTipoItem(context.Tipo)</MudText>
-                    </MudTd>
-                    <MudTd>@context.Quantidade</MudTd>
-                    <MudTd Style="text-align:right">@FormatacaoCampos.Moeda(context.ValorUnitario * context.Quantidade)</MudTd>
-                </RowTemplate>
-            </MudTable>
-        </MudItem>
-        <MudItem xs="12">
-            <MudStack Row="true" Justify="Justify.SpaceBetween" Class="pa-3 venda-confirmacao-total">
-                <MudText Typo="Typo.h6">Total</MudText>
-                <MudText Typo="Typo.h5" Color="Color.Success">@FormatacaoCampos.Moeda(Venda.Total)</MudText>
+            <MudStack AlignItems="AlignItems.Center">
+                <MudChip T="string" Size="Size.Small" Color="Color.Success">@VendaExibicaoHelper.TextoStatus()</MudChip>
             </MudStack>
+        </MudItem>
+        <MudItem xs="6" sm="3" Class="text-center">
+            <MudText Typo="Typo.caption" Color="Color.Secondary">Pagamento</MudText>
+            <MudText Typo="Typo.body1">Dinheiro</MudText>
         </MudItem>
     </MudGrid>
 
-    <MudAlert Severity="Severity.Info" Dense="true" Class="mt-4">
-        Envio por WhatsApp e e-mail do cliente — preparado para implementação futura.
-    </MudAlert>
+    <MudText Typo="Typo.subtitle2" Class="mb-2 text-center">Itens vendidos</MudText>
+    <MudTable Items="Venda.Itens" Dense="true" Hover="true" Outlined="true" Class="mb-3">
+        <HeaderContent>
+            <MudTh>Item</MudTh>
+            <MudTh Style="text-align:center">Qtd</MudTh>
+            <MudTh Style="text-align:right">Valor</MudTh>
+        </HeaderContent>
+        <RowTemplate>
+            <MudTd>
+                <MudText Typo="Typo.body2">@ResolverNome(context)</MudText>
+                <MudText Typo="Typo.caption" Color="Color.Secondary">@VendaExibicaoHelper.TextoTipoItem(context.Tipo)</MudText>
+            </MudTd>
+            <MudTd Style="text-align:center">@context.Quantidade</MudTd>
+            <MudTd Style="text-align:right">@FormatacaoCampos.Moeda(context.ValorUnitario * context.Quantidade)</MudTd>
+        </RowTemplate>
+    </MudTable>
+
+    <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center" Class="pa-3 venda-confirmacao-total">
+        <MudText Typo="Typo.h6">Total</MudText>
+        <MudText Typo="Typo.h5" Color="Color.Success">@FormatacaoCampos.Moeda(Venda.Total)</MudText>
+    </MudStack>
 
     <MudStack Row="true" Spacing="2" Justify="Justify.Center" Class="mt-4">
         <MudButton Variant="Variant.Outlined" OnClick="OnNovaVenda">Nova venda</MudButton>
@@ -65,9 +61,18 @@
 @code {
     [Parameter] public VendaDto Venda { get; set; } = new();
     [Parameter] public string NomeCliente { get; set; } = string.Empty;
-    [Parameter] public string FormaPagamentoExibicao { get; set; } = "Registro interno";
+    [Parameter] public int? NumeroVenda { get; set; }
     [Parameter] public Func<ItemVendaDto, string> ResolverNomeItem { get; set; } = _ => "—";
     [Parameter] public EventCallback OnNovaVenda { get; set; }
 
     private string ResolverNome(ItemVendaDto item) => ResolverNomeItem(item);
+
+    private string TextoNumeroVenda()
+    {
+        if (NumeroVenda is > 0)
+            return VendaExibicaoHelper.NumeroAmigavel(NumeroVenda.Value);
+        if (Venda.Numero is > 0)
+            return VendaExibicaoHelper.NumeroAmigavel(Venda.Numero.Value);
+        return VendaExibicaoHelper.NumeroAmigavel(Venda);
+    }
 }

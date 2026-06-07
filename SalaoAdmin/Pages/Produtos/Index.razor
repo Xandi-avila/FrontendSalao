@@ -53,9 +53,12 @@
                     <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
                         @if (!string.IsNullOrEmpty(context.CaminhoImagem))
                         {
-                            <MudAvatar Size="Size.Small">
-                                <MudImage Src="@context.CaminhoImagem" Alt="@context.Nome" />
-                            </MudAvatar>
+                            <span @onclick:stopPropagation="true">
+                                <MudAvatar Size="Size.Small" Class="cursor-pointer"
+                                           @onclick="@(() => AbrirImagemProduto(context))">
+                                    <MudImage Src="@context.CaminhoImagem" Alt="@context.Nome" />
+                                </MudAvatar>
+                            </span>
                         }
                         @context.Nome
                     </MudStack>
@@ -150,5 +153,25 @@
         }
         else
             Notificacoes.Erro(exclusao.Mensagem ?? "Não foi possível excluir.");
+    }
+
+    private async Task AbrirImagemProduto(ProdutoDto produto)
+    {
+        if (string.IsNullOrWhiteSpace(produto.CaminhoImagem)) return;
+
+        var opcoes = new DialogOptions
+        {
+            MaxWidth = MaxWidth.Medium,
+            FullWidth = true,
+            CloseOnEscapeKey = true
+        };
+
+        var parametros = new DialogParameters<DialogoImagemProduto>
+        {
+            { x => x.Nome, produto.Nome },
+            { x => x.UrlImagem, produto.CaminhoImagem }
+        };
+
+        await Dialogos.ShowAsync<DialogoImagemProduto>(produto.Nome, parametros, opcoes);
     }
 }
