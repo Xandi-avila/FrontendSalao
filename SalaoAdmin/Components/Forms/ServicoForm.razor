@@ -3,7 +3,7 @@
 @using SalaoAdmin.Enums
 
 <MudGrid Spacing="3">
-    <MudItem xs="12" md="8">
+    <MudItem xs="12" md="6">
         <MudTextField @bind-Value="Modelo.Nome"
                       Label="Nome do serviço"
                       Variant="Variant.Outlined"
@@ -12,7 +12,7 @@
                       Error="@TemErro(nameof(Modelo.Nome))"
                       ErrorText="@MsgErro(nameof(Modelo.Nome))" />
     </MudItem>
-    <MudItem xs="12" md="4">
+    <MudItem xs="12" md="6">
         <MudNumericField @bind-Value="Modelo.DuracaoMinutos"
                          Label="Duração (minutos)"
                          Variant="Variant.Outlined"
@@ -22,24 +22,28 @@
                          Error="@TemErro(nameof(Modelo.DuracaoMinutos))"
                          ErrorText="@MsgErro(nameof(Modelo.DuracaoMinutos))" />
     </MudItem>
-    <MudItem xs="12" md="4">
+    <MudItem xs="12" md="6">
         <CampoMoeda @bind-ValorNumerico="Modelo.PrecoMinimo"
                     Rotulo="Preço mínimo"
                     Obrigatorio="true"
                     ComErro="@TemErro(nameof(Modelo.PrecoMinimo))"
                     TextoErro="@MsgErro(nameof(Modelo.PrecoMinimo))" />
     </MudItem>
-    <MudItem xs="12" md="4">
-        <MudSelect @bind-Value="Modelo.CategoriaId"
+    <MudItem xs="12" md="6">
+        <MudSelect T="Guid?"
                    Label="Categoria"
                    Variant="Variant.Outlined"
                    Margin="Margin.Dense"
                    Required="true"
+                   Value="CategoriaSelecionada"
+                   ValueChanged="AoAlterarCategoria"
+                   ToStringFunc="NomeCategoria"
                    Error="@TemErro(nameof(Modelo.CategoriaId))"
                    ErrorText="@MsgErro(nameof(Modelo.CategoriaId))">
+            <MudSelectItem T="Guid?" Value="@((Guid?)null)">Selecione a categoria</MudSelectItem>
             @foreach (var cat in Categorias)
             {
-                <MudSelectItem Value="@cat.Id">@cat.Nome</MudSelectItem>
+                <MudSelectItem T="Guid?" Value="@((Guid?)cat.Id)">@cat.Nome</MudSelectItem>
             }
         </MudSelect>
     </MudItem>
@@ -63,4 +67,15 @@
 
     private bool TemErro(string campo) => Erros.ContainsKey(campo);
     private string? MsgErro(string campo) => Erros.TryGetValue(campo, out var msg) ? msg : null;
+
+    private Guid? CategoriaSelecionada =>
+        Modelo.CategoriaId == Guid.Empty ? null : Modelo.CategoriaId;
+
+    private void AoAlterarCategoria(Guid? id) =>
+        Modelo.CategoriaId = id ?? Guid.Empty;
+
+    private string NomeCategoria(Guid? id) =>
+        id is null || id == Guid.Empty
+            ? "Selecione a categoria"
+            : Categorias.FirstOrDefault(c => c.Id == id)?.Nome ?? "Categoria não encontrada";
 }
