@@ -1,17 +1,23 @@
-<MudTextField Value="_exibicao"
-              ValueChanged="@(async (string? v) => await AoDigitar(v))"
-              Label="@Rotulo"
-              Variant="Variant.Outlined"
-              Margin="Margin.Dense"
-              Required="@Obrigatorio"
-              Error="@ComErro"
-              ErrorText="@TextoErro"
-              Placeholder="dd/MM/aaaa"
-              MaxLength="10"
-              InputMode="InputMode.numeric"
-              Immediate="true"
-              @onfocusin="AoFocar"
-              @onfocusout="AoDesfocar" />
+<div>
+    <MudTextField Value="_exibicao"
+                  ValueChanged="@(async (string? v) => await AoDigitar(v))"
+                  Label="@Rotulo"
+                  Variant="Variant.Outlined"
+                  Margin="Margin.Dense"
+                  Required="@Obrigatorio"
+                  Error="@MostrarErro"
+                  ErrorText="@MensagemErro"
+                  Placeholder="dd/MM/aaaa"
+                  MaxLength="10"
+                  InputMode="InputMode.numeric"
+                  Immediate="true"
+                  @onfocusin="AoFocar"
+                  @onfocusout="AoDesfocar" />
+    @if (MostrarErro && !string.IsNullOrWhiteSpace(MensagemErro))
+    {
+        <MudText Typo="Typo.caption" Color="Color.Error" Class="ml-1 mt-n1">@MensagemErro</MudText>
+    }
+</div>
 
 @code {
     [Parameter] public string Rotulo { get; set; } = "Data";
@@ -20,9 +26,15 @@
     [Parameter] public bool Obrigatorio { get; set; }
     [Parameter] public bool ComErro { get; set; }
     [Parameter] public string? TextoErro { get; set; }
+    [Parameter] public DateTime? DataMinima { get; set; }
+    [Parameter] public DateTime? DataMaxima { get; set; }
 
     private string _exibicao = string.Empty;
+    private string? _erroLocal;
     private bool _focado;
+
+    private bool MostrarErro => !string.IsNullOrWhiteSpace(MensagemErro);
+    private string? MensagemErro => _erroLocal ?? (ComErro ? TextoErro : null);
 
     protected override void OnParametersSet()
     {
@@ -30,19 +42,54 @@
             return;
 
         _exibicao = FormatacaoCampos.DataParaCampo(Valor);
+        RecalcularErro();
+    }
+
+    public string? ObterErroAtual()
+    {
+        RecalcularErro();
+        return _erroLocal;
+    }
+
+    public async Task SincronizarAsync()
+    {
+        if (string.IsNullOrWhiteSpace(_exibicao))
+        {
+            _erroLocal = Obrigatorio ? "Informe a data." : null;
+            await ValorChanged.InvokeAsync(null);
+            await NotificarAlteracaoAsync();
+            return;
+        }
+
+        var digitos = FormatacaoCampos.SoNumeros(_exibicao);
+        if (digitos.Length is > 0 and < 8)
+        {
+            _erroLocal = "Data incompleta.";
+            await NotificarAlteracaoAsync();
+            return;
+        }
+
+        var data = FormatacaoCampos.DataDeTexto(_exibicao);
+        if (digitos.Length >= 8 && !data.HasValue)
+        {
+            _erroLocal = "Data inválida.";
+            await ValorChanged.InvokeAsync(null);
+            await NotificarAlteracaoAsync();
+            return;
+        }
+
+        if (!data.HasValue)
+            return;
+
+        await AplicarDataAsync(data.Value);
     }
 
     private void AoFocar(FocusEventArgs _) => _focado = true;
 
-    private void AoDesfocar(FocusEventArgs _)
+    private async Task AoDesfocar(FocusEventArgs _)
     {
         _focado = false;
-
-        if (string.IsNullOrWhiteSpace(_exibicao))
-            return;
-
-        if (FormatacaoCampos.SoNumeros(_exibicao).Length is > 0 and < 8)
-            _exibicao = FormatacaoCampos.DataParaCampo(Valor);
+        await SincronizarAsync();
     }
 
     private async Task AoDigitar(string? texto)
@@ -51,12 +98,49 @@
 
         if (string.IsNullOrWhiteSpace(_exibicao))
         {
+            _erroLocal = null;
             await ValorChanged.InvokeAsync(null);
+            await NotificarAlteracaoAsync();
             return;
         }
 
         var data = FormatacaoCampos.DataDeTexto(_exibicao);
-        if (data.HasValue)
-            await ValorChanged.InvokeAsync(data);
+        if (!data.HasValue)
+        {
+            _erroLocal = null;
+            await NotificarAlteracaoAsync();
+            return;
+        }
+
+        await AplicarDataAsync(data.Value);
     }
+
+    private async Task AplicarDataAsync(DateTime data)
+    {
+        _erroLocal = ValidacaoDatas.ValidarPeriodo(data, DataMinima, DataMaxima);
+        await ValorChanged.InvokeAsync(data);
+        await NotificarAlteracaoAsync();
+    }
+
+    private void RecalcularErro()
+    {
+        var dataTexto = FormatacaoCampos.DataDeTexto(_exibicao);
+        if (dataTexto.HasValue)
+        {
+            _erroLocal = ValidacaoDatas.ValidarPeriodo(dataTexto, DataMinima, DataMaxima);
+            return;
+        }
+
+        if (Obrigatorio && string.IsNullOrWhiteSpace(_exibicao))
+        {
+            _erroLocal = "Informe a data.";
+            return;
+        }
+
+        _erroLocal = Valor.HasValue
+            ? ValidacaoDatas.ValidarPeriodo(Valor, DataMinima, DataMaxima)
+            : null;
+    }
+
+    private Task NotificarAlteracaoAsync() => InvokeAsync(StateHasChanged);
 }
