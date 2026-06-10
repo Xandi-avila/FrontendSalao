@@ -21,6 +21,14 @@ public class ValidadorFuncionarioCadastro : AbstractValidator<FuncionarioCadastr
             .WithMessage("Celular incompleto.");
         RuleFor(x => x.Profissoes).NotEmpty().WithMessage("Informe ao menos uma profissão.");
         RuleFor(x => x.Endereco).NotEmpty().WithMessage("Informe o endereço.");
+
+        RuleFor(x => x.DataAdmissao)
+            .Must(data => ValidacaoDatas.MensagemErroAdmissao(data) is null)
+            .WithMessage(x => ValidacaoDatas.MensagemErroAdmissao(x.DataAdmissao)!);
+
+        RuleFor(x => x.DataNascimento)
+            .Must(data => ValidacaoDatas.MensagemErroNascimento(data) is null)
+            .WithMessage(x => ValidacaoDatas.MensagemErroNascimento(x.DataNascimento)!);
     }
 }
 
@@ -45,5 +53,13 @@ public class ValidadorFuncionarioEdicao : AbstractValidator<FuncionarioEdicaoDto
             .MinimumLength(6)
             .When(x => !string.IsNullOrWhiteSpace(x.Senha))
             .WithMessage("Nova senha deve ter no mínimo 6 caracteres.");
+
+        RuleFor(x => x.DataAdmissao)
+            .Must(data => ValidacaoDatas.MensagemErroAdmissao(data) is null)
+            .WithMessage(x => ValidacaoDatas.MensagemErroAdmissao(x.DataAdmissao)!);
+
+        RuleFor(x => x.DataNascimento)
+            .Must(data => ValidacaoDatas.MensagemErroNascimento(data) is null)
+            .WithMessage(x => ValidacaoDatas.MensagemErroNascimento(x.DataNascimento)!);
     }
 }

@@ -1,7 +1,11 @@
 @page "/vendas/historico"
 @layout AdminLayout
+@using SalaoAdmin.Dtos.Funcionarios
+@using SalaoAdmin.Enums
 @inject IVendaServico VendaServico
 @inject IClienteServico ClienteServico
+@inject IFuncionarioServico FuncionarioServico
+@inject TokenStorageService TokenStorage
 @inject IServicoNotificacao Notificacoes
 @inject NavigationManager Navegacao
 @implements IDisposable
@@ -31,6 +35,16 @@
                              CompareWith="CompararClientes"
                              Clearable="true" ResetValueOnEmptyText="true" />
         </MudItem>
+        @if (_podeVerTodosFuncionarios)
+        {
+            <MudItem xs="12" sm="6" md="3">
+                <MudAutocomplete T="FuncionarioDto" Label="Funcionário" Variant="Variant.Outlined" Margin="Margin.Dense"
+                                 SearchFunc="BuscarFuncionarios" ToStringFunc="@(f => f?.NomeCompleto ?? "")"
+                                 Value="_funcionarioFiltro" ValueChanged="v => _funcionarioFiltro = v"
+                                 CompareWith="CompararFuncionarios"
+                                 Clearable="true" ResetValueOnEmptyText="true" />
+            </MudItem>
+        }
         <MudItem xs="12" sm="6" md="3">
             <MudSelect T="string" Label="Tipo de item" Variant="Variant.Outlined" Margin="Margin.Dense"
                        Value="_filtroTipo" ValueChanged="v => _filtroTipo = v" Clearable="true">
@@ -69,6 +83,10 @@
                   OnRowClick="AbrirDetalhe" T="LinhaHistoricoVenda" RowClass="cursor-pointer">
             <HeaderContent>
                 <MudTh>Venda</MudTh>
+                @if (_podeVerTodosFuncionarios)
+                {
+                    <MudTh>Funcionário</MudTh>
+                }
                 <MudTh>Cliente</MudTh>
                 <MudTh>Data</MudTh>
                 <MudTh>Itens</MudTh>
@@ -79,6 +97,10 @@
                 <MudTd DataLabel="Venda">
                     <MudText Typo="Typo.body2"><strong>@VendaExibicaoHelper.NumeroAmigavel(context.Venda)</strong></MudText>
                 </MudTd>
+                @if (_podeVerTodosFuncionarios)
+                {
+                    <MudTd DataLabel="Funcionário">@NomeFuncionario(context.Venda.FuncionarioId)</MudTd>
+                }
                 <MudTd DataLabel="Cliente">@NomeCliente(context.Venda.ClienteId)</MudTd>
                 <MudTd DataLabel="Data">@context.Venda.DataHora.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</MudTd>
                 <MudTd DataLabel="Itens">@VendaCalculoHelper.TextoResumoItens(context.Venda)</MudTd>
@@ -105,7 +127,11 @@
     private Dictionary<Guid, int> _numerosVendas = new();
     private Task? _mapaNumerosTask;
     private readonly Dictionary<Guid, string> _nomesClientes = new();
+    private readonly Dictionary<Guid, string> _nomesFuncionarios = new();
     private List<ClienteDto> _clientes = [];
+    private List<FuncionarioDto> _funcionarios = [];
+    private bool _podeVerTodosFuncionarios;
+    private Guid _funcionarioLogadoId;
 
     private sealed class LinhaHistoricoVenda
     {
@@ -119,12 +145,22 @@
     private DateTime? _filtroInicio;
     private DateTime? _filtroFim;
     private ClienteDto? _clienteFiltro;
+    private FuncionarioDto? _funcionarioFiltro;
     private string? _filtroTipo;
 
     protected override async Task OnInitializedAsync()
     {
+        var usuario = await TokenStorage.ObterUsuarioAsync();
+        if (usuario is not null)
+        {
+            _funcionarioLogadoId = usuario.Id;
+            _podeVerTodosFuncionarios = (int)usuario.NivelPermissao >= (int)NivelPermissao.Gerente;
+        }
+
         DefinirPeriodoPadrao();
         await CarregarClientesAsync();
+        if (_podeVerTodosFuncionarios)
+            await CarregarFuncionariosAsync();
         IniciarMapaNumerosEmBackground();
         await Carregar();
     }
@@ -167,6 +203,32 @@
         _clientes = todos.OrderBy(c => c.NomeCompleto).ToList();
     }
 
+    private async Task CarregarFuncionariosAsync()
+    {
+        var todos = new List<FuncionarioDto>();
+        var pagina = 1;
+
+        while (true)
+        {
+            var resposta = await FuncionarioServico.ListarAsync(new FiltroPaginacao
+            {
+                Pagina = pagina,
+                ItensPorPagina = 100
+            });
+
+            if (!resposta.Sucesso || resposta.Dados is null || resposta.Dados.Itens.Count == 0)
+                break;
+
+            todos.AddRange(resposta.Dados.Itens);
+            if (todos.Count >= resposta.Dados.Total)
+                break;
+
+            pagina++;
+        }
+
+        _funcionarios = todos.OrderBy(f => f.NomeCompleto).ToList();
+    }
+
     private async Task Carregar()
     {
         var versao = Interlocked.Increment(ref _versaoCarregar);
@@ -180,7 +242,9 @@
 
         try
         {
-            if (_clienteFiltro is not null && !VendaNumeroHelper.TryParseNumeroBusca(_busca, out _))
+            if (_funcionarioFiltro is not null && _podeVerTodosFuncionarios && !VendaNumeroHelper.TryParseNumeroBusca(_busca, out _))
+                await CarregarVendasFuncionarioAsync(versao, cancelamento);
+            else if (_clienteFiltro is not null && !VendaNumeroHelper.TryParseNumeroBusca(_busca, out _))
                 await CarregarVendasClienteAsync(versao, cancelamento);
             else
                 await CarregarVendasServicoAsync(versao, cancelamento);
@@ -195,11 +259,20 @@
         }
     }
 
+    private Guid? FuncionarioIdConsulta =>
+        _podeVerTodosFuncionarios ? _funcionarioFiltro?.Id : _funcionarioLogadoId;
+
+    private IEnumerable<VendaDto> FiltrarPorPermissao(IEnumerable<VendaDto> vendas) =>
+        _podeVerTodosFuncionarios
+            ? vendas
+            : vendas.Where(v => v.FuncionarioId == _funcionarioLogadoId);
+
     private async Task CarregarVendasClienteAsync(int versao, CancellationToken cancelamento)
     {
         var resposta = await VendaServico.ListarAsync(new FiltroVenda
         {
             ClienteId = _clienteFiltro!.Id,
+            FuncionarioId = FuncionarioIdConsulta,
             Pagina = 1,
             ItensPorPagina = 100
         }, cancelamento);
@@ -216,7 +289,7 @@
             return;
         }
 
-        var filtradas = resposta.Dados.Itens
+        var filtradas = FiltrarPorPermissao(resposta.Dados.Itens)
             .Where(v => VendaCalculoHelper.VendaNoPeriodo(v, _filtroInicio, _filtroFim))
             .Where(v => string.IsNullOrWhiteSpace(_filtroTipo) || VendaCalculoHelper.VendaContemTipo(v, _filtroTipo!))
             .OrderByDescending(v => v.DataHora)
@@ -235,6 +308,51 @@
             IniciarMapaNumerosEmBackground();
     }
 
+    private async Task CarregarVendasFuncionarioAsync(int versao, CancellationToken cancelamento)
+    {
+        var resposta = await VendaServico.ListarAsync(new FiltroVenda
+        {
+            FuncionarioId = _funcionarioFiltro!.Id,
+            ClienteId = _clienteFiltro?.Id,
+            Pagina = 1,
+            ItensPorPagina = 100
+        }, cancelamento);
+
+        if (versao != _versaoCarregar || cancelamento.IsCancellationRequested)
+            return;
+
+        if (!resposta.Sucesso || resposta.Dados is null)
+        {
+            Notificacoes.Erro(resposta.Mensagem ?? "Erro ao carregar vendas.");
+            _lista = [];
+            _linhasHistorico = [];
+            _total = 0;
+            return;
+        }
+
+        var filtradas = FiltrarPorPermissao(resposta.Dados.Itens)
+            .Where(v => VendaCalculoHelper.VendaNoPeriodo(v, _filtroInicio, _filtroFim))
+            .Where(v => string.IsNullOrWhiteSpace(_filtroTipo) || VendaCalculoHelper.VendaContemTipo(v, _filtroTipo!))
+            .Where(v => _clienteFiltro is null || v.ClienteId == _clienteFiltro.Id)
+            .OrderByDescending(v => v.DataHora)
+            .ToList();
+
+        _total = filtradas.Count;
+        _lista = filtradas
+            .Skip((_pagina - 1) * _itensPorPagina)
+            .Take(_itensPorPagina)
+            .ToList();
+        AplicarNumerosGlobais(_lista);
+        _linhasHistorico = _lista.Select(v => new LinhaHistoricoVenda { Venda = v }).ToList();
+        _nomesFuncionarios[_funcionarioFiltro.Id] = _funcionarioFiltro.NomeCompleto;
+
+        if (_clienteFiltro is not null)
+            _nomesClientes[_clienteFiltro.Id] = _clienteFiltro.NomeCompleto;
+
+        if (_numerosVendas.Count == 0)
+            IniciarMapaNumerosEmBackground();
+    }
+
     private async Task CarregarVendasServicoAsync(int versao, CancellationToken cancelamento)
     {
         var resposta = await VendaServico.ListarAsync(new FiltroVenda
@@ -242,6 +360,7 @@
             Pagina = _pagina,
             ItensPorPagina = _itensPorPagina,
             ClienteId = _clienteFiltro?.Id,
+            FuncionarioId = FuncionarioIdConsulta,
             Inicio = _filtroInicio,
             Fim = _filtroFim,
             TipoItem = _filtroTipo,
@@ -260,7 +379,8 @@
             return;
         }
 
-        _lista = resposta.Dados.Itens.ToList();
+        var filtradas = FiltrarPorPermissao(resposta.Dados.Itens).ToList();
+        _lista = filtradas;
         _total = resposta.Dados.Total;
         AplicarNumerosGlobais(_lista);
         _linhasHistorico = _lista.Select(v => new LinhaHistoricoVenda { Venda = v }).ToList();
@@ -269,6 +389,11 @@
             _nomesClientes[_clienteFiltro.Id] = _clienteFiltro.NomeCompleto;
         else
             PreencherNomesClientesLocais(_lista);
+
+        if (_funcionarioFiltro is not null)
+            _nomesFuncionarios[_funcionarioFiltro.Id] = _funcionarioFiltro.NomeCompleto;
+        else
+            PreencherNomesFuncionariosLocais(_lista);
     }
 
     private void IniciarMapaNumerosEmBackground()
@@ -321,11 +446,25 @@
         }
     }
 
+    private void PreencherNomesFuncionariosLocais(IEnumerable<VendaDto> vendas)
+    {
+        foreach (var id in vendas.Select(v => v.FuncionarioId).Distinct())
+        {
+            if (_nomesFuncionarios.ContainsKey(id))
+                continue;
+
+            var local = _funcionarios.FirstOrDefault(f => f.Id == id);
+            if (local is not null)
+                _nomesFuncionarios[id] = local.NomeCompleto;
+        }
+    }
+
     private Task LimparFiltros()
     {
         _busca = string.Empty;
         DefinirPeriodoPadrao();
         _clienteFiltro = null;
+        _funcionarioFiltro = null;
         _filtroTipo = null;
         _pagina = 1;
         return Carregar();
@@ -350,6 +489,25 @@
     private static bool CompararClientes(ClienteDto? a, ClienteDto? b) =>
         a?.Id == b?.Id;
 
+    private Task<IEnumerable<FuncionarioDto>> BuscarFuncionarios(string texto, CancellationToken _)
+    {
+        if (_funcionarios.Count == 0)
+            return Task.FromResult(Enumerable.Empty<FuncionarioDto>());
+
+        if (string.IsNullOrWhiteSpace(texto))
+            return Task.FromResult(_funcionarios.Take(20).AsEnumerable());
+
+        var busca = texto.Trim().ToLowerInvariant();
+        return Task.FromResult(_funcionarios.Where(f =>
+                f.NomeCompleto.ToLowerInvariant().Contains(busca) ||
+                f.Email.ToLowerInvariant().Contains(busca) ||
+                f.Telefone.Contains(busca))
+            .Take(20));
+    }
+
+    private static bool CompararFuncionarios(FuncionarioDto? a, FuncionarioDto? b) =>
+        a?.Id == b?.Id;
+
     private void AbrirDetalhe(TableRowClickEventArgs<LinhaHistoricoVenda> args)
     {
         if (args.Item is null) return;
@@ -366,5 +524,15 @@
             return nome;
         var local = _clientes.FirstOrDefault(c => c.Id == id);
         return local?.NomeCompleto ?? "Cliente";
+    }
+
+    private string NomeFuncionario(Guid id)
+    {
+        if (_funcionarioFiltro?.Id == id)
+            return _funcionarioFiltro.NomeCompleto;
+        if (_nomesFuncionarios.TryGetValue(id, out var nome))
+            return nome;
+        var local = _funcionarios.FirstOrDefault(f => f.Id == id);
+        return local?.NomeCompleto ?? "Funcionário";
     }
 }

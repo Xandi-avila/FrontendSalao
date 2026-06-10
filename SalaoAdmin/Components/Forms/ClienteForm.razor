@@ -44,9 +44,12 @@
                       Margin="Margin.Dense"/>
     </MudItem>
     <MudItem xs="12" md="6">
-        <CampoData Valor="@Modelo.DataNascimento"
+        <CampoData @ref="_campoNascimento"
+                   Valor="@Modelo.DataNascimento"
                    ValorChanged="@(v => Modelo.DataNascimento = v)"
                    Rotulo="Data de nascimento"
+                   DataMinima="@ValidacaoDatas.DataMinimaPadrao"
+                   DataMaxima="@DateTime.Today"
                    ComErro="@TemErro(nameof(Modelo.DataNascimento))"
                    TextoErro="@MsgErro(nameof(Modelo.DataNascimento))" />
     </MudItem>
@@ -66,6 +69,22 @@
     [Parameter] public Dictionary<string, string> Erros { get; set; } = new();
 
     private string _profissaoTexto = string.Empty;
+    private CampoData? _campoNascimento;
+
+    public async Task SincronizarDatasAsync() =>
+        await (_campoNascimento?.SincronizarAsync() ?? Task.CompletedTask);
+
+    public Dictionary<string, string> ColetarErrosDatas()
+    {
+        var erros = new Dictionary<string, string>();
+
+        var erroNascimento = _campoNascimento?.ObterErroAtual()
+            ?? ValidacaoDatas.MensagemErroNascimento(Modelo.DataNascimento);
+        if (!string.IsNullOrWhiteSpace(erroNascimento))
+            erros["DataNascimento"] = erroNascimento;
+
+        return erros;
+    }
 
     protected override void OnParametersSet() =>
         _profissaoTexto = ProfissoesHelper.ParaTexto(Modelo.Profissao);
