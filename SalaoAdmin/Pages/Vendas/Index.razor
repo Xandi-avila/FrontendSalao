@@ -190,14 +190,20 @@ else
             _servicos = servicos.Dados.Itens.Where(s => s.Status == StatusRegistro.Ativo).OrderBy(s => s.Nome).ToList();
     }
 
-    private async Task CarregarIndicadoresAsync()
+    private async Task CarregarIndicadoresAsync(VendaDto? vendaIncluir = null)
     {
         var hoje = DateTime.Today;
         var vendas = await ListarVendasHojeAsync(hoje);
 
+        if (vendaIncluir is not null &&
+            VendaCalculoHelper.VendaNoPeriodo(vendaIncluir, hoje, hoje) &&
+            vendas.All(v => v.Id != vendaIncluir.Id))
+        {
+            vendas.Add(vendaIncluir);
+        }
+
         var produtos = VendaCalculoHelper.ContarItensPorTipo(vendas, TipoItemVenda.Produto);
         var servicos = VendaCalculoHelper.ContarItensPorTipo(vendas, TipoItemVenda.Servico);
-        var quantidade = produtos + servicos;
 
         var valor = vendas.Sum(v => v.Total);
         if (vendas.Count == 0)
@@ -209,7 +215,7 @@ else
 
         _indicadores = new VendaCardsOperacionais.IndicadoresVenda
         {
-            QuantidadeVendasHoje = quantidade,
+            QuantidadeVendasHoje = vendas.Count,
             QuantidadeProdutosHoje = produtos,
             QuantidadeServicosHoje = servicos,
             ValorVendidoHoje = valor
@@ -340,7 +346,7 @@ else
         }
 
         _etapa = EtapaVenda.Confirmacao;
-        await CarregarIndicadoresAsync();
+        await CarregarIndicadoresAsync(_vendaRegistrada);
         Notificacoes.Sucesso(resultado.Mensagem ?? "Venda registrada com sucesso.");
     }
 

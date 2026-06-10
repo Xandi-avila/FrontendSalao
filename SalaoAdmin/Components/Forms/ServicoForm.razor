@@ -13,11 +13,14 @@
                       ErrorText="@MsgErro(nameof(Modelo.Nome))" />
     </MudItem>
     <MudItem xs="12" md="6">
-        <MudNumericField @bind-Value="Modelo.DuracaoMinutos"
+        <MudNumericField T="int?" Value="_duracaoMinutos"
+                         ValueChanged="AoAlterarDuracao"
                          Label="Duração (minutos)"
                          Variant="Variant.Outlined"
                          Margin="Margin.Dense"
                          Min="1"
+                         Clearable="true"
+                         Placeholder="Informe os minutos"
                          Required="true"
                          Error="@TemErro(nameof(Modelo.DuracaoMinutos))"
                          ErrorText="@MsgErro(nameof(Modelo.DuracaoMinutos))" />
@@ -58,9 +61,19 @@
     [Parameter] public Dictionary<string, string> Erros { get; set; } = new();
 
     private bool _ativo = true;
+    private int? _duracaoMinutos;
 
-    protected override void OnParametersSet() =>
+    protected override void OnParametersSet()
+    {
         _ativo = Modelo.Status == StatusRegistro.Ativo;
+        _duracaoMinutos = Modelo.DuracaoMinutos > 0 ? Modelo.DuracaoMinutos : null;
+    }
+
+    private void AoAlterarDuracao(int? valor)
+    {
+        _duracaoMinutos = valor;
+        Modelo.DuracaoMinutos = valor ?? 0;
+    }
 
     protected override void OnAfterRender(bool firstRender) =>
         Modelo.Status = _ativo ? StatusRegistro.Ativo : StatusRegistro.Inativo;

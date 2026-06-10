@@ -19,7 +19,7 @@ else
 {
     <MudPaper Class="pa-4" Elevation="1" Style="position: relative;">
         <OverlayCarregando Visivel="_salvando" />
-        <ClienteForm Modelo="_modelo" Erros="_erros" />
+        <ClienteForm @ref="_formulario" Modelo="_modelo" Erros="_erros" />
         <MudStack Row="true" Justify="Justify.FlexEnd" Spacing="2" Class="mt-4">
             <MudButton Variant="Variant.Text" OnClick="@(() => Navegacao.NavigateTo("/clientes"))">Cancelar</MudButton>
             <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="Salvar" Disabled="_salvando">Atualizar</MudButton>
@@ -31,6 +31,7 @@ else
     [Parameter] public Guid Id { get; set; }
 
     private ClienteEdicaoDto? _modelo;
+    private ClienteForm? _formulario;
     private Dictionary<string, string> _erros = new();
     private bool _carregando = true;
     private bool _salvando;
@@ -60,12 +61,14 @@ else
     {
         if (_modelo is null) return;
 
-        var validacao = await Validacao.ValidarAsync(_modelo);
-        if (!validacao.IsValid)
-        {
-            _erros = Validacao.ParaErros(validacao);
+        _erros = await ValidacaoFormularioHelper.ValidarAntesDeSalvarAsync(
+            Validacao,
+            _modelo,
+            () => _formulario?.ColetarErrosDatas() ?? new Dictionary<string, string>(),
+            () => _formulario?.SincronizarDatasAsync() ?? Task.CompletedTask);
+
+        if (_erros.Count > 0)
             return;
-        }
 
         _salvando = true;
         try

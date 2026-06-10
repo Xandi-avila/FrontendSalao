@@ -22,7 +22,16 @@ public class ServicoValidacao(IServiceProvider provedor) : IServicoValidacao
 
     public Dictionary<string, string> ParaErros(ValidationResult resultado) =>
         resultado.Errors
-            .GroupBy(e => e.PropertyName)
+            .GroupBy(e => NormalizarPropriedade(e.PropertyName))
+            .Where(g => !string.IsNullOrWhiteSpace(g.Key))
             .ToDictionary(g => g.Key, g => g.First().ErrorMessage);
-}
 
+    private static string NormalizarPropriedade(string nome)
+    {
+        if (string.IsNullOrWhiteSpace(nome))
+            return string.Empty;
+
+        var ultimoPonto = nome.LastIndexOf('.');
+        return ultimoPonto >= 0 ? nome[(ultimoPonto + 1)..] : nome;
+    }
+}
