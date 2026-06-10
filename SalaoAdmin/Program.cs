@@ -11,6 +11,7 @@ builder.RootComponents.Add<HeadOutlet>("head::after");
 
 var configApi = new ConfiguracaoApi();
 builder.Configuration.GetSection(ConfiguracaoApi.NomeSecao).Bind(configApi);
+configApi.UrlBaseApi = ConfiguracaoApi.ResolverUrlBaseApi(configApi.UrlBaseApi, builder.HostEnvironment.BaseAddress);
 
 builder.Services.AddMudServices(c =>
 {
