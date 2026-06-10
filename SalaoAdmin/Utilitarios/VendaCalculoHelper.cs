@@ -49,8 +49,9 @@ public static class VendaCalculoHelper
 
     public static bool VendaNoPeriodo(VendaDto venda, DateTime? inicio, DateTime? fim)
     {
-        if (inicio.HasValue && venda.DataHora.Date < inicio.Value.Date) return false;
-        if (fim.HasValue && venda.DataHora.Date > fim.Value.Date) return false;
+        var data = venda.DataHora.ToLocalTime().Date;
+        if (inicio.HasValue && data < inicio.Value.Date) return false;
+        if (fim.HasValue && data > fim.Value.Date) return false;
         return true;
     }
 

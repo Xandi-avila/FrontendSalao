@@ -12,7 +12,7 @@ public class ValidadorServicoCadastro : AbstractValidator<ServicoCadastroDto>
             .MaximumLength(150);
 
         RuleFor(x => x.DuracaoMinutos)
-            .GreaterThan(0).WithMessage("Duração deve ser maior que zero.");
+            .GreaterThan(0).WithMessage("Informe a duração em minutos.");
 
         RuleFor(x => x.PrecoMinimo)
             .GreaterThan(0).WithMessage("Preço mínimo deve ser maior que zero.");
