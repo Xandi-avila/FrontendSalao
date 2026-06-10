@@ -71,17 +71,23 @@
                       ErrorText="@MsgErro(nameof(Modelo.Profissoes))" />
     </MudItem>
     <MudItem xs="12" md="6">
-        <CampoData Valor="@Modelo.DataAdmissao"
+        <CampoData @ref="_campoAdmissao"
+                   Valor="@Modelo.DataAdmissao"
                    ValorChanged="@(v => Modelo.DataAdmissao = v)"
                    Rotulo="Data de admissão"
                    Obrigatorio="true"
+                   DataMinima="@ValidacaoDatas.DataMinimaPadrao"
+                   DataMaxima="@DateTime.Today"
                    ComErro="@TemErro(nameof(Modelo.DataAdmissao))"
                    TextoErro="@MsgErro(nameof(Modelo.DataAdmissao))" />
     </MudItem>
     <MudItem xs="12" md="6">
-        <CampoData Valor="@Modelo.DataNascimento"
+        <CampoData @ref="_campoNascimento"
+                   Valor="@Modelo.DataNascimento"
                    ValorChanged="@(v => Modelo.DataNascimento = v)"
                    Rotulo="Data de nascimento"
+                   DataMinima="@ValidacaoDatas.DataMinimaPadrao"
+                   DataMaxima="@DateTime.Today"
                    ComErro="@TemErro(nameof(Modelo.DataNascimento))"
                    TextoErro="@MsgErro(nameof(Modelo.DataNascimento))" />
     </MudItem>
@@ -106,6 +112,33 @@
 
     private bool _ativo = true;
     private string _profissoesTexto = string.Empty;
+    private CampoData? _campoAdmissao;
+    private CampoData? _campoNascimento;
+
+    public async Task SincronizarDatasAsync()
+    {
+        if (_campoAdmissao is not null)
+            await _campoAdmissao.SincronizarAsync();
+        if (_campoNascimento is not null)
+            await _campoNascimento.SincronizarAsync();
+    }
+
+    public Dictionary<string, string> ColetarErrosDatas()
+    {
+        var erros = new Dictionary<string, string>();
+
+        var erroAdmissao = _campoAdmissao?.ObterErroAtual()
+            ?? ValidacaoDatas.MensagemErroAdmissao(Modelo.DataAdmissao);
+        if (!string.IsNullOrWhiteSpace(erroAdmissao))
+            erros["DataAdmissao"] = erroAdmissao;
+
+        var erroNascimento = _campoNascimento?.ObterErroAtual()
+            ?? ValidacaoDatas.MensagemErroNascimento(Modelo.DataNascimento);
+        if (!string.IsNullOrWhiteSpace(erroNascimento))
+            erros["DataNascimento"] = erroNascimento;
+
+        return erros;
+    }
 
     protected override void OnParametersSet()
     {
