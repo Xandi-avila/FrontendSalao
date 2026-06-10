@@ -1,0 +1,2 @@
+/api/*  https://salao-beleza-service.onrender.com/:splat  200
+/*  /index.html  200

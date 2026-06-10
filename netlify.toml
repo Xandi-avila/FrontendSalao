@@ -1,0 +1,14 @@
+[build]
+  publish = "SalaoAdmin/publish/wwwroot"
+  command = "dotnet publish SalaoAdmin/SalaoAdmin.csproj -c Release -o SalaoAdmin/publish"
+
+[[redirects]]
+  from = "/api/*"
+  to = "https://salao-beleza-service.onrender.com/:splat"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
