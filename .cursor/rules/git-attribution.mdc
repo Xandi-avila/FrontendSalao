@@ -1,0 +1,6 @@
+---
+description: Evitar atribuicao automatica em commits e PRs
+alwaysApply: true
+---
+
+Nunca adicione "Made-with: Cursor", "Co-authored-by: Cursor", "Co-authored-by: cursoragent@cursor.com", "Agent-Logs-Url" ou qualquer trailer de atribuicao de IA em commits, PRs ou comentarios de codigo.
