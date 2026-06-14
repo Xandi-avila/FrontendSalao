@@ -1,0 +1,6 @@
+#!/bin/sh
+# Remove atribuicao automatica do Cursor dos commits locais.
+if [ -f "$1" ]; then
+  sed -i '/cursoragent@cursor\.com/d' "$1" 2>/dev/null || sed -i '' '/cursoragent@cursor\.com/d' "$1"
+  sed -i '/^Agent-Logs-Url:/d' "$1" 2>/dev/null || sed -i '' '/^Agent-Logs-Url:/d' "$1"
+fi
