@@ -19,7 +19,7 @@ builder.Services.AddMudServices(c =>
     c.SnackbarConfiguration.ShowCloseIcon = true;
 });
 
-builder.Services.RegistrarServicos(configApi);
+builder.Services.RegistrarServicos(configApi, builder.HostEnvironment.BaseAddress);
 
 await builder.Build().RunAsync();
 

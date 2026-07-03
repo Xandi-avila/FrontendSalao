@@ -2,13 +2,13 @@
 
 ## Problema confirmado (teste em 24/05/2026)
 
-| Teste | Resultado |
-|-------|-----------|
-| `GET /saude` | 200 OK |
-| `POST /auth/login` (credenciais do usuário) | 401 — credenciais inválidas (usuário ainda não existe) |
-| `POST /funcionarios` (sem token) | 401 — token não informado |
-| Header `Access-Control-Allow-Origin` na resposta | **ausente** |
-| `OPTIONS /funcionarios` | 401 — exige token (incorreto para preflight) |
+| Teste                                            | Resultado                                              |
+| ------------------------------------------------ | ------------------------------------------------------ |
+| `GET /saude`                                     | 200 OK                                                 |
+| `POST /auth/login` (credenciais do usuário)      | 401 — credenciais inválidas (usuário ainda não existe) |
+| `POST /funcionarios` (sem token)                 | 401 — token não informado                              |
+| Header `Access-Control-Allow-Origin` na resposta | **ausente**                                            |
+| `OPTIONS /funcionarios`                          | 401 — exige token (incorreto para preflight)           |
 
 O front em `http://localhost:5086` e o Swagger no navegador falham com **Failed to fetch** porque o **back-end não libera CORS** para o browser.
 
@@ -19,20 +19,19 @@ Isso **não se corrige no front-end** de forma definitiva. Quem mantém a API pr
 ## O que o back-end precisa fazer (Node/Express exemplo)
 
 ```javascript
-const cors = require('cors');
+const cors = require("cors");
 
-app.use(cors({
-  origin: [
-    'http://localhost:5086',
-    'https://seu-front-publicado.com'
-  ],
-  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
-  credentials: true
-}));
+app.use(
+  cors({
+    origin: ["http://localhost:5086", "https://seu-front-publicado.com"],
+    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
+    credentials: true,
+  }),
+);
 
 // OPTIONS não pode exigir JWT
-app.options('*', cors());
+app.options("*", cors());
 ```
 
 Regras importantes:

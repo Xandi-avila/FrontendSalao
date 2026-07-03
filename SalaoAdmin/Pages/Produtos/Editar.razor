@@ -47,7 +47,8 @@ else
                 Nome = p.Nome,
                 Valor = p.Valor,
                 CaminhoImagem = p.CaminhoImagem,
-                Status = p.Status
+                Status = p.Status,
+                PercentualComissao = p.PercentualComissao
             };
         }
         _carregando = false;
@@ -74,7 +75,7 @@ else
                 Navegacao.NavigateTo("/produtos");
             }
             else
-                Notificacoes.Erro(resposta.Mensagem ?? "Erro ao atualizar.");
+                Notificacoes.NotificarFalha(resposta, "Erro ao atualizar.");
         }
         finally
         {

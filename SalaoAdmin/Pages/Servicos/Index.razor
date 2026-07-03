@@ -51,6 +51,7 @@
                 <MudTh>Duração</MudTh>
                 <MudTh>Preço mín.</MudTh>
                 <MudTh>Categoria</MudTh>
+                <MudTh>Comissão</MudTh>
                 <MudTh>Status</MudTh>
                 <MudTh Style="width: 120px">Ações</MudTh>
             </HeaderContent>
@@ -59,6 +60,7 @@
                 <MudTd DataLabel="Duração">@context.DuracaoMinutos min</MudTd>
                 <MudTd DataLabel="Preço">@FormatacaoCampos.Moeda(context.PrecoMinimo)</MudTd>
                 <MudTd DataLabel="Categoria">@context.NomeCategoria</MudTd>
+                <MudTd DataLabel="Comissão">@($"{context.PercentualComissao:0.##}%")</MudTd>
                 <MudTd DataLabel="Status">
                     <MudChip T="string" Size="Size.Small"
                              Color="@(context.Status == StatusRegistro.Ativo ? Color.Success : Color.Default)">

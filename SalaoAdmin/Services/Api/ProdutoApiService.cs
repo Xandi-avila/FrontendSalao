@@ -56,7 +56,8 @@ public class ProdutoApiService(
             Nome = dto.Nome,
             Valor = dto.Valor,
             CaminhoImagem = dto.CaminhoImagem,
-            Status = dto.Status
+            Status = dto.Status,
+            PercentualComissao = dto.PercentualComissao
         };
         var api = await PutAsync<ProdutoCadastroDto, ProdutoDto>($"produtos/{dto.Id}", payload, cancelamento);
         return api.ParaResultado();

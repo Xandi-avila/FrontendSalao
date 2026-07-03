@@ -58,6 +58,10 @@ else
                         <MudText Typo="Typo.subtitle1">Total</MudText>
                         <MudText Typo="Typo.h6" Color="Color.Primary">@FormatacaoCampos.Moeda(_venda.Total)</MudText>
                     </MudStack>
+                    <MudStack Row="true" Justify="Justify.SpaceBetween">
+                        <MudText Typo="Typo.caption" Color="Color.Secondary">Comissão total</MudText>
+                        <MudText Typo="Typo.body1">@FormatacaoCampos.Moeda(VendaCalculoHelper.ComissaoTotal(_venda))</MudText>
+                    </MudStack>
                 </MudStack>
             </MudPaper>
         </MudItem>
@@ -73,6 +77,7 @@ else
                         <MudTh>Qtd</MudTh>
                         <MudTh Style="text-align:right">Unit.</MudTh>
                         <MudTh Style="text-align:right">Subtotal</MudTh>
+                        <MudTh Style="text-align:right">Comissão</MudTh>
                     </HeaderContent>
                     <RowTemplate>
                         <MudTd DataLabel="Item"><strong>@context.Nome</strong></MudTd>
@@ -81,6 +86,7 @@ else
                         <MudTd DataLabel="Qtd">@context.Quantidade</MudTd>
                         <MudTd DataLabel="Unit." Style="text-align:right">@FormatacaoCampos.Moeda(context.ValorUnitario)</MudTd>
                         <MudTd DataLabel="Subtotal" Style="text-align:right">@FormatacaoCampos.Moeda(context.Subtotal)</MudTd>
+                        <MudTd DataLabel="Comissão" Style="text-align:right">@FormatacaoCampos.Moeda(context.Comissao)</MudTd>
                     </RowTemplate>
                 </MudTable>
             </MudPaper>
@@ -105,6 +111,7 @@ else
         public string Tipo { get; init; } = string.Empty;
         public int Quantidade { get; init; }
         public decimal ValorUnitario { get; init; }
+        public decimal Comissao { get; init; }
         public decimal Subtotal => ValorUnitario * Quantidade;
     }
 
@@ -157,16 +164,17 @@ else
         _linhas = _venda.Itens.Select(i =>
         {
             if (i.Tipo == TipoItemVenda.Produto && i.ProdutoId.HasValue && mapProd.TryGetValue(i.ProdutoId.Value, out var p))
-                return new LinhaDetalhe { Nome = p.Nome, Categoria = "Produto", Tipo = i.Tipo, Quantidade = i.Quantidade, ValorUnitario = i.ValorUnitario };
+                return new LinhaDetalhe { Nome = p.Nome, Categoria = "Produto", Tipo = i.Tipo, Quantidade = i.Quantidade, ValorUnitario = i.ValorUnitario, Comissao = i.ValorComissao };
             if (i.Tipo == TipoItemVenda.Servico && i.ServicoId.HasValue && mapServ.TryGetValue(i.ServicoId.Value, out var s))
-                return new LinhaDetalhe { Nome = s.Nome, Categoria = s.NomeCategoria, Tipo = i.Tipo, Quantidade = i.Quantidade, ValorUnitario = i.ValorUnitario };
+                return new LinhaDetalhe { Nome = s.Nome, Categoria = s.NomeCategoria, Tipo = i.Tipo, Quantidade = i.Quantidade, ValorUnitario = i.ValorUnitario, Comissao = i.ValorComissao };
             return new LinhaDetalhe
             {
                 Nome = VendaExibicaoHelper.TextoTipoItem(i.Tipo),
                 Categoria = "—",
                 Tipo = i.Tipo,
                 Quantidade = i.Quantidade,
-                ValorUnitario = i.ValorUnitario
+                ValorUnitario = i.ValorUnitario,
+                Comissao = i.ValorComissao
             };
         }).ToList();
 

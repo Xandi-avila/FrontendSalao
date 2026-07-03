@@ -48,14 +48,15 @@ else
                 NomeCompleto = f.NomeCompleto,
                 Endereco = f.Endereco,
                 Telefone = FormatacaoCampos.Telefone(f.Telefone),
-                Celular = string.IsNullOrWhiteSpace(f.Celular) ? null : FormatacaoCampos.Telefone(f.Celular),
                 CPF = FormatacaoCampos.Cpf(f.CPF),
                 DataAdmissao = f.DataAdmissao,
                 Profissoes = f.Profissoes ?? [],
                 Email = f.Email,
                 DataNascimento = f.DataNascimento,
                 NivelPermissao = f.NivelPermissao,
-                Status = f.Status
+                Status = f.Status,
+                PercentualComissaoProduto = f.PercentualComissaoProduto,
+                PercentualComissaoServico = f.PercentualComissaoServico
             };
         }
         _carregando = false;
@@ -84,7 +85,7 @@ else
                 Navegacao.NavigateTo("/funcionarios");
             }
             else
-                Notificacoes.Erro(resposta.Mensagem ?? "Erro ao atualizar.");
+                Notificacoes.NotificarFalha(resposta, "Erro ao atualizar.");
         }
         finally
         {

@@ -33,6 +33,16 @@
                     TextoErro="@MsgErro(nameof(Modelo.PrecoMinimo))" />
     </MudItem>
     <MudItem xs="12" md="6">
+        <MudNumericField @bind-Value="Modelo.PercentualComissao"
+                         Label="Percentual de comissão (%)"
+                         Variant="Variant.Outlined"
+                         Margin="Margin.Dense"
+                         Min="0" Max="100"
+                         Adornment="Adornment.End" AdornmentText="%"
+                         Error="@TemErro(nameof(Modelo.PercentualComissao))"
+                         ErrorText="@MsgErro(nameof(Modelo.PercentualComissao))" />
+    </MudItem>
+    <MudItem xs="12" md="6">
         <MudSelect T="Guid?"
                    Label="Categoria"
                    Variant="Variant.Outlined"

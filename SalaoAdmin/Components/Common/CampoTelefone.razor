@@ -8,6 +8,7 @@
               ErrorText="@TextoErro"
               Adornment="Adornment.Start"
               AdornmentIcon="@Icons.Material.Filled.Phone"
+              MaxLength="@(_comprimentoMaximo ?? 524288)"
               Immediate="true" />
 
 @code {
@@ -17,15 +18,29 @@
     [Parameter] public bool Obrigatorio { get; set; }
     [Parameter] public bool ComErro { get; set; }
     [Parameter] public string? TextoErro { get; set; }
+    [Parameter] public int? MaxDigitos { get; set; }
 
     private string? _exibicao;
+    private int? _comprimentoMaximo;
 
-    protected override void OnParametersSet() =>
+    protected override void OnParametersSet()
+    {
         _exibicao = FormatacaoCampos.Telefone(Valor);
+        _comprimentoMaximo = MaxDigitos switch
+        {
+            11 => 15,
+            10 => 14,
+            _ => null
+        };
+    }
 
     private async Task AoDigitar(string? texto)
     {
-        _exibicao = FormatacaoCampos.Telefone(texto);
+        var digitos = FormatacaoCampos.SoNumeros(texto ?? string.Empty);
+        if (MaxDigitos.HasValue && digitos.Length > MaxDigitos.Value)
+            digitos = digitos[..MaxDigitos.Value];
+
+        _exibicao = FormatacaoCampos.Telefone(digitos);
         await ValorChanged.InvokeAsync(_exibicao);
     }
 }

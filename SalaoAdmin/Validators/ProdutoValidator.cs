@@ -13,6 +13,9 @@ public class ValidadorProdutoCadastro : AbstractValidator<ProdutoCadastroDto>
 
         RuleFor(x => x.Valor)
             .GreaterThan(0).WithMessage("Valor deve ser maior que zero.");
+
+        RuleFor(x => x.PercentualComissao)
+            .InclusiveBetween(0m, 100m).WithMessage("Percentual de comissão deve ser entre 0 e 100%.");
     }
 }
 

@@ -9,6 +9,7 @@ public class ProdutoDto
     public decimal Valor { get; set; }
     public string? CaminhoImagem { get; set; }
     public StatusRegistro Status { get; set; }
+    public decimal PercentualComissao { get; set; }
 }
 
 public class ProdutoCadastroDto
@@ -17,6 +18,7 @@ public class ProdutoCadastroDto
     public decimal Valor { get; set; }
     public string? CaminhoImagem { get; set; }
     public StatusRegistro Status { get; set; } = StatusRegistro.Ativo;
+    public decimal PercentualComissao { get; set; }
 }
 
 public class ProdutoEdicaoDto : ProdutoCadastroDto

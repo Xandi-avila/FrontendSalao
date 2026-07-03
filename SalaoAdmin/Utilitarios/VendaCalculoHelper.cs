@@ -47,6 +47,9 @@ public static class VendaCalculoHelper
     public static bool VendaContemTipo(VendaDto venda, string tipo) =>
         venda.Itens.Any(i => ItemEhTipo(i, tipo));
 
+    public static decimal ComissaoTotal(VendaDto venda) =>
+        venda.Itens.Sum(i => i.ValorComissao);
+
     public static bool VendaNoPeriodo(VendaDto venda, DateTime? inicio, DateTime? fim)
     {
         var data = venda.DataHora.ToLocalTime().Date;

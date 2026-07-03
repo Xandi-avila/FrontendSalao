@@ -19,6 +19,9 @@ public class ValidadorServicoCadastro : AbstractValidator<ServicoCadastroDto>
 
         RuleFor(x => x.CategoriaId)
             .NotEmpty().WithMessage("Categoria é obrigatória.");
+
+        RuleFor(x => x.PercentualComissao)
+            .InclusiveBetween(0m, 100m).WithMessage("Percentual de comissão deve ser entre 0 e 100%.");
     }
 }
 

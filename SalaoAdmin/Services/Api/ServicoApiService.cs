@@ -60,7 +60,8 @@ public class ServicoApiService(
             DuracaoMinutos = dto.DuracaoMinutos,
             PrecoMinimo = dto.PrecoMinimo,
             CategoriaId = dto.CategoriaId,
-            Status = dto.Status
+            Status = dto.Status,
+            PercentualComissao = dto.PercentualComissao
         };
         var api = await PutAsync<ServicoCadastroDto, ServicoDto>($"servicos/{dto.Id}", payload, cancelamento);
         return api.ParaResultado();

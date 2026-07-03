@@ -131,12 +131,6 @@
             return;
         }
 
-        if (Obrigatorio && string.IsNullOrWhiteSpace(_exibicao))
-        {
-            _erroLocal = "Informe a data.";
-            return;
-        }
-
         _erroLocal = Valor.HasValue
             ? ValidacaoDatas.ValidarPeriodo(Valor, DataMinima, DataMaxima)
             : null;

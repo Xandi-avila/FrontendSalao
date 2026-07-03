@@ -35,6 +35,7 @@
             <MudTh>Item</MudTh>
             <MudTh Style="text-align:center">Qtd</MudTh>
             <MudTh Style="text-align:right">Valor</MudTh>
+            <MudTh Style="text-align:right">Comissão</MudTh>
         </HeaderContent>
         <RowTemplate>
             <MudTd>
@@ -43,12 +44,17 @@
             </MudTd>
             <MudTd Style="text-align:center">@context.Quantidade</MudTd>
             <MudTd Style="text-align:right">@FormatacaoCampos.Moeda(context.ValorUnitario * context.Quantidade)</MudTd>
+            <MudTd Style="text-align:right">@FormatacaoCampos.Moeda(context.ValorComissao)</MudTd>
         </RowTemplate>
     </MudTable>
 
     <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center" Class="pa-3 venda-confirmacao-total">
         <MudText Typo="Typo.h6">Total</MudText>
         <MudText Typo="Typo.h5" Color="Color.Success">@FormatacaoCampos.Moeda(Venda.Total)</MudText>
+    </MudStack>
+    <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center" Class="px-3">
+        <MudText Typo="Typo.body2" Color="Color.Secondary">Comissão total</MudText>
+        <MudText Typo="Typo.body1">@FormatacaoCampos.Moeda(VendaCalculoHelper.ComissaoTotal(Venda))</MudText>
     </MudStack>
 
     <MudStack Row="true" Spacing="2" Justify="Justify.Center" Class="mt-4">
