@@ -20,6 +20,9 @@ public class ItemVendaDto
     public Guid? ServicoId { get; set; }
     public int Quantidade { get; set; }
     public decimal ValorUnitario { get; set; }
+    public decimal PercentualComissaoBase { get; set; }
+    public decimal PercentualComissaoFuncionario { get; set; }
+    public decimal ValorComissao { get; set; }
 }
 
 public class VendaDto

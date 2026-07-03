@@ -15,12 +15,12 @@ public class ValidadorFuncionarioCadastro : AbstractValidator<FuncionarioCadastr
         RuleFor(x => x.CPF)
             .Must(cpf => string.IsNullOrWhiteSpace(cpf) || FormatacaoCampos.SoNumeros(cpf).Length == 11)
             .WithMessage("CPF deve conter 11 dígitos.");
-        RuleFor(x => x.Celular)
-            .MinimumLength(14)
-            .When(x => !string.IsNullOrWhiteSpace(x.Celular))
-            .WithMessage("Celular incompleto.");
         RuleFor(x => x.Profissoes).NotEmpty().WithMessage("Informe ao menos uma profissão.");
         RuleFor(x => x.Endereco).NotEmpty().WithMessage("Informe o endereço.");
+        RuleFor(x => x.PercentualComissaoProduto)
+            .InclusiveBetween(0m, 100m).WithMessage("Comissão sobre produtos deve ser entre 0 e 100%.");
+        RuleFor(x => x.PercentualComissaoServico)
+            .InclusiveBetween(0m, 100m).WithMessage("Comissão sobre serviços deve ser entre 0 e 100%.");
 
         RuleFor(x => x.DataAdmissao)
             .Must(data => ValidacaoDatas.MensagemErroAdmissao(data) is null)
@@ -43,12 +43,12 @@ public class ValidadorFuncionarioEdicao : AbstractValidator<FuncionarioEdicaoDto
         RuleFor(x => x.CPF)
             .Must(cpf => string.IsNullOrWhiteSpace(cpf) || FormatacaoCampos.SoNumeros(cpf).Length == 11)
             .WithMessage("CPF deve conter 11 dígitos.");
-        RuleFor(x => x.Celular)
-            .MinimumLength(14)
-            .When(x => !string.IsNullOrWhiteSpace(x.Celular))
-            .WithMessage("Celular incompleto.");
         RuleFor(x => x.Profissoes).NotEmpty().WithMessage("Informe ao menos uma profissão.");
         RuleFor(x => x.Endereco).NotEmpty().WithMessage("Informe o endereço.");
+        RuleFor(x => x.PercentualComissaoProduto)
+            .InclusiveBetween(0m, 100m).WithMessage("Comissão sobre produtos deve ser entre 0 e 100%.");
+        RuleFor(x => x.PercentualComissaoServico)
+            .InclusiveBetween(0m, 100m).WithMessage("Comissão sobre serviços deve ser entre 0 e 100%.");
         RuleFor(x => x.Senha)
             .MinimumLength(6)
             .When(x => !string.IsNullOrWhiteSpace(x.Senha))

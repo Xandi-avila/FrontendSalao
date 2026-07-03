@@ -14,8 +14,10 @@ namespace SalaoAdmin.Compartilhado;
 
 public static class RegistroServicos
 {
-    public static IServiceCollection RegistrarServicos(this IServiceCollection servicos, ConfiguracaoApi config)
+    public static IServiceCollection RegistrarServicos(this IServiceCollection servicos, ConfiguracaoApi config, string baseAddressHost)
     {
+        var urlBaseApi = ResolverUrlBaseApi(config.UrlBaseApi, baseAddressHost);
+
         servicos.AddSingleton(config);
         servicos.AddSingleton<ArmazenamentoLocal>();
 
@@ -33,13 +35,13 @@ public static class RegistroServicos
 
         servicos.AddHttpClient<AuthApiService>(client =>
         {
-            client.BaseAddress = new Uri(config.UrlBaseApi);
+            client.BaseAddress = urlBaseApi;
             client.Timeout = TimeSpan.FromSeconds(config.TimeoutSegundos);
         });
 
         servicos.AddHttpClient("ApiAutenticada", client =>
             {
-                client.BaseAddress = new Uri(config.UrlBaseApi);
+                client.BaseAddress = urlBaseApi;
                 client.Timeout = TimeSpan.FromSeconds(config.TimeoutSegundos);
             })
             .AddHttpMessageHandler<AuthHttpMessageHandler>();
@@ -81,6 +83,17 @@ public static class RegistroServicos
         }
 
         return servicos;
+    }
+
+    private static Uri ResolverUrlBaseApi(string urlBaseApi, string baseAddressHost)
+    {
+        if (urlBaseApi.StartsWith("http://", StringComparison.OrdinalIgnoreCase) ||
+            urlBaseApi.StartsWith("https://", StringComparison.OrdinalIgnoreCase))
+            return new Uri(urlBaseApi, UriKind.Absolute);
+
+        var origem = new Uri(baseAddressHost, UriKind.Absolute);
+        var caminho = urlBaseApi.TrimStart('/');
+        return new Uri(origem, caminho);
     }
 }
 

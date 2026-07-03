@@ -49,6 +49,7 @@
         <CampoTelefone Valor="@Modelo.Telefone"
                        ValorChanged="@(v => Modelo.Telefone = v ?? string.Empty)"
                        Rotulo="Telefone / WhastApp"
+                       MaxDigitos="11"
                        Obrigatorio="true"
                        ComErro="@TemErro(nameof(Modelo.Telefone))"
                        TextoErro="@MsgErro(nameof(Modelo.Telefone))" />
@@ -91,7 +92,7 @@
                    ComErro="@TemErro(nameof(Modelo.DataNascimento))"
                    TextoErro="@MsgErro(nameof(Modelo.DataNascimento))" />
     </MudItem>
-    <MudItem xs="12">
+    <MudItem xs="6">
         <MudTextField @bind-Value="Modelo.Endereco"
                       Label="Endereço"
                       Variant="Variant.Outlined"
@@ -99,6 +100,26 @@
                       Required="true"
                       Error="@TemErro(nameof(Modelo.Endereco))"
                       ErrorText="@MsgErro(nameof(Modelo.Endereco))" />
+    </MudItem>
+    <MudItem xs="12" md="6">
+        <MudNumericField @bind-Value="Modelo.PercentualComissaoProduto"
+                         Label="Comissão sobre produtos (%)"
+                         Variant="Variant.Outlined"
+                         Margin="Margin.Dense"
+                         Min="0" Max="100"
+                         Adornment="Adornment.End" AdornmentText="%"
+                         Error="@TemErro(nameof(Modelo.PercentualComissaoProduto))"
+                         ErrorText="@MsgErro(nameof(Modelo.PercentualComissaoProduto))" />
+    </MudItem>
+    <MudItem xs="12" md="6">
+        <MudNumericField @bind-Value="Modelo.PercentualComissaoServico"
+                         Label="Comissão sobre serviços (%)"
+                         Variant="Variant.Outlined"
+                         Margin="Margin.Dense"
+                         Min="0" Max="100"
+                         Adornment="Adornment.End" AdornmentText="%"
+                         Error="@TemErro(nameof(Modelo.PercentualComissaoServico))"
+                         ErrorText="@MsgErro(nameof(Modelo.PercentualComissaoServico))" />
     </MudItem>
     <MudItem xs="12">
         <MudSwitch @bind-Value="_ativo" Label="Funcionário ativo" Color="Color.Primary" />

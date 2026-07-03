@@ -8,6 +8,10 @@ public class AnaliseFuncionarioItemDto
     public int Quantidade { get; set; }
     public int Total { get; set; }
     public decimal Faturamento { get; set; }
+    public decimal TotalFaturado { get; set; }
+    public decimal TotalComissao { get; set; }
+    public decimal ComissaoProduto { get; set; }
+    public decimal ComissaoServico { get; set; }
 }
 
 public class AnaliseServicoItemDto

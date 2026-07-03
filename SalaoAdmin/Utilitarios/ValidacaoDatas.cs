@@ -26,9 +26,6 @@ public static class ValidacaoDatas
 
     public static string? MensagemErroAdmissao(DateTime? data)
     {
-        if (!data.HasValue)
-            return "Informe a data de admissão.";
-
         if (!AcimaDoMinimo(data))
             return "Data deve ser posterior a 01/01/1900.";
 

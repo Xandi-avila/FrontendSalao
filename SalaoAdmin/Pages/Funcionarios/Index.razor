@@ -16,7 +16,7 @@
 
 <MudPaper Class="pa-4 mb-4" Elevation="1">
     <MudTextField @bind-Value="_busca"
-                  Placeholder="Nome, e-mail, CPF, celular ou profissão..."
+                  Placeholder="Nome, e-mail, CPF, telefone ou profissão..."
                   Adornment="Adornment.Start"
                   AdornmentIcon="@Icons.Material.Filled.Search"
                   DebounceInterval="400"
@@ -46,9 +46,10 @@
                 <MudTh>Nome</MudTh>
                 <MudTh>E-mail</MudTh>
                 <MudTh>CPF</MudTh>
-                <MudTh>Celular</MudTh>
+                <MudTh>Telefone</MudTh>
                 <MudTh>Admissão</MudTh>
                 <MudTh>Profissões</MudTh>
+                <MudTh>Comissão (Prod./Serv.)</MudTh>
                 <MudTh>Permissão</MudTh>
                 <MudTh>Status</MudTh>
                 <MudTh Style="width: 120px">Ações</MudTh>
@@ -57,9 +58,10 @@
                 <MudTd DataLabel="Nome">@context.NomeCompleto</MudTd>
                 <MudTd DataLabel="E-mail">@context.Email</MudTd>
                 <MudTd DataLabel="CPF">@(string.IsNullOrWhiteSpace(context.CPF) ? "—" : FormatacaoCampos.Cpf(context.CPF))</MudTd>
-                <MudTd DataLabel="Celular">@(string.IsNullOrWhiteSpace(context.Celular) && string.IsNullOrWhiteSpace(context.Telefone) ? "—" : FormatacaoCampos.Telefone(context.Celular ?? context.Telefone))</MudTd>
+                <MudTd DataLabel="Telefone">@(string.IsNullOrWhiteSpace(context.Telefone) ? "—" : FormatacaoCampos.Telefone(context.Telefone))</MudTd>
                 <MudTd DataLabel="Admissão">@(context.DataAdmissao?.ToString("dd/MM/yyyy") ?? "—")</MudTd>
                 <MudTd DataLabel="Profissões">@ProfissoesHelper.Exibir(context.Profissoes)</MudTd>
+                <MudTd DataLabel="Comissão (Prod./Serv.)">@($"{context.PercentualComissaoProduto:0.##}% / {context.PercentualComissaoServico:0.##}%")</MudTd>
                 <MudTd DataLabel="Permissão">@context.NivelPermissao.Descricao()</MudTd>
                 <MudTd DataLabel="Status">
                     <MudChip T="string" Size="Size.Small"

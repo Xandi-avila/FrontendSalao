@@ -105,8 +105,56 @@ public class AnaliseApiService(
                 Nome = nomeFuncionario(x.Id),
                 Quantidade = x.Qtd,
                 Percentual = maxCancel > 0 ? x.Qtd * 100.0 / maxCancel : 0
-            }).ToList()
+            }).ToList(),
+            ComissoesPorFuncionario = ExtrairComissoesFuncionarios(funcApi.Dados, nomeFuncionario)
         });
+    }
+
+    private static List<AgendaPainelGerencial.ComissaoProfissionalItem> ExtrairComissoesFuncionarios(
+        JsonElement? dados,
+        Func<Guid, string> nomeFuncionario)
+    {
+        if (dados is null || dados.Value.ValueKind != JsonValueKind.Array)
+            return [];
+
+        var itens = new List<AgendaPainelGerencial.ComissaoProfissionalItem>();
+        foreach (var el in dados.Value.EnumerateArray())
+        {
+            var comissaoTotal = LerDecimal(el, "totalComissao", "comissaoTotal", "comissao");
+            var comissaoProduto = LerDecimal(el, "comissaoProduto");
+            var comissaoServico = LerDecimal(el, "comissaoServico");
+            var faturamento = LerDecimal(el, "totalFaturado", "faturamento", "valor");
+
+            if (comissaoTotal == 0 && comissaoProduto == 0 && comissaoServico == 0 && faturamento == 0)
+                continue;
+
+            if (comissaoTotal == 0 && (comissaoProduto > 0 || comissaoServico > 0))
+                comissaoTotal = comissaoProduto + comissaoServico;
+
+            itens.Add(new AgendaPainelGerencial.ComissaoProfissionalItem
+            {
+                Nome = LerNome(el, preferirFuncionario: true, nomeFuncionario, _ => "—"),
+                Faturamento = faturamento,
+                ComissaoTotal = comissaoTotal,
+                ComissaoProduto = comissaoProduto,
+                ComissaoServico = comissaoServico
+            });
+        }
+
+        return itens.OrderByDescending(x => x.ComissaoTotal).ToList();
+    }
+
+    private static decimal LerDecimal(JsonElement el, params string[] nomes)
+    {
+        foreach (var nome in nomes)
+        {
+            if (el.TryGetProperty(nome, out var prop) &&
+                prop.ValueKind == JsonValueKind.Number &&
+                prop.TryGetDecimal(out var valor))
+                return valor;
+        }
+
+        return 0m;
     }
 
     private static List<AgendaPainelGerencial.ItemBarra> ExtrairItensBarra(

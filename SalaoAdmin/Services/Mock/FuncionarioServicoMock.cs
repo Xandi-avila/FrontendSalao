@@ -19,7 +19,7 @@ public class FuncionarioServicoMock(ArmazenamentoLocal dados) : ServicoMockBase<
             f => string.IsNullOrEmpty(busca) ||
                  f.NomeCompleto.Contains(busca, StringComparison.OrdinalIgnoreCase) ||
                  f.Email.Contains(busca, StringComparison.OrdinalIgnoreCase) ||
-                 f.Celular?.Contains(busca, StringComparison.OrdinalIgnoreCase) == true ||
+                 f.Telefone.Contains(busca, StringComparison.OrdinalIgnoreCase) ||
                  f.CPF?.Contains(busca, StringComparison.OrdinalIgnoreCase) == true ||
                  ProfissoesHelper.ContemBusca(f.Profissoes, busca),
             f => f.NomeCompleto);
@@ -68,7 +68,6 @@ public class FuncionarioServicoMock(ArmazenamentoLocal dados) : ServicoMockBase<
         NomeCompleto = dto.NomeCompleto.Trim(),
         Endereco = dto.Endereco.Trim(),
         Telefone = FormatacaoCampos.Telefone(dto.Telefone),
-        Celular = string.IsNullOrWhiteSpace(dto.Celular) ? null : FormatacaoCampos.Telefone(dto.Celular),
         CPF = FormatacaoCampos.CpfSomenteDigitos(dto.CPF),
         DataAdmissao = dto.DataAdmissao,
         Profissoes = ProfissoesHelper.Limpar(dto.Profissoes),

@@ -54,7 +54,8 @@ else
                 DuracaoMinutos = s.DuracaoMinutos,
                 PrecoMinimo = s.PrecoMinimo,
                 CategoriaId = s.CategoriaId,
-                Status = s.Status
+                Status = s.Status,
+                PercentualComissao = s.PercentualComissao
             };
         }
         _carregando = false;
@@ -81,7 +82,7 @@ else
                 Navegacao.NavigateTo("/servicos");
             }
             else
-                Notificacoes.Erro(resposta.Mensagem ?? "Erro ao atualizar.");
+                Notificacoes.NotificarFalha(resposta, "Erro ao atualizar.");
         }
         finally
         {

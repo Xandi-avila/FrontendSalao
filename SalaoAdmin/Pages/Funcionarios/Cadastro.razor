@@ -43,7 +43,7 @@
                 Navegacao.NavigateTo("/funcionarios");
             }
             else
-                Notificacoes.Erro(resposta.Mensagem ?? "Erro ao salvar.");
+                Notificacoes.NotificarFalha(resposta, "Erro ao salvar.");
         }
         finally
         {

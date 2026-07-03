@@ -109,7 +109,34 @@
         </MudPaper>
     </MudItem>
 
-    
+    <MudItem xs="12">
+        <MudPaper Class="pa-4" Outlined="true">
+            <MudText Typo="Typo.subtitle1" Class="mb-3">Comissões por profissional</MudText>
+            @if (Indicadores.ComissoesPorFuncionario.Count == 0)
+            {
+                <MudText Typo="Typo.body2" Color="Color.Secondary">Sem comissões no período.</MudText>
+            }
+            else
+            {
+                <MudTable Items="Indicadores.ComissoesPorFuncionario" Dense="true" Hover="true" Breakpoint="Breakpoint.Sm" Elevation="0">
+                    <HeaderContent>
+                        <MudTh>Profissional</MudTh>
+                        <MudTh Style="text-align:right">Faturamento</MudTh>
+                        <MudTh Style="text-align:right">Comissão total</MudTh>
+                        <MudTh Style="text-align:right">Comissão produtos</MudTh>
+                        <MudTh Style="text-align:right">Comissão serviços</MudTh>
+                    </HeaderContent>
+                    <RowTemplate>
+                        <MudTd DataLabel="Profissional">@context.Nome</MudTd>
+                        <MudTd DataLabel="Faturamento" Style="text-align:right">@FormatacaoCampos.Moeda(context.Faturamento)</MudTd>
+                        <MudTd DataLabel="Comissão total" Style="text-align:right"><strong>@FormatacaoCampos.Moeda(context.ComissaoTotal)</strong></MudTd>
+                        <MudTd DataLabel="Comissão produtos" Style="text-align:right">@FormatacaoCampos.Moeda(context.ComissaoProduto)</MudTd>
+                        <MudTd DataLabel="Comissão serviços" Style="text-align:right">@FormatacaoCampos.Moeda(context.ComissaoServico)</MudTd>
+                    </RowTemplate>
+                </MudTable>
+            }
+        </MudPaper>
+    </MudItem>
 </MudGrid>
 
 @code {
@@ -118,6 +145,15 @@
         public string Nome { get; init; } = string.Empty;
         public int Quantidade { get; init; }
         public double Percentual { get; init; }
+    }
+
+    public sealed class ComissaoProfissionalItem
+    {
+        public string Nome { get; init; } = string.Empty;
+        public decimal Faturamento { get; init; }
+        public decimal ComissaoTotal { get; init; }
+        public decimal ComissaoProduto { get; init; }
+        public decimal ComissaoServico { get; init; }
     }
 
     public sealed class IndicadoresGerenciais
@@ -130,6 +166,7 @@
         public List<ItemBarra> PorServico { get; init; } = [];
         public List<ItemBarra> PorHorario { get; init; } = [];
         public List<ItemBarra> CancelamentosPorFuncionario { get; init; } = [];
+        public List<ComissaoProfissionalItem> ComissoesPorFuncionario { get; init; } = [];
     }
 
     [Parameter] public string TextoPeriodo { get; set; } = string.Empty;

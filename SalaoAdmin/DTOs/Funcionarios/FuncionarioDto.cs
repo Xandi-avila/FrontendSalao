@@ -9,7 +9,6 @@ public class FuncionarioDto
     public string NomeCompleto { get; set; } = string.Empty;
     public string Endereco { get; set; } = string.Empty;
     public string Telefone { get; set; } = string.Empty;
-    public string? Celular { get; set; }
     public string? CPF { get; set; }
     public DateTime? DataAdmissao { get; set; }
 
@@ -20,6 +19,8 @@ public class FuncionarioDto
     public DateTime? DataNascimento { get; set; }
     public NivelPermissao NivelPermissao { get; set; }
     public StatusRegistro Status { get; set; }
+    public decimal PercentualComissaoProduto { get; set; }
+    public decimal PercentualComissaoServico { get; set; }
 }
 
 public class FuncionarioCadastroDto
@@ -27,7 +28,6 @@ public class FuncionarioCadastroDto
     public string NomeCompleto { get; set; } = string.Empty;
     public string Endereco { get; set; } = string.Empty;
     public string Telefone { get; set; } = string.Empty;
-    public string? Celular { get; set; }
     public string? CPF { get; set; }
     public DateTime? DataAdmissao { get; set; }
 
@@ -39,6 +39,8 @@ public class FuncionarioCadastroDto
     public DateTime? DataNascimento { get; set; }
     public NivelPermissao NivelPermissao { get; set; } = NivelPermissao.Profissional;
     public StatusRegistro Status { get; set; } = StatusRegistro.Ativo;
+    public decimal PercentualComissaoProduto { get; set; }
+    public decimal PercentualComissaoServico { get; set; }
 }
 
 public class FuncionarioEdicaoDto : FuncionarioCadastroDto

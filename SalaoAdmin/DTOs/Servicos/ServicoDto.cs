@@ -11,6 +11,7 @@ public class ServicoDto
     public Guid CategoriaId { get; set; }
     public string NomeCategoria { get; set; } = string.Empty;
     public StatusRegistro Status { get; set; }
+    public decimal PercentualComissao { get; set; }
 }
 
 public class ServicoCadastroDto
@@ -20,6 +21,7 @@ public class ServicoCadastroDto
     public decimal PrecoMinimo { get; set; }
     public Guid CategoriaId { get; set; }
     public StatusRegistro Status { get; set; } = StatusRegistro.Ativo;
+    public decimal PercentualComissao { get; set; }
 }
 
 public class ServicoEdicaoDto : ServicoCadastroDto

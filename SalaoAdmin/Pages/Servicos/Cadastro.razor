@@ -54,7 +54,7 @@
                 Navegacao.NavigateTo("/servicos");
             }
             else
-                Notificacoes.Erro(resposta.Mensagem ?? "Erro ao salvar.");
+                Notificacoes.NotificarFalha(resposta, "Erro ao salvar.");
         }
         finally
         {

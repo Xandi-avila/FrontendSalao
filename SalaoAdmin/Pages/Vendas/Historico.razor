@@ -8,6 +8,7 @@
 @inject TokenStorageService TokenStorage
 @inject IServicoNotificacao Notificacoes
 @inject NavigationManager Navegacao
+@inject IJSRuntime JS
 @implements IDisposable
 
 <CabecalhoPagina Titulo="Histórico de vendas"
@@ -60,7 +61,12 @@
         </MudItem>
         <MudItem xs="12" md="6" Class="d-flex align-center">
             <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="Carregar" Class="mr-2">Filtrar</MudButton>
-            <MudButton Variant="Variant.Outlined" OnClick="LimparFiltros">Limpar</MudButton>
+            <MudButton Variant="Variant.Outlined" OnClick="LimparFiltros" Class="mr-2">Limpar</MudButton>
+            <MudButton Variant="Variant.Filled" Color="Color.Secondary"
+                       StartIcon="@Icons.Material.Filled.PictureAsPdf"
+                       OnClick="ExportarPdf" Disabled="_exportando">
+                @(_exportando ? "Gerando..." : "Exportar PDF")
+            </MudButton>
         </MudItem>
     </MudGrid>
 </MudPaper>
@@ -91,6 +97,7 @@
                 <MudTh>Data</MudTh>
                 <MudTh>Itens</MudTh>
                 <MudTh>Total</MudTh>
+                <MudTh>Comissão</MudTh>
                 <MudTh>Status</MudTh>
             </HeaderContent>
             <RowTemplate>
@@ -105,6 +112,7 @@
                 <MudTd DataLabel="Data">@context.Venda.DataHora.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</MudTd>
                 <MudTd DataLabel="Itens">@VendaCalculoHelper.TextoResumoItens(context.Venda)</MudTd>
                 <MudTd DataLabel="Total">@FormatacaoCampos.Moeda(context.Venda.Total)</MudTd>
+                <MudTd DataLabel="Comissão">@FormatacaoCampos.Moeda(VendaCalculoHelper.ComissaoTotal(context.Venda))</MudTd>
                 <MudTd DataLabel="Status">
                     <MudChip T="string" Size="Size.Small" Color="Color.Success">@VendaExibicaoHelper.TextoStatus()</MudChip>
                 </MudTd>
@@ -120,6 +128,7 @@
 
 @code {
     private bool _carregando = true;
+    private bool _exportando;
     private int _versaoCarregar;
     private CancellationTokenSource? _ctsCarregar;
     private List<VendaDto> _lista = [];
@@ -468,6 +477,151 @@
         _filtroTipo = null;
         _pagina = 1;
         return Carregar();
+    }
+
+    private async Task ExportarPdf()
+    {
+        if (_exportando)
+            return;
+
+        _exportando = true;
+        try
+        {
+            var vendas = await ObterTodasVendasFiltradasAsync(CancellationToken.None);
+            if (vendas.Count == 0)
+            {
+                Notificacoes.Aviso("Não há vendas para exportar com os filtros atuais.");
+                return;
+            }
+
+            if (_mapaNumerosTask is not null)
+            {
+                try { await _mapaNumerosTask; } catch { }
+            }
+
+            AplicarNumerosGlobais(vendas);
+            PreencherNomesClientesLocais(vendas);
+            if (_podeVerTodosFuncionarios)
+                PreencherNomesFuncionariosLocais(vendas);
+
+            var incluirFuncionario = _podeVerTodosFuncionarios;
+
+            var colunas = new List<string> { "Venda" };
+            if (incluirFuncionario)
+                colunas.Add("Funcionário");
+            colunas.AddRange(["Cliente", "Data", "Itens", "Total", "Comissão"]);
+
+            var linhas = new List<string[]>();
+            decimal somaTotal = 0;
+            decimal somaComissao = 0;
+
+            foreach (var venda in vendas)
+            {
+                var comissao = VendaCalculoHelper.ComissaoTotal(venda);
+                somaTotal += venda.Total;
+                somaComissao += comissao;
+
+                var linha = new List<string> { VendaExibicaoHelper.NumeroAmigavel(venda) };
+                if (incluirFuncionario)
+                    linha.Add(NomeFuncionario(venda.FuncionarioId));
+                linha.Add(NomeCliente(venda.ClienteId));
+                linha.Add(venda.DataHora.ToLocalTime().ToString("dd/MM/yyyy HH:mm"));
+                linha.Add(VendaCalculoHelper.TextoResumoItens(venda));
+                linha.Add(FormatacaoCampos.Moeda(venda.Total));
+                linha.Add(FormatacaoCampos.Moeda(comissao));
+                linhas.Add(linha.ToArray());
+            }
+
+            var rodape = new List<string> { $"{vendas.Count} venda(s)" };
+            var colunasAteTotal = colunas.Count - 2;
+            for (var i = 1; i < colunasAteTotal; i++)
+                rodape.Add(string.Empty);
+            rodape.Add(FormatacaoCampos.Moeda(somaTotal));
+            rodape.Add(FormatacaoCampos.Moeda(somaComissao));
+
+            var payload = new
+            {
+                titulo = "Histórico de vendas",
+                subtitulo = MontarSubtituloExportacao(),
+                geradoEm = DateTime.Now.ToString("dd/MM/yyyy HH:mm"),
+                nomeArquivo = $"historico-vendas-{DateTime.Now:yyyyMMdd-HHmm}.pdf",
+                colunas = colunas.ToArray(),
+                linhas,
+                rodape = rodape.ToArray()
+            };
+
+            var sucesso = await JS.InvokeAsync<bool>("exportacaoVendas.gerarPdf", payload);
+            if (sucesso)
+                Notificacoes.Sucesso("PDF gerado com sucesso.");
+            else
+                Notificacoes.Erro("Não foi possível gerar o PDF.");
+        }
+        catch (Exception)
+        {
+            Notificacoes.Erro("Erro ao gerar o PDF.");
+        }
+        finally
+        {
+            _exportando = false;
+        }
+    }
+
+    private async Task<List<VendaDto>> ObterTodasVendasFiltradasAsync(CancellationToken cancelamento)
+    {
+        var todas = new List<VendaDto>();
+        var pagina = 1;
+
+        while (true)
+        {
+            var resposta = await VendaServico.ListarAsync(new FiltroVenda
+            {
+                Pagina = pagina,
+                ItensPorPagina = 100,
+                ClienteId = _clienteFiltro?.Id,
+                FuncionarioId = FuncionarioIdConsulta,
+                Inicio = _filtroInicio,
+                Fim = _filtroFim,
+                TipoItem = _filtroTipo,
+                Busca = _busca
+            }, cancelamento);
+
+            if (!resposta.Sucesso || resposta.Dados is null || resposta.Dados.Itens.Count == 0)
+                break;
+
+            todas.AddRange(resposta.Dados.Itens);
+
+            if (todas.Count >= resposta.Dados.Total || resposta.Dados.Itens.Count < 100)
+                break;
+
+            pagina++;
+        }
+
+        return FiltrarPorPermissao(todas)
+            .OrderByDescending(v => v.DataHora)
+            .ToList();
+    }
+
+    private string MontarSubtituloExportacao()
+    {
+        var partes = new List<string>();
+
+        if (_filtroInicio.HasValue && _filtroFim.HasValue)
+            partes.Add($"Período: {_filtroInicio.Value:dd/MM/yyyy} a {_filtroFim.Value:dd/MM/yyyy}");
+        else if (_filtroInicio.HasValue)
+            partes.Add($"A partir de {_filtroInicio.Value:dd/MM/yyyy}");
+        else if (_filtroFim.HasValue)
+            partes.Add($"Até {_filtroFim.Value:dd/MM/yyyy}");
+
+        if (_clienteFiltro is not null)
+            partes.Add($"Cliente: {_clienteFiltro.NomeCompleto}");
+
+        if (_podeVerTodosFuncionarios && _funcionarioFiltro is not null)
+            partes.Add($"Funcionário: {_funcionarioFiltro.NomeCompleto}");
+
+        if (!string.IsNullOrWhiteSpace(_filtroTipo))
+            partes.Add($"Tipo: {(_filtroTipo == TipoItemVenda.Produto ? "Produtos" : "Serviços")}");
+
+        return partes.Count > 0 ? string.Join("  ·  ", partes) : "Todas as vendas";
     }
 
     private Task<IEnumerable<ClienteDto>> BuscarClientes(string texto, CancellationToken _)
