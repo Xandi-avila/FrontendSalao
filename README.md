@@ -50,7 +50,7 @@ Arquivo: `SalaoAdmin/wwwroot/appsettings.json`
 }
 ```
 
-Com `UsarMocks: true` usa os mocks. Com `false`, o projeto tenta a API (hoje só funcionário tem esqueleto em `Services/Api/`).
+Com `UsarMocks: true` usa os mocks. Com `false`, o projeto conecta na API.
 
 ## Publicar
 
