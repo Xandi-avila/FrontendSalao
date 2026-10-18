@@ -2,7 +2,7 @@
 
 Front-end do painel administrativo de um salão de beleza.
 
-Blazor WebAssembly (.NET 9), MudBlazor e FluentValidation. Os cadastros usam dados mockados por enquanto; a ideia é plugar a API depois.
+Blazor WebAssembly (.NET 9), MudBlazor e FluentValidation. Os cadastros usam dados mockados e pode ser conectado na API..
 
 ## Como rodar
 
