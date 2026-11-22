@@ -1,0 +1,54 @@
+@page "/funcionarios/cadastro"
+@layout AdminLayout
+@inject IFuncionarioServico FuncionarioServico
+@inject IServicoValidacao Validacao
+@inject IServicoNotificacao Notificacoes
+@inject NavigationManager Navegacao
+
+<CabecalhoPagina Titulo="Novo funcionário" Subtitulo="Cadastro na equipe" />
+
+<MudPaper Class="pa-4" Elevation="1" Style="position: relative;">
+    <OverlayCarregando Visivel="_salvando" />
+    <FuncionarioForm @ref="_formulario" Modelo="_modelo" Erros="_erros" />
+    <MudStack Row="true" Justify="Justify.FlexEnd" Spacing="2" Class="mt-4">
+        <MudButton Variant="Variant.Text" OnClick="@(() => Navegacao.NavigateTo("/funcionarios"))">Cancelar</MudButton>
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="Salvar" Disabled="_salvando">Salvar</MudButton>
+    </MudStack>
+</MudPaper>
+
+@code {
+    private FuncionarioCadastroDto _modelo = new();
+    private FuncionarioForm? _formulario;
+    private Dictionary<string, string> _erros = new();
+    private bool _salvando;
+
+    private async Task Salvar()
+    {
+        _erros = await ValidacaoFormularioHelper.ValidarAntesDeSalvarAsync(
+            Validacao,
+            _modelo,
+            () => _formulario?.ColetarErrosDatas() ?? new Dictionary<string, string>(),
+            () => _formulario?.SincronizarDatasAsync() ?? Task.CompletedTask);
+
+        if (_erros.Count > 0)
+            return;
+
+        _salvando = true;
+        try
+        {
+            var resposta = await FuncionarioServico.CriarAsync(_modelo);
+            if (resposta.Sucesso)
+            {
+                Notificacoes.Sucesso(resposta.Mensagem ?? "Salvo.");
+                Navegacao.NavigateTo("/funcionarios");
+            }
+            else
+                Notificacoes.NotificarFalha(resposta, "Erro ao salvar.");
+        }
+        finally
+        {
+            _salvando = false;
+        }
+    }
+}
+

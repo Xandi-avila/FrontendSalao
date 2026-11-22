@@ -1,0 +1,184 @@
+@using SalaoAdmin.Dtos.Funcionarios
+@using SalaoAdmin.Enums
+
+<MudGrid Spacing="2">
+    <MudItem xs="12" md="6">
+        <MudTextField @bind-Value="Modelo.NomeCompleto"
+                      Label="Nome completo"
+                      Variant="Variant.Outlined"
+                      Margin="Margin.Dense"
+                      Required="true"
+                      Error="@TemErro(nameof(Modelo.NomeCompleto))"
+                      ErrorText="@MsgErro(nameof(Modelo.NomeCompleto))" />
+    </MudItem>
+    <MudItem xs="12" md="6">
+        <MudSelect @bind-Value="Modelo.NivelPermissao"
+                   Label="Permissão de acesso"
+                   Variant="Variant.Outlined"
+                   Margin="Margin.Dense"
+                   Required="true">
+            @foreach (NivelPermissao nivel in Enum.GetValues<NivelPermissao>())
+            {
+                <MudSelectItem Value="@nivel">@nivel.Descricao()</MudSelectItem>
+            }
+        </MudSelect>
+    </MudItem>
+    <MudItem xs="12" md="6">
+        <MudTextField @bind-Value="Modelo.Email"
+                      Label="E-mail"
+                      Variant="Variant.Outlined"
+                      Margin="Margin.Dense"
+                      InputType="InputType.Email"
+                      Required="true"
+                      Immediate="true"
+                      @bind-Value:after="NormalizarEmail"
+                      Error="@TemErro(nameof(Modelo.Email))"
+                      ErrorText="@MsgErro(nameof(Modelo.Email))" />
+    </MudItem>
+    <MudItem xs="12" md="6">
+        <MudTextField @bind-Value="Modelo.Senha"
+                      Label="@(Edicao ? "Nova senha (opcional)" : "Senha")"
+                      Variant="Variant.Outlined"
+                      Margin="Margin.Dense"
+                      InputType="InputType.Password"
+                      Required="@(!Edicao)"
+                      Error="@TemErro(nameof(Modelo.Senha))"
+                      ErrorText="@MsgErro(nameof(Modelo.Senha))" />
+    </MudItem>
+    <MudItem xs="12" md="6">
+        <CampoTelefone Valor="@Modelo.Telefone"
+                       ValorChanged="@(v => Modelo.Telefone = v ?? string.Empty)"
+                       Rotulo="Telefone / WhastApp"
+                       MaxDigitos="11"
+                       Obrigatorio="true"
+                       ComErro="@TemErro(nameof(Modelo.Telefone))"
+                       TextoErro="@MsgErro(nameof(Modelo.Telefone))" />
+    </MudItem>
+    <MudItem xs="12" md="6">
+        <CampoCpf Valor="@Modelo.CPF"
+                  ValorChanged="@(v => Modelo.CPF = v)"
+                  ComErro="@TemErro(nameof(Modelo.CPF))"
+                  TextoErro="@MsgErro(nameof(Modelo.CPF))" />
+    </MudItem>
+    <MudItem xs="12" md="6">
+        <MudTextField T="string"
+                      Value="_profissoesTexto"
+                      ValueChanged="EventCallback.Factory.Create<string>(this, AtualizarProfissoes)"
+                      Label="Profissões (separe por vírgula)"
+                      Variant="Variant.Outlined"
+                      Margin="Margin.Dense"
+                      Required="true"
+                      Error="@TemErro(nameof(Modelo.Profissoes))"
+                      ErrorText="@MsgErro(nameof(Modelo.Profissoes))" />
+    </MudItem>
+    <MudItem xs="12" md="6">
+        <CampoData @ref="_campoAdmissao"
+                   Valor="@Modelo.DataAdmissao"
+                   ValorChanged="@(v => Modelo.DataAdmissao = v)"
+                   Rotulo="Data de admissão"
+                   Obrigatorio="true"
+                   DataMinima="@ValidacaoDatas.DataMinimaPadrao"
+                   DataMaxima="@DateTime.Today"
+                   ComErro="@TemErro(nameof(Modelo.DataAdmissao))"
+                   TextoErro="@MsgErro(nameof(Modelo.DataAdmissao))" />
+    </MudItem>
+    <MudItem xs="12" md="6">
+        <CampoData @ref="_campoNascimento"
+                   Valor="@Modelo.DataNascimento"
+                   ValorChanged="@(v => Modelo.DataNascimento = v)"
+                   Rotulo="Data de nascimento"
+                   DataMinima="@ValidacaoDatas.DataMinimaPadrao"
+                   DataMaxima="@DateTime.Today"
+                   ComErro="@TemErro(nameof(Modelo.DataNascimento))"
+                   TextoErro="@MsgErro(nameof(Modelo.DataNascimento))" />
+    </MudItem>
+    <MudItem xs="6">
+        <MudTextField @bind-Value="Modelo.Endereco"
+                      Label="Endereço"
+                      Variant="Variant.Outlined"
+                      Margin="Margin.Dense"
+                      Required="true"
+                      Error="@TemErro(nameof(Modelo.Endereco))"
+                      ErrorText="@MsgErro(nameof(Modelo.Endereco))" />
+    </MudItem>
+    <MudItem xs="12" md="6">
+        <MudNumericField @bind-Value="Modelo.PercentualComissaoProduto"
+                         Label="Comissão sobre produtos (%)"
+                         Variant="Variant.Outlined"
+                         Margin="Margin.Dense"
+                         Min="0" Max="100"
+                         Adornment="Adornment.End" AdornmentText="%"
+                         Error="@TemErro(nameof(Modelo.PercentualComissaoProduto))"
+                         ErrorText="@MsgErro(nameof(Modelo.PercentualComissaoProduto))" />
+    </MudItem>
+    <MudItem xs="12" md="6">
+        <MudNumericField @bind-Value="Modelo.PercentualComissaoServico"
+                         Label="Comissão sobre serviços (%)"
+                         Variant="Variant.Outlined"
+                         Margin="Margin.Dense"
+                         Min="0" Max="100"
+                         Adornment="Adornment.End" AdornmentText="%"
+                         Error="@TemErro(nameof(Modelo.PercentualComissaoServico))"
+                         ErrorText="@MsgErro(nameof(Modelo.PercentualComissaoServico))" />
+    </MudItem>
+    <MudItem xs="12">
+        <MudSwitch @bind-Value="_ativo" Label="Funcionário ativo" Color="Color.Primary" />
+    </MudItem>
+</MudGrid>
+
+@code {
+    [Parameter, EditorRequired] public FuncionarioCadastroDto Modelo { get; set; } = new();
+    [Parameter] public Dictionary<string, string> Erros { get; set; } = new();
+    [Parameter] public bool Edicao { get; set; }
+
+    private bool _ativo = true;
+    private string _profissoesTexto = string.Empty;
+    private CampoData? _campoAdmissao;
+    private CampoData? _campoNascimento;
+
+    public async Task SincronizarDatasAsync()
+    {
+        if (_campoAdmissao is not null)
+            await _campoAdmissao.SincronizarAsync();
+        if (_campoNascimento is not null)
+            await _campoNascimento.SincronizarAsync();
+    }
+
+    public Dictionary<string, string> ColetarErrosDatas()
+    {
+        var erros = new Dictionary<string, string>();
+
+        var erroAdmissao = _campoAdmissao?.ObterErroAtual()
+            ?? ValidacaoDatas.MensagemErroAdmissao(Modelo.DataAdmissao);
+        if (!string.IsNullOrWhiteSpace(erroAdmissao))
+            erros["DataAdmissao"] = erroAdmissao;
+
+        var erroNascimento = _campoNascimento?.ObterErroAtual()
+            ?? ValidacaoDatas.MensagemErroNascimento(Modelo.DataNascimento);
+        if (!string.IsNullOrWhiteSpace(erroNascimento))
+            erros["DataNascimento"] = erroNascimento;
+
+        return erros;
+    }
+
+    protected override void OnParametersSet()
+    {
+        _ativo = Modelo.Status == StatusRegistro.Ativo;
+        _profissoesTexto = ProfissoesHelper.ParaTexto(Modelo.Profissoes);
+    }
+
+    protected override void OnAfterRender(bool firstRender) =>
+        Modelo.Status = _ativo ? StatusRegistro.Ativo : StatusRegistro.Inativo;
+
+    private void AtualizarProfissoes(string valor)
+    {
+        _profissoesTexto = valor;
+        Modelo.Profissoes = ProfissoesHelper.Parse(valor);
+    }
+
+    private void NormalizarEmail() =>
+        Modelo.Email = Modelo.Email.Trim();
+
+    private bool TemErro(string campo) => Erros.ContainsKey(campo);
+    private string? MsgErro(string campo) => Erros.TryGetValue(campo, out var msg) ? msg : null;
+}

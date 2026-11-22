@@ -1,0 +1,60 @@
+<MudTextField Value="_texto"
+              ValueChanged="@(async (string? v) => await AoDigitar(v))"
+              Label="@Rotulo"
+              Variant="Variant.Outlined"
+              Margin="Margin.Dense"
+              Required="@Obrigatorio"
+              Error="@ComErro"
+              ErrorText="@TextoErro"
+              Adornment="Adornment.Start"
+              AdornmentText="R$"
+              Placeholder="0,00"
+              InputMode="InputMode.numeric"
+              Immediate="true"
+              @onfocusin="AoFocar"
+              @onfocusout="AoDesfocar" />
+
+@code {
+    [Parameter] public string Rotulo { get; set; } = "Valor";
+    [Parameter] public decimal ValorNumerico { get; set; }
+    [Parameter] public EventCallback<decimal> ValorNumericoChanged { get; set; }
+    [Parameter] public bool Obrigatorio { get; set; }
+    [Parameter] public bool ComErro { get; set; }
+    [Parameter] public string? TextoErro { get; set; }
+
+    private string _texto = "0,00";
+    private bool _focado;
+
+    protected override void OnParametersSet()
+    {
+        if (_focado)
+            return;
+
+        _texto = FormatacaoCampos.MoedaParaCampo(ValorNumerico);
+    }
+
+    private void AoFocar(FocusEventArgs _)
+    {
+        _focado = true;
+
+        if (ValorNumerico == 0)
+            _texto = string.Empty;
+    }
+
+    private void AoDesfocar(FocusEventArgs _)
+    {
+        _focado = false;
+
+        if (string.IsNullOrWhiteSpace(_texto) || FormatacaoCampos.SoNumeros(_texto).Length == 0)
+            _texto = FormatacaoCampos.MoedaParaCampo(ValorNumerico);
+    }
+
+    private async Task AoDigitar(string? texto)
+    {
+        var valor = FormatacaoCampos.MoedaValorDeDigitos(texto);
+        _texto = FormatacaoCampos.MoedaParaCampo(valor);
+
+        if (valor != ValorNumerico)
+            await ValorNumericoChanged.InvokeAsync(valor);
+    }
+}

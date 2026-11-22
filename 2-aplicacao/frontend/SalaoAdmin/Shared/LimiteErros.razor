@@ -1,0 +1,25 @@
+@inherits ErrorBoundary
+@inject ITratadorErros TratadorErros
+
+@if (CurrentException is null)
+{
+    @ChildContent
+}
+else
+{
+    <MudAlert Severity="Severity.Error" Class="my-4">
+        <MudText><b>Ops, algo deu errado</b></MudText>
+        <MudText Typo="Typo.body2">@CurrentException.Message</MudText>
+        <MudButton Variant="Variant.Text" Color="Color.Error" OnClick="Recover" Class="mt-2">
+            Tentar de novo
+        </MudButton>
+    </MudAlert>
+}
+
+@code {
+    protected override async Task OnErrorAsync(Exception exception)
+    {
+        await TratadorErros.TratarAsync(exception);
+    }
+}
+

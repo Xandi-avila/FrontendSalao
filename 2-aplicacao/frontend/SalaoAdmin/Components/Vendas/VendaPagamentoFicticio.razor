@@ -1,0 +1,29 @@
+@using SalaoAdmin.Utilitarios
+
+<MudPaper Class="pa-4" Outlined="true">
+    <MudText Typo="Typo.h6" Class="mb-2">Pagamento</MudText>
+
+    <MudPaper Class="pa-4 venda-pagamento-resumo" Outlined="true">
+        <MudStack Spacing="2">
+            <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+                <MudIcon Icon="@Icons.Material.Filled.Payments" Color="Color.Primary" />
+                <div>
+                    <MudText Typo="Typo.caption" Color="Color.Secondary">Forma de pagamento</MudText>
+                    <MudText Typo="Typo.body1"><strong>Dinheiro</strong></MudText>
+                </div>
+            </MudStack>
+            <MudDivider />
+            <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center">
+                <div>
+                    <MudText Typo="Typo.caption" Color="Color.Secondary">Valor a registrar</MudText>
+                    <MudText Typo="Typo.h5" Color="Color.Primary">@FormatacaoCampos.Moeda(Total)</MudText>
+                </div>
+                <MudChip T="string" Color="Color.Success" Variant="Variant.Outlined">Dinheiro</MudChip>
+            </MudStack>
+        </MudStack>
+    </MudPaper>
+</MudPaper>
+
+@code {
+    [Parameter] public decimal Total { get; set; }
+}

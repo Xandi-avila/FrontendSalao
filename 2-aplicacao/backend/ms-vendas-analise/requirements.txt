@@ -1,0 +1,1 @@
+# Biblioteca padrão Python 3.12 (zero dependências externas obrigatórias)

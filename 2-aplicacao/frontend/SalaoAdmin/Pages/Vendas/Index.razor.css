@@ -1,0 +1,15 @@
+.venda-card-op {
+    border-left: 4px solid var(--mud-palette-primary);
+    height: 100%;
+}
+
+.venda-pdv-layout {
+    align-items: stretch;
+}
+
+@media (min-width: 960px) {
+    .venda-carrinho-sticky {
+        position: sticky;
+        top: 88px;
+    }
+}

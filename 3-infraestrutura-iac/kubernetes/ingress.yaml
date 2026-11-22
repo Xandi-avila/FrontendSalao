@@ -1,0 +1,28 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: salao-admin-ingress
+  namespace: salao-admin
+  annotations:
+    kubernetes.io/ingress.class: alb
+    alb.ingress.kubernetes.io/scheme: internet-facing
+    alb.ingress.kubernetes.io/target-type: ip
+spec:
+  rules:
+    - http:
+        paths:
+          - path: /api/auth
+            pathType: Prefix
+            backend: { service: { name: ms-cadastros, port: { number: 8001 } } }
+          - path: /api/clientes
+            pathType: Prefix
+            backend: { service: { name: ms-cadastros, port: { number: 8001 } } }
+          - path: /api/agendamentos
+            pathType: Prefix
+            backend: { service: { name: ms-agendamentos, port: { number: 8002 } } }
+          - path: /api/vendas
+            pathType: Prefix
+            backend: { service: { name: ms-vendas-analise, port: { number: 8003 } } }
+          - path: /
+            pathType: Prefix
+            backend: { service: { name: frontend-salao, port: { number: 80 } } }

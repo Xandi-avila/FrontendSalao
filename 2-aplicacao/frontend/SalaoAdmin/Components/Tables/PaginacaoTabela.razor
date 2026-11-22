@@ -1,0 +1,22 @@
+<MudTablePager page="@(Pagina - 1)"
+               pageSize="@ItensPorPagina"
+               totalItems="@TotalItens"
+               pageSizeOptions="@(new int[] { 5, 10, 25, 50 })"
+               pageChanged="AoMudarPagina"
+               pageSizeChanged="AoMudarTamanho"
+               infoFormat="{first_item}-{last_item} de {all_items}"
+               rowsPerPageString="Itens por página:" />
+
+@code {
+    [Parameter] public int Pagina { get; set; } = 1;
+    [Parameter] public int ItensPorPagina { get; set; } = 10;
+    [Parameter] public int TotalItens { get; set; }
+    [Parameter] public EventCallback<int> PaginaAlterada { get; set; }
+    [Parameter] public EventCallback<int> ItensPorPaginaAlterados { get; set; }
+
+    private async Task AoMudarPagina(int indice) =>
+        await PaginaAlterada.InvokeAsync(indice + 1);
+
+    private async Task AoMudarTamanho(int tamanho) =>
+        await ItensPorPaginaAlterados.InvokeAsync(tamanho);
+}

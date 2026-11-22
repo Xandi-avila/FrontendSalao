@@ -1,0 +1,22 @@
+<MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center" Class="mb-4">
+    <MudStack Spacing="0">
+        <MudText Typo="Typo.h5">@Titulo</MudText>
+        @if (!string.IsNullOrWhiteSpace(Subtitulo))
+        {
+            <MudText Typo="Typo.body2" Color="Color.Secondary">@Subtitulo</MudText>
+        }
+    </MudStack>
+    @if (Acoes is not null)
+    {
+        <MudStack Row="true" Spacing="2" AlignItems="AlignItems.Center">
+            @Acoes
+        </MudStack>
+    }
+</MudStack>
+
+@code {
+    [Parameter, EditorRequired] public string Titulo { get; set; } = string.Empty;
+    [Parameter] public string? Subtitulo { get; set; }
+    [Parameter] public RenderFragment? Acoes { get; set; }
+}
+

@@ -1,0 +1,169 @@
+services:
+  api-gateway:
+    image: nginx:1.27-alpine
+    container_name: salao-api-gateway
+    ports:
+      - "8080:80"
+    volumes:
+      - ../2-aplicacao/backend/api-gateway/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+    depends_on:
+      - frontend-salao
+      - ms-cadastros
+      - ms-agendamentos
+      - ms-vendas-analise
+    restart: unless-stopped
+    networks:
+      - salao-net
+
+  frontend-salao:
+    build:
+      context: ../2-aplicacao/frontend
+      dockerfile: Dockerfile
+    container_name: salao-frontend
+    restart: unless-stopped
+    networks:
+      - salao-net
+
+  ms-cadastros:
+    build:
+      context: ../2-aplicacao/backend/ms-cadastros
+    container_name: salao-ms-cadastros
+    environment:
+      - PORT=8001
+      - DATABASE_URL=postgresql://salao:salao123@postgres:5432/salao_db
+      - REDIS_URL=redis://redis:6379/0
+    depends_on:
+      - postgres
+      - redis
+    restart: unless-stopped
+    networks:
+      - salao-net
+
+  ms-agendamentos:
+    build:
+      context: ../2-aplicacao/backend/ms-agendamentos
+    container_name: salao-ms-agendamentos
+    environment:
+      - PORT=8002
+      - DATABASE_URL=postgresql://salao:salao123@postgres:5432/salao_db
+      - RABBITMQ_URL=amqp://salao:salao123@rabbitmq:5672/
+      - SERVERLESS_WORKER_URL=http://serverless-notificacoes:8004/events
+    depends_on:
+      - postgres
+      - rabbitmq
+      - serverless-notificacoes
+    restart: unless-stopped
+    networks:
+      - salao-net
+
+  ms-vendas-analise:
+    build:
+      context: ../2-aplicacao/backend/ms-vendas-analise
+    container_name: salao-ms-vendas-analise
+    environment:
+      - PORT=8003
+      - DATABASE_URL=postgresql://salao:salao123@postgres:5432/salao_db
+      - REDIS_URL=redis://redis:6379/1
+      - SERVERLESS_WORKER_URL=http://serverless-notificacoes:8004/events
+    depends_on:
+      - postgres
+      - redis
+      - serverless-notificacoes
+    restart: unless-stopped
+    networks:
+      - salao-net
+
+  serverless-notificacoes:
+    build:
+      context: ../2-aplicacao/serverless-notificacoes
+    container_name: salao-serverless-notificacoes
+    environment:
+      - PORT=8004
+      - RABBITMQ_URL=amqp://salao:salao123@rabbitmq:5672/
+    depends_on:
+      - rabbitmq
+    restart: unless-stopped
+    networks:
+      - salao-net
+
+  postgres:
+    image: postgres:16-alpine
+    container_name: salao-postgres
+    environment:
+      - POSTGRES_USER=salao
+      - POSTGRES_PASSWORD=salao123
+      - POSTGRES_DB=salao_db
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    restart: unless-stopped
+    networks:
+      - salao-net
+
+  redis:
+    image: redis:7-alpine
+    container_name: salao-redis
+    restart: unless-stopped
+    networks:
+      - salao-net
+
+  rabbitmq:
+    image: rabbitmq:3.13-management-alpine
+    container_name: salao-rabbitmq
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      - RABBITMQ_DEFAULT_USER=salao
+      - RABBITMQ_DEFAULT_PASS=salao123
+    restart: unless-stopped
+    networks:
+      - salao-net
+
+  prometheus:
+    image: prom/prometheus:v2.54.1
+    container_name: salao-prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ../4-logs-observabilidade/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ../4-logs-observabilidade/prometheus/alerts.yml:/etc/prometheus/alerts.yml:ro
+    restart: unless-stopped
+    networks:
+      - salao-net
+
+  loki:
+    image: grafana/loki:3.1.1
+    container_name: salao-loki
+    ports:
+      - "3100:3100"
+    volumes:
+      - ../4-logs-observabilidade/loki/loki-config.yaml:/etc/loki/local-config.yaml:ro
+    command: -config.file=/etc/loki/local-config.yaml
+    restart: unless-stopped
+    networks:
+      - salao-net
+
+  grafana:
+    image: grafana/grafana:11.2.0
+    container_name: salao-grafana
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+    volumes:
+      - ../5-dashboard-monitoramento/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ../5-dashboard-monitoramento/grafana/dashboards:/var/lib/grafana/dashboards:ro
+    depends_on:
+      - prometheus
+      - loki
+    restart: unless-stopped
+    networks:
+      - salao-net
+
+volumes:
+  pgdata:
+
+networks:
+  salao-net:
+    driver: bridge

@@ -1,0 +1,11 @@
+@page "/logout"
+@attribute [AllowAnonymous]
+@layout AuthLayout
+@inject IAuthService AuthService
+
+@code {
+    protected override async Task OnInitializedAsync()
+    {
+        await AuthService.LogoutAsync();
+    }
+}

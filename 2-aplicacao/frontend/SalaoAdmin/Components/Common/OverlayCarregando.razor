@@ -1,0 +1,12 @@
+@if (Visivel)
+{
+    <MudOverlay Visible="true" DarkBackground="true" Absolute="true">
+        <MudProgressCircular Color="Color.Primary" Indeterminate="true" Size="Size.Large" />
+    </MudOverlay>
+}
+
+@code {
+    [Parameter] public bool Visivel { get; set; }
+    [Parameter] public bool Absoluto { get; set; } = true;
+}
+

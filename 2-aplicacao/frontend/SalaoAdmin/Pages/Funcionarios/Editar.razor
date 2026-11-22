@@ -1,0 +1,96 @@
+@page "/funcionarios/editar/{Id:guid}"
+@layout AdminLayout
+@inject IFuncionarioServico FuncionarioServico
+@inject IServicoValidacao Validacao
+@inject IServicoNotificacao Notificacoes
+@inject NavigationManager Navegacao
+
+<CabecalhoPagina Titulo="Editar funcionário" />
+
+@if (_carregando)
+{
+    <MudProgressLinear Indeterminate="true" Color="Color.Primary" />
+}
+else if (_modelo is null)
+{
+    <MudAlert Severity="Severity.Warning">Registro não encontrado.</MudAlert>
+}
+else
+{
+    <MudPaper Class="pa-4" Elevation="1" Style="position: relative;">
+        <OverlayCarregando Visivel="_salvando" />
+        <FuncionarioForm @ref="_formulario" Modelo="_modelo" Erros="_erros" Edicao="true" />
+        <MudStack Row="true" Justify="Justify.FlexEnd" Spacing="2" Class="mt-4">
+            <MudButton Variant="Variant.Text" OnClick="@(() => Navegacao.NavigateTo("/funcionarios"))">Cancelar</MudButton>
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="Salvar" Disabled="_salvando">Atualizar</MudButton>
+        </MudStack>
+    </MudPaper>
+}
+
+@code {
+    [Parameter] public Guid Id { get; set; }
+
+    private FuncionarioEdicaoDto? _modelo;
+    private FuncionarioForm? _formulario;
+    private Dictionary<string, string> _erros = new();
+    private bool _carregando = true;
+    private bool _salvando;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var resposta = await FuncionarioServico.ObterPorIdAsync(Id);
+        if (resposta.Sucesso && resposta.Dados is not null)
+        {
+            var f = resposta.Dados;
+            _modelo = new FuncionarioEdicaoDto
+            {
+                Id = f.Id,
+                NomeCompleto = f.NomeCompleto,
+                Endereco = f.Endereco,
+                Telefone = FormatacaoCampos.Telefone(f.Telefone),
+                CPF = FormatacaoCampos.Cpf(f.CPF),
+                DataAdmissao = f.DataAdmissao,
+                Profissoes = f.Profissoes ?? [],
+                Email = f.Email,
+                DataNascimento = f.DataNascimento,
+                NivelPermissao = f.NivelPermissao,
+                Status = f.Status,
+                PercentualComissaoProduto = f.PercentualComissaoProduto,
+                PercentualComissaoServico = f.PercentualComissaoServico
+            };
+        }
+        _carregando = false;
+    }
+
+    private async Task Salvar()
+    {
+        if (_modelo is null) return;
+
+        _erros = await ValidacaoFormularioHelper.ValidarAntesDeSalvarAsync(
+            Validacao,
+            _modelo,
+            () => _formulario?.ColetarErrosDatas() ?? new Dictionary<string, string>(),
+            () => _formulario?.SincronizarDatasAsync() ?? Task.CompletedTask);
+
+        if (_erros.Count > 0)
+            return;
+
+        _salvando = true;
+        try
+        {
+            var resposta = await FuncionarioServico.AtualizarAsync(_modelo);
+            if (resposta.Sucesso)
+            {
+                Notificacoes.Sucesso(resposta.Mensagem ?? "Atualizado.");
+                Navegacao.NavigateTo("/funcionarios");
+            }
+            else
+                Notificacoes.NotificarFalha(resposta, "Erro ao atualizar.");
+        }
+        finally
+        {
+            _salvando = false;
+        }
+    }
+}
+

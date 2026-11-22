@@ -1,0 +1,109 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: frontend-salao
+  namespace: salao-admin
+spec:
+  replicas: 2
+  selector:
+    matchLabels: { app: frontend-salao }
+  template:
+    metadata:
+      labels: { app: frontend-salao }
+    spec:
+      topologySpreadConstraints:
+        - maxSkew: 1
+          topologyKey: topology.kubernetes.io/zone
+          whenUnsatisfiable: DoNotSchedule
+          labelSelector:
+            matchLabels: { app: frontend-salao }
+      containers:
+        - name: frontend
+          image: salao-admin/frontend-salao:latest
+          ports: [{ containerPort: 80 }]
+          readinessProbe: { httpGet: { path: /health, port: 80 }, initialDelaySeconds: 5, periodSeconds: 10 }
+          livenessProbe:  { httpGet: { path: /health, port: 80 }, initialDelaySeconds: 15, periodSeconds: 20 }
+          resources:
+            requests: { cpu: "100m", memory: "128Mi" }
+            limits:   { cpu: "300m", memory: "256Mi" }
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ms-cadastros
+  namespace: salao-admin
+spec:
+  replicas: 2
+  selector:
+    matchLabels: { app: ms-cadastros }
+  template:
+    metadata:
+      labels: { app: ms-cadastros }
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "8001"
+        prometheus.io/path: "/metrics"
+    spec:
+      containers:
+        - name: ms-cadastros
+          image: salao-admin/ms-cadastros:latest
+          ports: [{ containerPort: 8001 }]
+          readinessProbe: { httpGet: { path: /ready, port: 8001 }, initialDelaySeconds: 5, periodSeconds: 10 }
+          livenessProbe:  { httpGet: { path: /health, port: 8001 }, initialDelaySeconds: 10, periodSeconds: 15 }
+          resources:
+            requests: { cpu: "150m", memory: "192Mi" }
+            limits:   { cpu: "500m", memory: "512Mi" }
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ms-agendamentos
+  namespace: salao-admin
+spec:
+  replicas: 2
+  selector:
+    matchLabels: { app: ms-agendamentos }
+  template:
+    metadata:
+      labels: { app: ms-agendamentos }
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "8002"
+        prometheus.io/path: "/metrics"
+    spec:
+      containers:
+        - name: ms-agendamentos
+          image: salao-admin/ms-agendamentos:latest
+          ports: [{ containerPort: 8002 }]
+          readinessProbe: { httpGet: { path: /ready, port: 8002 }, initialDelaySeconds: 5, periodSeconds: 10 }
+          livenessProbe:  { httpGet: { path: /health, port: 8002 }, initialDelaySeconds: 10, periodSeconds: 15 }
+          resources:
+            requests: { cpu: "150m", memory: "192Mi" }
+            limits:   { cpu: "500m", memory: "512Mi" }
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ms-vendas-analise
+  namespace: salao-admin
+spec:
+  replicas: 2
+  selector:
+    matchLabels: { app: ms-vendas-analise }
+  template:
+    metadata:
+      labels: { app: ms-vendas-analise }
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "8003"
+        prometheus.io/path: "/metrics"
+    spec:
+      containers:
+        - name: ms-vendas-analise
+          image: salao-admin/ms-vendas-analise:latest
+          ports: [{ containerPort: 8003 }]
+          readinessProbe: { httpGet: { path: /ready, port: 8003 }, initialDelaySeconds: 5, periodSeconds: 10 }
+          livenessProbe:  { httpGet: { path: /health, port: 8003 }, initialDelaySeconds: 10, periodSeconds: 15 }
+          resources:
+            requests: { cpu: "150m", memory: "192Mi" }
+            limits:   { cpu: "500m", memory: "512Mi" }

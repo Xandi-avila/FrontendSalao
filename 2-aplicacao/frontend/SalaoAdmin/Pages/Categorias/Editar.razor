@@ -1,0 +1,87 @@
+@page "/categorias/editar/{Id:guid}"
+@layout AdminLayout
+@inject ICategoriaServico CategoriaServico
+@inject IServicoCatalogoServico ServicoCatalogoServico
+@inject IServicoValidacao Validacao
+@inject IServicoNotificacao Notificacoes
+@inject NavigationManager Navegacao
+
+<CabecalhoPagina Titulo="Editar categoria" />
+
+@if (_carregando)
+{
+    <MudProgressLinear Indeterminate="true" Color="Color.Primary" />
+}
+else if (_modelo is null)
+{
+    <MudAlert Severity="Severity.Warning">Categoria não encontrada.</MudAlert>
+}
+else
+{
+    <MudPaper Class="pa-4" Elevation="1" Style="position: relative;">
+        <OverlayCarregando Visivel="_salvando" />
+        <CategoriaForm Modelo="_modelo" ServicosDisponiveis="_servicos" Erros="_erros" />
+        <MudStack Row="true" Justify="Justify.FlexEnd" Spacing="2" Class="mt-4">
+            <MudButton Variant="Variant.Text" OnClick="@(() => Navegacao.NavigateTo("/categorias"))">Cancelar</MudButton>
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="Salvar" Disabled="_salvando">Atualizar</MudButton>
+        </MudStack>
+    </MudPaper>
+}
+
+@code {
+    [Parameter] public Guid Id { get; set; }
+
+    private CategoriaEdicaoDto? _modelo;
+    private List<ServicoDto> _servicos = [];
+    private Dictionary<string, string> _erros = new();
+    private bool _carregando = true;
+    private bool _salvando;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var servicos = await ServicoCatalogoServico.ListarAsync(new FiltroPaginacao { Pagina = 1, ItensPorPagina = 100 });
+        if (servicos.Sucesso && servicos.Dados is not null)
+            _servicos = servicos.Dados.Itens.ToList();
+
+        var resposta = await CategoriaServico.ObterPorIdAsync(Id);
+        if (resposta.Sucesso && resposta.Dados is not null)
+        {
+            _modelo = new CategoriaEdicaoDto
+            {
+                Id = resposta.Dados.Id,
+                Nome = resposta.Dados.Nome,
+                ServicoIds = resposta.Dados.ServicoIds.ToList()
+            };
+        }
+        _carregando = false;
+    }
+
+    private async Task Salvar()
+    {
+        if (_modelo is null) return;
+
+        var validacao = await Validacao.ValidarAsync(_modelo);
+        if (!validacao.IsValid)
+        {
+            _erros = Validacao.ParaErros(validacao);
+            return;
+        }
+
+        _salvando = true;
+        try
+        {
+            var resposta = await CategoriaServico.AtualizarAsync(_modelo);
+            if (resposta.Sucesso)
+            {
+                Notificacoes.Sucesso(resposta.Mensagem ?? "Atualizado.");
+                Navegacao.NavigateTo("/categorias");
+            }
+            else
+                Notificacoes.Erro(resposta.Mensagem ?? "Erro ao atualizar.");
+        }
+        finally
+        {
+            _salvando = false;
+        }
+    }
+}

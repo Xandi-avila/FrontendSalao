@@ -1,0 +1,150 @@
+@inherits LayoutComponentBase
+@inject IPreferenciaTemaServico PreferenciaTema
+
+<MudThemeProvider Theme="_theme"
+                  IsDarkMode="_modoEscuro"
+                  IsDarkModeChanged="AoAlterarModoEscuroAsync" />
+<MudPopoverProvider />
+<MudDialogProvider />
+<MudSnackbarProvider />
+
+<MudLayout>
+    <MudAppBar Elevation="0" Color="Color.Primary" Dense="false" Fixed="true">
+        <MudIconButton Icon="@Icons.Material.Filled.Menu" Color="Color.Inherit" Edge="Edge.Start" OnClick="@((e) => AlternarDrawer())" />
+        <MudSpacer />
+        <MudTooltip Text="@(_modoEscuro ? "Usar modo claro" : "Usar modo escuro")">
+            <MudIconButton Icon="@(_modoEscuro ? Icons.Material.Filled.LightMode : Icons.Material.Filled.DarkMode)"
+                           Color="Color.Inherit"
+                           OnClick="AlternarTemaAsync"
+                           aria-label="@(_modoEscuro ? "Modo claro" : "Modo escuro")" />
+        </MudTooltip>
+    </MudAppBar>
+
+    <MudDrawer @bind-Open="_drawerOpen"
+               Elevation="2"
+               Variant="@DrawerVariant.Responsive"
+               ClipMode="DrawerClipMode.Docked">
+        
+        <MudDrawerHeader Class="pa-4 d-flex align-center justify-center" Style="height: var(--mud-appbar-height);">
+            @if (_modoEscuro)
+            {
+                <img src="/brandlogo-white.png" alt="Bella Estética" style="max-height: 40px; width: auto; object-fit: contain;" />
+            }
+            else
+            {
+                <img src="/brand-logo.png" alt="Bella Estética" style="max-height: 40px; width: auto; object-fit: contain;" />
+            }
+        </MudDrawerHeader>
+
+        <MudNavMenu>
+            <MudNavLink Href="/" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.Dashboard">
+                Início
+            </MudNavLink>
+        
+            <MudText Typo="Typo.overline" Class="px-4 mt-4 mb-1">Cadastros</MudText>
+            <MudNavLink Href="/funcionarios" Icon="@Icons.Material.Filled.Badge">Funcionários</MudNavLink>
+            <MudNavLink Href="/clientes" Icon="@Icons.Material.Filled.People">Clientes</MudNavLink>
+            <MudNavLink Href="/produtos" Icon="@Icons.Material.Filled.Inventory2">Produtos</MudNavLink>
+            <MudNavLink Href="/servicos" Icon="@Icons.Material.Filled.ContentCut">Serviços e categorias</MudNavLink>
+            
+            <MudText Typo="Typo.overline" Class="px-4 mt-4 mb-1">Operação</MudText>
+            <MudNavLink Href="/agenda" Icon="@Icons.Material.Filled.CalendarMonth">Agenda e agendamentos</MudNavLink>
+            <MudNavLink Href="/vendas" Icon="@Icons.Material.Filled.PointOfSale">Vendas (PDV)</MudNavLink>
+            <MudNavLink Href="/vendas/historico" Icon="@Icons.Material.Filled.ReceiptLong">Histórico de vendas</MudNavLink>
+            <MudNavLink Href="/logout" Icon="@Icons.Material.Filled.Logout">Sair</MudNavLink>
+        </MudNavMenu>
+    </MudDrawer>
+
+    <MudMainContent Class="pa-4 pa-md-6" Style="padding-top: 80px !important;">
+            <MudContainer MaxWidth="MaxWidth.ExtraLarge">
+                @Body
+            </MudContainer>
+        </MudMainContent>
+    </MudLayout>
+
+@code {
+    private bool _drawerOpen = true;
+    private bool _modoEscuro;
+    private bool _preferenciaCarregada;
+
+    private readonly MudTheme _theme = new()
+    {
+        PaletteLight = new PaletteLight
+        {
+            Primary = "#398E97",
+            Secondary = "#5FC7D0",
+            Tertiary = "#96D7DB",
+            Background = "#F2F5F5",
+            Surface = "#FFFFFF",
+            AppbarBackground = "#398E97",
+            AppbarText = "#FFFFFF",
+            DrawerBackground = "#FFFFFF",
+            DrawerText = "#141C1E",
+            DrawerIcon = "rgba(20,28,30,0.54)",
+            TextPrimary = "#141C1E",
+            TextSecondary = "#4A5557",
+            Divider = "#D1E2E4",
+            TableLines = "#D1E2E4",
+            LinesDefault = "#D1E2E4",
+            Info = "#96D7DB",
+            Success = "#1A8245",
+            Warning = "#B27000",
+            Error = "#D32F2F"
+        },
+        PaletteDark = new PaletteDark
+        {
+            Primary = "#4CD2EC",
+            Secondary = "#3D9EB4",
+            Tertiary = "#003541",
+            Background = "#0F1416",
+            Surface = "#192224",
+            AppbarBackground = "#192224", 
+            AppbarText = "#FFFFFF",
+            DrawerBackground = "#192224",
+            DrawerText = "#E1E8E9",
+            DrawerIcon = "rgba(225,232,233,0.54)",
+            TextPrimary = "#E1E8E9",
+            TextSecondary = "#9AA7A9",
+            Divider = "#334549",
+            TableLines = "#334549",
+            LinesDefault = "#334549",
+            Info = "#4CD2EC",
+            Success = "#4CE18B",
+            Warning = "#FFC457",
+            Error = "#FF8985"
+        },
+        LayoutProperties = new LayoutProperties
+        {
+            DefaultBorderRadius = "8px"
+        }
+    };
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender || _preferenciaCarregada)
+            return;
+
+        _modoEscuro = await PreferenciaTema.ObterModoEscuroAsync();
+        _preferenciaCarregada = true;
+        StateHasChanged();
+    }
+
+    private void AlternarDrawer()
+    {
+        _drawerOpen = !_drawerOpen;
+    }
+
+    private async Task AlternarTemaAsync()
+    {
+        await AoAlterarModoEscuroAsync(!_modoEscuro);
+    }
+
+    private async Task AoAlterarModoEscuroAsync(bool modoEscuro)
+    {
+        if (_modoEscuro == modoEscuro && _preferenciaCarregada)
+            return;
+
+        _modoEscuro = modoEscuro;
+        await PreferenciaTema.SalvarModoEscuroAsync(modoEscuro);
+    }
+}

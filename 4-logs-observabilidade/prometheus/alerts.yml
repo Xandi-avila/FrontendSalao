@@ -1,0 +1,15 @@
+groups:
+  - name: salao_admin_slos
+    rules:
+      - alert: MicrosservicoIndisponivel
+        expr: up == 0
+        for: 1m
+        labels: { severity: critical }
+        annotations:
+          summary: "Instância {{ $labels.job }} indisponível"
+      - alert: AltaTaxaErrosHTTP
+        expr: sum(rate(http_requests_total{status=~"5.."}[5m])) / sum(rate(http_requests_total[5m])) > 0.05
+        for: 2m
+        labels: { severity: warning }
+        annotations:
+          summary: "Taxa de erros 5xx acima de 5% nos últimos 5 minutos"

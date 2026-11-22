@@ -1,0 +1,146 @@
+@using SalaoAdmin.Utilitarios
+
+<MudExpansionPanels Class="mb-4" Elevation="1">
+    <MudExpansionPanel Text="Busca inteligente de horário" Icon="@Icons.Material.Filled.Search" initiallyExpanded="true">
+        <MudText Typo="Typo.caption" Color="Color.Secondary" Class="mb-3">
+            Encontre profissionais com horarios livres baseado no serviço a ser realizado.
+        </MudText>
+        <MudGrid Spacing="2">
+            <MudItem xs="12" sm="6" md="3">
+                <MudSelect T="Guid?" Label="Cliente" Variant="Variant.Outlined" Margin="Margin.Dense"
+                           Value="_clienteId" ValueChanged="v => _clienteId = v"
+                           ToStringFunc="NomeCliente">
+                    <MudSelectItem T="Guid?" Value="@((Guid?)null)">Selecione o cliente</MudSelectItem>
+                    @foreach (var cliente in Clientes)
+                    {
+                        <MudSelectItem T="Guid?" Value="@((Guid?)cliente.Id)">@cliente.NomeCompleto</MudSelectItem>
+                    }
+                </MudSelect>
+            </MudItem>
+            <MudItem xs="12" sm="6" md="3">
+                <MudSelect T="Guid?" Label="Serviço" Variant="Variant.Outlined" Margin="Margin.Dense"
+                           Value="_servicoId" ValueChanged="v => _servicoId = v"
+                           ToStringFunc="NomeServico">
+                    <MudSelectItem T="Guid?" Value="@((Guid?)null)">Selecione o serviço</MudSelectItem>
+                    @foreach (var servico in Servicos)
+                    {
+                        <MudSelectItem T="Guid?" Value="@((Guid?)servico.Id)">@($"{servico.Nome} ({servico.DuracaoMinutos} min)")</MudSelectItem>
+                    }
+                </MudSelect>
+            </MudItem>
+            <MudItem xs="12" sm="6" md="3">
+                <MudDatePicker Label="Data desejada" Variant="Variant.Outlined" Margin="Margin.Dense" @bind-Date="DataDesejada" />
+            </MudItem>
+            <MudItem xs="12" sm="6" md="3">
+                <MudTimePicker Label="Hora preferida (opcional)" AmPm="false" Variant="Variant.Outlined" Margin="Margin.Dense"
+                               Time="HoraDesejada" TimeChanged="h => HoraDesejada = h" Clearable="true" />
+            </MudItem>
+            <MudItem xs="12" Class="d-flex align-center">
+                <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="Buscar" Disabled="Carregando"
+                           StartIcon="@Icons.Material.Filled.AutoAwesome">
+                    Buscar vagas
+                </MudButton>
+            </MudItem>
+        </MudGrid>
+
+        @if (_sugestoes.Count > 0)
+        {
+            <MudTable Items="_sugestoes" Dense="true" Hover="true" Class="mt-3" Elevation="0" Breakpoint="Breakpoint.Sm">
+                <HeaderContent>
+                    <MudTh>Profissional</MudTh>
+                    <MudTh>Horário</MudTh>
+                    <MudTh>Duração</MudTh>
+                    <MudTh Style="width:100px"></MudTh>
+                </HeaderContent>
+                <RowTemplate>
+                    <MudTd DataLabel="Profissional">@context.NomeFuncionario</MudTd>
+                    <MudTd DataLabel="Horário">@context.HorarioInicio.ToString("dd/MM HH:mm")</MudTd>
+                    <MudTd DataLabel="Duração">@($"{(context.HorarioFim - context.HorarioInicio).TotalMinutes:0} min")</MudTd>
+                    <MudTd>
+                        <MudButton Size="Size.Small" Variant="Variant.Filled" Color="Color.Success"
+                                   OnClick="@(() => AgendarSugestao(context))">
+                            Agendar
+                        </MudButton>
+                    </MudTd>
+                </RowTemplate>
+            </MudTable>
+        }
+        else if (_buscaRealizada)
+        {
+            <MudAlert Severity="Severity.Warning" Dense="true" Class="mt-3">
+                Nenhuma vaga encontrada. Verifique a disponibilidade semanal do profissional ou escolha outra data.
+            </MudAlert>
+        }
+    </MudExpansionPanel>
+</MudExpansionPanels>
+
+@code {
+    [Parameter] public IReadOnlyList<ClienteDto> Clientes { get; set; } = [];
+    [Parameter] public IReadOnlyList<ServicoDto> Servicos { get; set; } = [];
+    [Parameter] public IReadOnlyList<FuncionarioDto> Funcionarios { get; set; } = [];
+    [Parameter] public IReadOnlyDictionary<Guid, List<JanelaAgendaDto>> JanelasPorFuncionario { get; set; } = new Dictionary<Guid, List<JanelaAgendaDto>>();
+    [Parameter] public IReadOnlyList<AgendamentoDto> Agendamentos { get; set; } = [];
+    [Parameter] public Func<AgendamentoDto, DateTime> ObterFimAgendamento { get; set; } = a => a.DataHoraInicio;
+    [Parameter] public EventCallback<AgendaBuscaAgendamentoRequest> OnAgendar { get; set; }
+    [Parameter] public bool Carregando { get; set; }
+
+    private Guid? _clienteId;
+    private Guid? _servicoId;
+    public DateTime? DataDesejada { get; set; } = DateTime.Today;
+    public TimeSpan? HoraDesejada { get; set; }
+
+    private readonly List<SugestaoFuncionarioVaga> _sugestoes = [];
+    private bool _buscaRealizada;
+
+    private string NomeCliente(Guid? id) =>
+        id is null || id == Guid.Empty
+            ? "Selecione o cliente"
+            : Clientes.FirstOrDefault(c => c.Id == id)?.NomeCompleto ?? "Cliente não encontrado";
+
+    private string NomeServico(Guid? id)
+    {
+        if (id is null || id == Guid.Empty)
+            return "Selecione o serviço";
+
+        var servico = Servicos.FirstOrDefault(s => s.Id == id);
+        return servico is null
+            ? "Serviço não encontrado"
+            : $"{servico.Nome} ({servico.DuracaoMinutos} min)";
+    }
+
+    private void Buscar()
+    {
+        _sugestoes.Clear();
+        _buscaRealizada = true;
+
+        if (!_servicoId.HasValue || _servicoId == Guid.Empty || !DataDesejada.HasValue)
+            return;
+
+        var servico = Servicos.FirstOrDefault(s => s.Id == _servicoId);
+        if (servico is null || servico.DuracaoMinutos <= 0)
+            return;
+
+        var funcionariosBusca = Funcionarios.Select(f => (f.Id, f.NomeCompleto));
+        _sugestoes.AddRange(AgendaCalculoHelper.BuscarFuncionariosComVaga(
+            DataDesejada.Value,
+            servico.DuracaoMinutos,
+            HoraDesejada,
+            funcionariosBusca,
+            JanelasPorFuncionario,
+            Agendamentos,
+            ObterFimAgendamento));
+    }
+
+    private async Task AgendarSugestao(SugestaoFuncionarioVaga sugestao)
+    {
+        if (!OnAgendar.HasDelegate || !_clienteId.HasValue || _clienteId == Guid.Empty || !_servicoId.HasValue || _servicoId == Guid.Empty)
+            return;
+
+        await OnAgendar.InvokeAsync(new AgendaBuscaAgendamentoRequest
+        {
+            Sugestao = sugestao,
+            ClienteId = _clienteId.Value,
+            ServicoId = _servicoId.Value
+        });
+    }
+}

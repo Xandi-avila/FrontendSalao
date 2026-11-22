@@ -1,0 +1,81 @@
+### METRICS FROM ms-cadastros (:8001/metrics)
+# HELP http_requests_total Total de requisições HTTP processadas
+# TYPE http_requests_total counter
+http_requests_total{service="ms-cadastros",method="GET",path="/categorias",status="200"} 1
+http_requests_total{service="ms-cadastros",method="GET",path="/clientes",status="200"} 1
+http_requests_total{service="ms-cadastros",method="GET",path="/clientes/<id>",status="404"} 1
+http_requests_total{service="ms-cadastros",method="GET",path="/funcionarios",status="200"} 1
+http_requests_total{service="ms-cadastros",method="GET",path="/produtos",status="200"} 1
+http_requests_total{service="ms-cadastros",method="GET",path="/servicos",status="200"} 1
+http_requests_total{service="ms-cadastros",method="POST",path="/auth/login",status="200"} 1
+http_requests_total{service="ms-cadastros",method="POST",path="/auth/login",status="401"} 1
+http_requests_total{service="ms-cadastros",method="POST",path="/clientes",status="201"} 1
+# HELP http_request_duration_ms_sum Soma das latências HTTP em ms
+# TYPE http_request_duration_ms_sum counter
+http_request_duration_ms_sum{service="ms-cadastros",path="/auth/login"} 0.14
+http_request_duration_ms_count{service="ms-cadastros",path="/auth/login"} 2
+http_request_duration_ms_sum{service="ms-cadastros",path="/categorias"} 0.03
+http_request_duration_ms_count{service="ms-cadastros",path="/categorias"} 1
+http_request_duration_ms_sum{service="ms-cadastros",path="/clientes"} 0.08
+http_request_duration_ms_count{service="ms-cadastros",path="/clientes"} 2
+http_request_duration_ms_sum{service="ms-cadastros",path="/clientes/<id>"} 0.04
+http_request_duration_ms_count{service="ms-cadastros",path="/clientes/<id>"} 1
+http_request_duration_ms_sum{service="ms-cadastros",path="/funcionarios"} 0.03
+http_request_duration_ms_count{service="ms-cadastros",path="/funcionarios"} 1
+http_request_duration_ms_sum{service="ms-cadastros",path="/produtos"} 0.03
+http_request_duration_ms_count{service="ms-cadastros",path="/produtos"} 1
+http_request_duration_ms_sum{service="ms-cadastros",path="/servicos"} 0.04
+http_request_duration_ms_count{service="ms-cadastros",path="/servicos"} 1
+
+### METRICS FROM ms-agendamentos (:8002/metrics)
+# HELP http_requests_total Total de requisições HTTP processadas
+# TYPE http_requests_total counter
+http_requests_total{service="ms-agendamentos",method="GET",path="/agenda/funcionarios/<id>",status="200"} 1
+http_requests_total{service="ms-agendamentos",method="GET",path="/agendamentos",status="200"} 1
+http_requests_total{service="ms-agendamentos",method="PATCH",path="/agendamentos/<id>/cancelar",status="200"} 1
+http_requests_total{service="ms-agendamentos",method="POST",path="/agendamentos",status="201"} 2
+# HELP http_request_duration_ms_sum Soma das latências HTTP em ms
+# TYPE http_request_duration_ms_sum counter
+http_request_duration_ms_sum{service="ms-agendamentos",path="/agenda/funcionarios/<id>"} 0.05
+http_request_duration_ms_count{service="ms-agendamentos",path="/agenda/funcionarios/<id>"} 1
+http_request_duration_ms_sum{service="ms-agendamentos",path="/agendamentos"} 33.85
+http_request_duration_ms_count{service="ms-agendamentos",path="/agendamentos"} 3
+http_request_duration_ms_sum{service="ms-agendamentos",path="/agendamentos/<id>/cancelar"} 16.44
+http_request_duration_ms_count{service="ms-agendamentos",path="/agendamentos/<id>/cancelar"} 1
+# HELP messaging_events_published_total Eventos publicados na fila
+# TYPE messaging_events_published_total counter
+messaging_events_published_total{service="ms-agendamentos",event_type="agendamento.cancelado"} 1
+messaging_events_published_total{service="ms-agendamentos",event_type="agendamento.criado"} 2
+
+### METRICS FROM ms-vendas-analise (:8003/metrics)
+# HELP http_requests_total Total de requisições HTTP processadas
+# TYPE http_requests_total counter
+http_requests_total{service="ms-vendas-analise",method="GET",path="/analise/faturamento",status="200"} 1
+http_requests_total{service="ms-vendas-analise",method="GET",path="/analise/funcionarios",status="200"} 1
+http_requests_total{service="ms-vendas-analise",method="GET",path="/analise/servicos",status="200"} 1
+http_requests_total{service="ms-vendas-analise",method="GET",path="/vendas",status="200"} 1
+http_requests_total{service="ms-vendas-analise",method="POST",path="/vendas",status="201"} 2
+# HELP http_request_duration_ms_sum Soma das latências HTTP em ms
+# TYPE http_request_duration_ms_sum counter
+http_request_duration_ms_sum{service="ms-vendas-analise",path="/analise/faturamento"} 0.04
+http_request_duration_ms_count{service="ms-vendas-analise",path="/analise/faturamento"} 1
+http_request_duration_ms_sum{service="ms-vendas-analise",path="/analise/funcionarios"} 0.05
+http_request_duration_ms_count{service="ms-vendas-analise",path="/analise/funcionarios"} 1
+http_request_duration_ms_sum{service="ms-vendas-analise",path="/analise/servicos"} 0.03
+http_request_duration_ms_count{service="ms-vendas-analise",path="/analise/servicos"} 1
+http_request_duration_ms_sum{service="ms-vendas-analise",path="/vendas"} 33.45
+http_request_duration_ms_count{service="ms-vendas-analise",path="/vendas"} 3
+# HELP messaging_events_published_total Eventos publicados na fila
+# TYPE messaging_events_published_total counter
+messaging_events_published_total{service="ms-vendas-analise",event_type="venda.concluida"} 2
+
+### METRICS FROM serverless-notificacoes (:8004/metrics)
+# HELP http_requests_total Total de requisições HTTP processadas
+# TYPE http_requests_total counter
+# HELP http_request_duration_ms_sum Soma das latências HTTP em ms
+# TYPE http_request_duration_ms_sum counter
+# HELP serverless_events_processed_total Eventos consumidos pela função serverless
+# TYPE serverless_events_processed_total counter
+serverless_events_processed_total{service="serverless-notificacoes",event_type="agendamento.cancelado",status="sucesso"} 1
+serverless_events_processed_total{service="serverless-notificacoes",event_type="agendamento.criado",status="sucesso"} 2
+serverless_events_processed_total{service="serverless-notificacoes",event_type="venda.concluida",status="sucesso"} 2

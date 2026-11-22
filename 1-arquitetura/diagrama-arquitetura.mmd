@@ -1,0 +1,61 @@
+flowchart LR
+    subgraph Client["Camada de Apresentação"]
+        U["Usuário / Navegador<br/>(Salão Admin - Blazor WASM .NET 9)"]
+    end
+
+    subgraph Edge["Borda & Entrada (Multi-AZ)"]
+        CDN["CloudFront + WAF"]
+        GW["API Gateway / Ingress ALB<br/>(Nginx + TLS + X-Correlation-ID)"]
+    end
+
+    subgraph K8S["Cluster Kubernetes (AWS EKS / Docker) — Multi-AZ + HPA (2-10 pods)"]
+        FE["frontend-salao<br/>(Nginx SPA Estático)"]
+        MS1["ms-cadastros<br/>(/api/auth, clientes,<br/>funcionarios, produtos, servicos)"]
+        MS2["ms-agendamentos<br/>(/api/agenda, agendamentos)"]
+        MS3["ms-vendas-analise<br/>(/api/vendas, analise)"]
+    end
+
+    subgraph Async["Mensageria & Serverless"]
+        SQS["Fila de Eventos<br/>(Amazon SQS / RabbitMQ)"]
+        DLQ["Dead-Letter Queue<br/>(DLQ - Retentativa 3x)"]
+        LMB["Função Serverless<br/>(AWS Lambda / Worker<br/>notificacao-worker)"]
+    end
+
+    subgraph Data["Camada de Dados (Multi-AZ)"]
+        RDS[("Amazon RDS PostgreSQL<br/>Multi-AZ (Standby Síncrono)<br/>Schemas por Domínio")]
+        REDIS[("ElastiCache Redis<br/>Cache-Aside & Sessão")]
+    end
+
+    subgraph Obs["Observabilidade & Monitoramento"]
+        PROM["Prometheus<br/>(Métricas /metrics & Alertas)"]
+        LOKI["Grafana Loki + Promtail<br/>(Logs JSON Centralizados)"]
+        GRAF["Grafana Dashboards<br/>(Golden Signals + SLA)"]
+    end
+
+    U --> CDN --> GW
+    GW -->|/| FE
+    GW -->|/api/auth, cadastros| MS1
+    GW -->|/api/agenda, agendamentos| MS2
+    GW -->|/api/vendas, analise| MS3
+
+    MS1 --> RDS
+    MS2 --> RDS
+    MS3 --> RDS
+    MS1 --> REDIS
+    MS3 --> REDIS
+
+    MS2 -->|agendamento.criado / cancelado| SQS
+    MS3 -->|venda.concluida| SQS
+    SQS -->|Event Source Mapping| LMB
+    SQS -.->|Falha > 3x| DLQ
+
+    MS1 -.->|/metrics| PROM
+    MS2 -.->|/metrics| PROM
+    MS3 -.->|/metrics| PROM
+    LMB -.->|/metrics| PROM
+    MS1 -.->|JSON stdout| LOKI
+    MS2 -.->|JSON stdout| LOKI
+    MS3 -.->|JSON stdout| LOKI
+    LMB -.->|JSON stdout| LOKI
+    PROM --> GRAF
+    LOKI --> GRAF
