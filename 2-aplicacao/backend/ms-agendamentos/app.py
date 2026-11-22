@@ -1,8 +1,4 @@
-import json
-import os
-import time
-import uuid
-import uuid
+import json, os, time, uuid
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import urlparse
 from telemetry import TelemetryStore, dispatch_event
@@ -12,30 +8,15 @@ PORT = int(os.environ.get("PORT", "8002"))
 telemetry = TelemetryStore(SERVICE_NAME, os.environ.get("LOG_FILE"))
 
 AGENDAMENTOS = [
-    {
-        "id": 101,
-        "clienteId": 1,
-        "clienteNome": "Ana Paula Souza",
-        "funcionarioId": 1,
-        "servicoId": 1,
-        "dataHora": "2026-11-25T14:00:00-03:00",
-        "status": "Confirmado",
-    }
+    {"id": "66666666-6666-6666-6666-666666666661", "clienteId": "44444444-4444-4444-4444-444444444441", "funcionarioId": "33333333-3333-3333-3333-333333333331", "servicoIds": ["22222222-2222-2222-2222-222222222221"], "dataHoraInicio": "2026-11-25T14:00:00", "dataHoraFim": "2026-11-25T15:00:00", "status": "CONFIRMADO"}
 ]
 
-JANELAS = {
-    1: [
-        {"id": 1, "diaSemana": "Segunda", "inicio": "09:00", "fim": "18:00"},
-        {"id": 2, "diaSemana": "Quarta", "inicio": "09:00", "fim": "18:00"},
-    ]
-}
-
+def ok(dados, msg="OK"):
+    return {"sucesso": True, "mensagem": msg, "erros": [], "dados": dados}
 
 class Handler(BaseHTTPRequestHandler):
-    def log_message(self, format, *args):
-        return
-
-    def _send(self, status: int, body, content_type="application/json"):
+    def log_message(self, format, *args): return
+    def _send(self, status, body, content_type="application/json"):
         raw = body.encode("utf-8") if isinstance(body, str) else json.dumps(body, ensure_ascii=False).encode("utf-8")
         self.send_response(status)
         self.send_header("Content-Type", content_type)
@@ -43,7 +24,7 @@ class Handler(BaseHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(raw)
 
-    def _handle(self, method: str):
+    def _handle(self, method):
         t0 = time.perf_counter()
         corr = self.headers.get("X-Correlation-ID", str(uuid.uuid4()))
         path = urlparse(self.path).path.rstrip("/") or "/"
@@ -51,39 +32,33 @@ class Handler(BaseHTTPRequestHandler):
         payload = json.loads(self.rfile.read(length).decode("utf-8")) if length > 0 else {}
 
         if path in ("/health", "/ready"):
-            self._send(200, {"status": "ok", "service": SERVICE_NAME})
-            return
+            self._send(200, {"status": "ok", "service": SERVICE_NAME}); return
         if path == "/metrics":
-            self._send(200, telemetry.render_prometheus(), "text/plain; version=0.0.4")
-            return
+            self._send(200, telemetry.render_prometheus(), "text/plain; version=0.0.4"); return
 
-        status, resp = 200, {}
+        status, resp = 200, ok(None)
         parts = [p for p in path.split("/") if p]
         if parts == ["agendamentos"] and method == "GET":
-            resp = {"itens": AGENDAMENTOS, "totalRegistros": len(AGENDAMENTOS), "pagina": 1, "tamanhoPagina": 20}
+            resp = ok({"pagina": 1, "tamanho": 20, "total": len(AGENDAMENTOS), "itens": AGENDAMENTOS})
         elif parts == ["agendamentos"] and method == "POST":
-            new_id = max((x["id"] for x in AGENDAMENTOS), default=100) + 1
-            item = {"id": new_id, "status": "Agendado", **payload}
+            item = {"id": str(uuid.uuid4()), "status": "AGENDADO", **payload}
             AGENDAMENTOS.append(item)
             dispatch_event("agendamento.criado", item, corr, telemetry)
-            status, resp = 201, item
+            status, resp = 201, ok(item, "Agendamento criado")
         elif len(parts) == 3 and parts[0] == "agendamentos" and parts[2] == "cancelar" and method == "PATCH":
-            aid = int(parts[1])
-            item = next((x for x in AGENDAMENTOS if x["id"] == aid), None)
+            item = next((x for x in AGENDAMENTOS if str(x["id"]) == parts[1]), None)
             if item:
-                item["status"] = "Cancelado"
+                item["status"] = "CANCELADO"
                 dispatch_event("agendamento.cancelado", item, corr, telemetry)
-                resp = item
+                resp = ok(item, "Cancelado")
             else:
-                status, resp = 404, {"erro": "Agendamento não encontrado"}
-        elif len(parts) == 3 and parts[0] == "agenda" and parts[1] == "funcionarios" and method == "GET":
-            fid = int(parts[2])
-            resp = JANELAS.get(fid, [])
+                status, resp = 404, {"sucesso": False, "mensagem": "Não encontrado", "erros": ["Não encontrado"], "dados": None}
+        elif len(parts) >= 2 and parts[0] == "agenda":
+            resp = ok([])
         else:
-            status, resp = 404, {"erro": "Rota não encontrada"}
+            status, resp = 404, {"sucesso": False, "mensagem": "Rota não encontrada", "erros": [], "dados": None}
 
-        latency_ms = (time.perf_counter() - t0) * 1000.0
-        telemetry.record_http(method, path, status, latency_ms, corr)
+        telemetry.record_http(method, path, status, (time.perf_counter() - t0) * 1000.0, corr)
         self._send(status, resp)
 
     def do_GET(self): self._handle("GET")
@@ -91,7 +66,6 @@ class Handler(BaseHTTPRequestHandler):
     def do_PUT(self): self._handle("PUT")
     def do_PATCH(self): self._handle("PATCH")
     def do_DELETE(self): self._handle("DELETE")
-
 
 if __name__ == "__main__":
     telemetry.log("INFO", f"Iniciando {SERVICE_NAME} na porta {PORT}")
