@@ -22,7 +22,7 @@ DB = {
         {"id": CLI2_ID, "nomeCompleto": "Mariana Costa", "whatsApp": "51997418890", "email": "mariana.costa@email.com", "instagram": "@maricosta", "profissao": ["Designer"], "dataNascimento": "1995-08-22T00:00:00", "endereco": "Rua Presidente Vargas, 180"},
     ],
     "funcionarios": [
-        {"id": FUNC1_ID, "nomeCompleto": "Carla Mendes", "endereco": "Rua Garibaldi, 100", "telefone": "51999112233", "cpf": "12345678901", "dataAdmissao": "2024-02-01T00:00:00", "profissoes": ["Cabeleireira"], "email": "carla@salao.com", "dataNascimento": "1990-03-10T00:00:00", "nivelPermissao": 1, "status": 1, "percentualComissaoProduto": 10.0, "percentualComissaoServico": 35.0},
+        {"id": FUNC1_ID, "nomeCompleto": "Carla Mendes", "endereco": "Rua Garibaldi, 100", "telefone": "51999112233", "cpf": "12345678901", "dataAdmissao": "2024-02-01T00:00:00", "profissoes": ["Cabeleireira"], "email": "carla@salao.com", "dataNascimento": "1990-03-10T00:00:00", "nivelPermissao": 4, "status": 1, "percentualComissaoProduto": 10.0, "percentualComissaoServico": 35.0},
         {"id": FUNC2_ID, "nomeCompleto": "Lucas Ferreira", "endereco": "Av. Brasil, 55", "telefone": "51998223344", "cpf": "98765432100", "dataAdmissao": "2024-06-15T00:00:00", "profissoes": ["Colorista"], "email": "lucas@salao.com", "dataNascimento": "1993-11-20T00:00:00", "nivelPermissao": 2, "status": 1, "percentualComissaoProduto": 10.0, "percentualComissaoServico": 30.0},
     ],
     "categorias": [
@@ -45,7 +45,7 @@ def fail(msg):
 
 def make_jwt(email: str) -> str:
     h = base64.urlsafe_b64encode(json.dumps({"alg": "HS256", "typ": "JWT"}).encode()).decode().rstrip("=")
-    p = base64.urlsafe_b64encode(json.dumps({"sub": email, "email": email, "name": "Administrador", "role": "Administrador", "exp": int(time.time()) + 86400}).encode()).decode().rstrip("=")
+    p = base64.urlsafe_b64encode(json.dumps({"sub": email, "email": email, "name": "Administrador", "role": "Administrador", "nivelPermissao": "Administrador", "exp": int(time.time()) + 86400}).encode()).decode().rstrip("=")
     s = base64.urlsafe_b64encode(b"salao-admin-cloud-signature").decode().rstrip("=")
     return f"{h}.{p}.{s}"
 
@@ -78,7 +78,7 @@ class Handler(BaseHTTPRequestHandler):
             if not email or senha == "invalida":
                 status, resp = 401, fail("Credenciais inválidas")
             else:
-                resp = ok({"token": make_jwt(email), "funcionario": {"id": FUNC1_ID, "nomeCompleto": "Carla Mendes", "email": email, "nivelPermissao": 1}})
+                resp = ok({"token": make_jwt(email), "funcionario": {"id": FUNC1_ID, "nomeCompleto": "Carla Mendes", "email": email, "nivelPermissao": 4}})
         else:
             parts = [p for p in path.split("/") if p]
             res = parts[0] if parts else ""
@@ -118,3 +118,4 @@ class Handler(BaseHTTPRequestHandler):
 if __name__ == "__main__":
     telemetry.log("INFO", f"Iniciando {SERVICE_NAME} na porta {PORT}")
     ThreadingHTTPServer(("0.0.0.0", PORT), Handler).serve_forever()
+
