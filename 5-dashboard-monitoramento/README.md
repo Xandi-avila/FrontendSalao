@@ -1,20 +1,20 @@
 # 5 — Dashboard de Monitoramento (Grafana + Prometheus + Loki)
 
-## Painel Visual das Métricas Reais Coletadas
+## Painel de Métricas e Logs Coletados
 
 ![Dashboard de Monitoramento Salão Admin](./dashboard-metricas-execucao.png)
 
-> **Transparência técnica:** A imagem acima foi plotada diretamente a partir dos dados reais coletados nos endpoints `/metrics` e nos logs JSON durante a execução integrada dos microsserviços e do worker serverless (`4-logs-observabilidade/`).
+O painel acima consolida as métricas coletadas nos endpoints `/metrics` dos microsserviços e os logs estruturados gerados durante a execução integrada da aplicação e do worker serverless (`4-logs-observabilidade/`).
 
-## Como Abrir o Grafana ao Vivo e Capturar Print Nativo
+## Acesso ao Grafana em Execução
 
-Ao executar a stack completa em sua máquina com Docker:
+Ao subir o ambiente com Docker Compose:
 
 ```bash
 cd ../3-infraestrutura-iac
 docker compose up -d --build
 ```
 
-1. Acesse **http://localhost:3000** (`admin` / `admin`).
-2. O datasource **Prometheus** (`http://prometheus:9090`), o **Loki** (`http://loki:3100`) e o dashboard **Salão Admin — Observabilidade & Microsserviços** (`grafana/dashboards/salao-observabilidade.json`) já estarão **provisionados automaticamente**.
-3. Navegue no sistema em `http://localhost:8080` para gerar tráfego em tempo real e visualizar os painéis atualizando a cada 10 segundos.
+1. Acesse `http://<IP-DO-SERVIDOR>:3000` (ou `http://localhost:3000` localmente) com usuário `admin` e senha `admin`.
+2. Os datasources **Prometheus** (`http://prometheus:9090`) e **Loki** (`http://loki:3100`), além do dashboard **Salão Admin — Observabilidade & Microsserviços** (`grafana/dashboards/salao-observabilidade.json`), sobem provisionados automaticamente.
+3. Ao navegar pela aplicação na porta `8080`, os painéis de volume HTTP, latência, eventos serverless e logs atualizam a cada 10 segundos.

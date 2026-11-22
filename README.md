@@ -1,30 +1,30 @@
-# Salão Admin — Arquitetura em Nuvem (Microsserviços, Serverless & Observabilidade)
+# Salão Admin — Arquitetura em Nuvem
 
-Repositório oficial do trabalho da disciplina de **Arquitetura em Nuvem**, estruturando a solução **Salão Admin** (painel administrativo para gestão de salões de beleza construído em **Blazor WebAssembly / .NET 9 + MudBlazor**) em uma arquitetura moderna de **microsserviços em contêineres (Docker / Kubernetes)**, **processamento assíncrono com mensageria e função Serverless**, **Infraestrutura como Código (IaC)** e **observabilidade completa**.
+Repositório do projeto de **Arquitetura em Nuvem** do sistema **Salão Admin** (painel administrativo para gestão de salões de beleza em **Blazor WebAssembly / .NET 9 + MudBlazor**), estruturado em **microsserviços containerizados (Docker / Kubernetes)**, **mensageria com função Serverless**, **Infraestrutura como Código (IaC)** e **observabilidade completa**.
 
-## Estrutura do Repositório (Entregáveis 0 a 6)
+## Estrutura do Repositório
 
-| Pasta | Entregável | Descrição |
+| Pasta | Etapa | Descrição |
 | :--- | :--- | :--- |
-| [`0-raci/`](./0-raci/RACI.md) | **0 — Matriz RACI** | Responsabilidades da equipe (R, A, C, I) por etapa do projeto. |
-| [`1-arquitetura/`](./1-arquitetura/README.md) | **1 — Arquitetura da Solução** | Diagrama arquitetural (PNG + Mermaid), fluxos, funcionalidades, HA, escalabilidade e observabilidade. |
-| [`2-aplicacao/`](./2-aplicacao/) | **2 — Código da Aplicação** | Frontend original `SalaoAdmin` (alteração mínima), API Gateway, 3 microsserviços de referência, guia plug-and-play para backend real e função Serverless/Worker. |
-| [`3-infraestrutura-iac/`](./3-infraestrutura-iac/) | **3 — Infraestrutura (IaC)** | Terraform (AWS EKS Multi-AZ, RDS, Redis, SQS+DLQ, Lambda, CloudWatch), Kubernetes (HPA, PDB, Probes) e `docker-compose.yml`. |
-| [`4-logs-observabilidade/`](./4-logs-observabilidade/) | **4 — Logs e Eventos** | Configurações Prometheus/Loki/Promtail e logs JSON + métricas reais coletadas em execução. |
-| [`5-dashboard-monitoramento/`](./5-dashboard-monitoramento/) | **5 — Dashboard Monitorado** | Provisionamento automático do Grafana, JSON do dashboard e visualização das métricas coletadas. |
-| [`6-apresentacao/`](./6-apresentacao/) | **6 — Apresentação (PPTX)** | Deck executivo de 15–20 minutos pronto para apresentação (semanas de 30/11 e 07/12). |
+| [`0-raci/`](./0-raci/RACI.md) | **0 — Matriz RACI** | Divisão de responsabilidades da equipe por etapa do projeto. |
+| [`1-arquitetura/`](./1-arquitetura/README.md) | **1 — Arquitetura da Solução** | Diagrama arquitetural (PNG e Mermaid), fluxos, alta disponibilidade e observabilidade. |
+| [`2-aplicacao/`](./2-aplicacao/) | **2 — Código da Aplicação** | Frontend `SalaoAdmin`, API Gateway Nginx, microsserviços de domínio e worker Serverless. |
+| [`3-infraestrutura-iac/`](./3-infraestrutura-iac/) | **3 — Infraestrutura (IaC)** | Terraform (AWS EKS Multi-AZ, RDS, Redis, SQS+DLQ, Lambda), manifestos Kubernetes e Docker Compose. |
+| [`4-logs-observabilidade/`](./4-logs-observabilidade/) | **4 — Logs e Eventos** | Configurações Prometheus/Loki e registros reais de logs JSON, eventos e métricas. |
+| [`5-dashboard-monitoramento/`](./5-dashboard-monitoramento/) | **5 — Dashboard Monitorado** | Provisionamento do Grafana, JSON do dashboard e painel de métricas coletadas. |
+| [`6-apresentacao/`](./6-apresentacao/) | **6 — Apresentação** | Apresentação técnica em PowerPoint (`.pptx`) com visão completa da solução. |
 
-## Como Subir Toda a Stack Localmente (Docker Compose)
+## Execução com Docker Compose
 
 ```bash
 cd 3-infraestrutura-iac
 docker compose up -d --build
 ```
 
-Após subir os contêineres:
-- **Aplicação Web (Salão Admin via API Gateway):** `http://localhost:8080`
-- **Grafana (Dashboards já provisionados):** `http://localhost:3000` (`admin` / `admin`)
-- **Prometheus (Métricas e Alertas):** `http://localhost:9090`
-- **RabbitMQ Management (Filas de Mensageria):** `http://localhost:15672` (`salao` / `salao123`)
+Serviços expostos após a inicialização:
+- **Aplicação Web (API Gateway):** `http://localhost:8080`
+- **Grafana:** `http://localhost:3000` (`admin` / `admin`)
+- **Prometheus:** `http://localhost:9090`
+- **RabbitMQ Management:** `http://localhost:15672` (`salao` / `salao123`)
 
-> **Caso o repositório do Backend oficial seja entregue a tempo:** consulte [`2-aplicacao/backend/COMO_PLUGAR_BACKEND_REAL.md`](./2-aplicacao/backend/COMO_PLUGAR_BACKEND_REAL.md) para apontar o API Gateway diretamente para a API real sem alterar o frontend.
+Para apontar o API Gateway para um serviço externo ou backend alternativo, veja [`2-aplicacao/backend/INTEGRACAO_API.md`](./2-aplicacao/backend/INTEGRACAO_API.md).
