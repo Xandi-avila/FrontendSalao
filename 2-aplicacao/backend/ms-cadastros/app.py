@@ -63,6 +63,8 @@ class Handler(BaseHTTPRequestHandler):
         t0 = time.perf_counter()
         corr = self.headers.get("X-Correlation-ID", str(uuid.uuid4()))
         path = urlparse(self.path).path.rstrip("/") or "/"
+        if path.startswith("/api/"):  # atrás do ALB a rota chega com o prefixo /api
+            path = path[4:]
         length = int(self.headers.get("Content-Length", "0"))
         payload = json.loads(self.rfile.read(length).decode("utf-8")) if length > 0 else {}
 

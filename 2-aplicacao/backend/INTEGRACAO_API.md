@@ -1,10 +1,18 @@
-# Integração do API Gateway com Serviços Externos ou Alternativos
+# Trocar o backend por outra API
 
-O API Gateway (`2-aplicacao/backend/api-gateway/nginx.conf`) centraliza o roteamento das chamadas `/api/*` do frontend `SalaoAdmin`, permitindo alternar os destinos de upstream sem modificar o código Blazor.
+O frontend chama sempre `/api/...`. Quem decide para onde cada chamada vai é o API Gateway (`2-aplicacao/backend/api-gateway/nginx.conf`). Por isso dá para trocar os microsserviços de demonstração por outra API sem mexer no código do Blazor.
 
-## Roteamento para API Externa (ex.: Render)
+A outra API precisa responder no mesmo formato que o frontend espera:
 
-Para redirecionar todas as rotas `/api/*` para uma instância externa já publicada, ajuste o bloco de roteamento em `2-aplicacao/backend/api-gateway/nginx.conf`:
+```json
+{ "sucesso": true, "mensagem": "OK", "erros": [], "dados": { } }
+```
+
+Nas listas, `dados` vem como `{ "pagina", "tamanho", "total", "itens" }`, e os IDs são GUID.
+
+## Usar uma API publicada na internet (ex.: Render)
+
+No `nginx.conf`, **apague os três blocos** `location ~ ^/api/...` (cadastros, agendamentos e vendas) e coloque no lugar:
 
 ```nginx
 location /api/ {
@@ -15,8 +23,12 @@ location /api/ {
 }
 ```
 
-## Roteamento para Serviço em Contêiner Dedicado
+Os blocos antigos precisam sair porque, no Nginx, um `location` com expressão regular tem prioridade sobre um `location /api/` comum.
 
-1. Adicione o código-fonte e o `Dockerfile` do serviço em uma subpasta dentro de `2-aplicacao/backend/`.
-2. Registre o serviço em `3-infraestrutura-iac/docker-compose.yml` na rede `salao-net`.
-3. Atualize o `upstream` correspondente no `nginx.conf` e recrie os contêineres com `docker compose up -d --build`.
+Depois reinicie o gateway: `docker compose restart api-gateway`.
+
+## Usar uma API em outro contêiner
+
+1. Coloque o código e o `Dockerfile` da API numa pasta dentro de `2-aplicacao/backend/`.
+2. Acrescente o serviço no `3-infraestrutura-iac/docker-compose.yml`, na rede `salao-net`.
+3. Aponte o `upstream` correspondente no `nginx.conf` para o novo serviço e rode `docker compose up -d --build`.

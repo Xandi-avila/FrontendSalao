@@ -28,6 +28,8 @@ class Handler(BaseHTTPRequestHandler):
         t0 = time.perf_counter()
         corr = self.headers.get("X-Correlation-ID", str(uuid.uuid4()))
         path = urlparse(self.path).path.rstrip("/") or "/"
+        if path.startswith("/api/"):  # atrás do ALB a rota chega com o prefixo /api
+            path = path[4:]
         length = int(self.headers.get("Content-Length", "0"))
         payload = json.loads(self.rfile.read(length).decode("utf-8")) if length > 0 else {}
 
@@ -53,6 +55,18 @@ class Handler(BaseHTTPRequestHandler):
                 resp = ok(item, "Cancelado")
             else:
                 status, resp = 404, {"sucesso": False, "mensagem": "Não encontrado", "erros": ["Não encontrado"], "dados": None}
+        elif len(parts) == 2 and parts[0] == "agendamentos" and method in ("GET", "PUT", "DELETE"):
+            idx = next((i for i, x in enumerate(AGENDAMENTOS) if str(x["id"]) == parts[1]), None)
+            if idx is None:
+                status, resp = 404, {"sucesso": False, "mensagem": "Não encontrado", "erros": ["Não encontrado"], "dados": None}
+            elif method == "GET":
+                resp = ok(AGENDAMENTOS[idx])
+            elif method == "PUT":
+                AGENDAMENTOS[idx] = {**AGENDAMENTOS[idx], **payload, "id": parts[1]}
+                resp = ok(AGENDAMENTOS[idx], "Agendamento atualizado")
+            else:
+                AGENDAMENTOS.pop(idx)
+                resp = ok(None, "Removido")
         elif len(parts) >= 2 and parts[0] == "agenda":
             resp = ok([])
         else:

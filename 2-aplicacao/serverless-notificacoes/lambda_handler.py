@@ -1,12 +1,11 @@
 """
-Função Serverless de Notificações e Auditoria — Salão Admin
-- Na AWS: executa como AWS Lambda disparada por Amazon SQS (Event Source Mapping).
-- Em Docker/K8s local: executa como worker HTTP/fila na porta 8004 expondo /events, /health e /metrics.
+Função de notificações do Salão Admin.
+- Na AWS: roda como Lambda, acionada pelo SQS (entrada lambda_handler).
+- No Docker: roda como serviço HTTP na porta 8004, com /events, /health e /metrics.
 """
 import json
 import os
 import time
-import uuid
 import uuid
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import urlparse

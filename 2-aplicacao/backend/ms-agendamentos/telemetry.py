@@ -1,12 +1,15 @@
 import json
 import os
 import time
-import uuid
+import re
 import uuid
 import urllib.request
 from datetime import datetime, timezone
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import urlparse
+
+# IDs em GUID viram "<id>" nas métricas, para não criar uma série nova por registro
+ID_GUID = re.compile(r"^[0-9a-fA-F-]{36}$")
 
 
 class TelemetryStore:
@@ -36,7 +39,7 @@ class TelemetryStore:
 
     def record_http(self, method: str, path: str, status: int, latency_ms: float, corr_id: str):
         norm_path = "/" + "/".join(
-            "<id>" if seg.isdigit() else seg for seg in path.strip("/").split("/") if seg
+            "<id>" if seg.isdigit() or ID_GUID.match(seg) else seg for seg in path.strip("/").split("/") if seg
         )
         key = (method, norm_path, status)
         self.requests_total[key] = self.requests_total.get(key, 0) + 1
@@ -119,7 +122,7 @@ def dispatch_event(event_type: str, payload: dict, correlation_id: str, telemetr
     except Exception as exc:
         telemetry.log(
             "WARN",
-            f"Worker indisponível no dispatch imediato (mantido em fila): {exc}",
+            f"Falha ao entregar o evento para a função de notificações: {exc}",
             correlation_id=correlation_id,
             event_type=event_type,
         )

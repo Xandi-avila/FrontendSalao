@@ -1,1 +1,1 @@
-# Compatível com AWS Lambda Python 3.12 runtime (stdlib)
+# Sem dependências externas: roda no runtime Python 3.12 do Lambda só com a biblioteca padrão

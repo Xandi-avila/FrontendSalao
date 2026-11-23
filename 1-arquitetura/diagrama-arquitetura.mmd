@@ -23,13 +23,13 @@ flowchart LR
 
     subgraph Data["Camada de Dados (Multi-AZ)"]
         RDS[("Amazon RDS PostgreSQL<br/>Multi-AZ (Standby Síncrono)<br/>Schemas por Domínio")]
-        REDIS[("ElastiCache Redis<br/>Cache-Aside & Sessão")]
+        REDIS[("ElastiCache Redis<br/>Cache")]
     end
 
     subgraph Obs["Observabilidade & Monitoramento"]
-        PROM["Prometheus<br/>(Métricas /metrics & Alertas)"]
-        LOKI["Grafana Loki + Promtail<br/>(Logs JSON Centralizados)"]
-        GRAF["Grafana Dashboards<br/>(Golden Signals + SLA)"]
+        PROM["Prometheus<br/>(Métricas e Alertas)"]
+        LOKI["Grafana Loki<br/>(Logs JSON)"]
+        GRAF["Grafana<br/>(Dashboard)"]
     end
 
     U --> CDN --> GW

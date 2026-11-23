@@ -1,20 +1,23 @@
-# 5 — Dashboard de Monitoramento (Grafana + Prometheus + Loki)
+# 5 — Dashboard de monitoramento
 
-## Painel de Métricas e Logs Coletados
+![Dashboard do Grafana rodando na EC2](./grafana-dashboard-ec2.png)
 
-![Dashboard de Monitoramento Salão Admin](./dashboard-metricas-execucao.png)
+Print do Grafana rodando na instância EC2 da AWS, tirado logo depois de usar o sistema pelo navegador. No print aparecem:
 
-O painel acima consolida as métricas coletadas nos endpoints `/metrics` dos microsserviços e os logs estruturados gerados durante a execução integrada da aplicação e do worker serverless (`4-logs-observabilidade/`).
+- o total de requisições HTTP e a taxa de sucesso (respostas 2xx);
+- quantos eventos a função de notificações processou;
+- quantos serviços estão no ar, segundo o Prometheus;
+- o tráfego por microsserviço e o tempo médio de resposta por rota.
 
-## Acesso ao Grafana em Execução
+O painel de logs aparece vazio porque o ambiente da demonstração não tem o coletor (Promtail) mandando os logs dos contêineres para o Loki. Na demonstração, os logs são lidos com `docker compose logs` (veja a pasta 4).
 
-Ao subir o ambiente com Docker Compose:
+## Como abrir
 
 ```bash
-cd ../3-infraestrutura-iac
+cd 3-infraestrutura-iac
 docker compose up -d --build
 ```
 
-1. Acesse `http://<IP-DO-SERVIDOR>:3000` (ou `http://localhost:3000` localmente) com usuário `admin` e senha `admin`.
-2. Os datasources **Prometheus** (`http://prometheus:9090`) e **Loki** (`http://loki:3100`), além do dashboard **Salão Admin — Observabilidade & Microsserviços** (`grafana/dashboards/salao-observabilidade.json`), sobem provisionados automaticamente.
-3. Ao navegar pela aplicação na porta `8080`, os painéis de volume HTTP, latência, eventos serverless e logs atualizam a cada 10 segundos.
+1. Acesse `http://<IP-DA-MAQUINA>:3000`. Usuário e senha iniciais: `admin` / `admin`. O Grafana pede para trocar a senha no primeiro acesso.
+2. As fontes de dados (Prometheus e Loki) e o dashboard `grafana/dashboards/salao-observabilidade.json` já sobem configurados.
+3. Use o sistema na porta `8080` e os gráficos se atualizam a cada 10 segundos.

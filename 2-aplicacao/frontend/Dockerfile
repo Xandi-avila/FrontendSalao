@@ -1,4 +1,4 @@
-# Build multi-stage do Frontend Blazor WebAssembly (.NET 9) — sem alterar código-fonte
+# Etapa 1 compila o Blazor com o SDK do .NET 9; etapa 2 serve os arquivos estáticos com Nginx
 FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
 WORKDIR /src
 COPY SalaoAdmin/SalaoAdmin.csproj SalaoAdmin/

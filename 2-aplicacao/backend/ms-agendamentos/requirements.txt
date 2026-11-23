@@ -1,1 +1,1 @@
-# Biblioteca padrão Python 3.12 (zero dependências externas obrigatórias)
+# Sem dependências externas: usa só a biblioteca padrão do Python 3.12

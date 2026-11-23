@@ -1,4 +1,5 @@
 import json, os, time, uuid
+from datetime import datetime
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import urlparse
 from telemetry import TelemetryStore, dispatch_event
@@ -28,6 +29,8 @@ class Handler(BaseHTTPRequestHandler):
         t0 = time.perf_counter()
         corr = self.headers.get("X-Correlation-ID", str(uuid.uuid4()))
         path = urlparse(self.path).path.rstrip("/") or "/"
+        if path.startswith("/api/"):  # atrás do ALB a rota chega com o prefixo /api
+            path = path[4:]
         length = int(self.headers.get("Content-Length", "0"))
         payload = json.loads(self.rfile.read(length).decode("utf-8")) if length > 0 else {}
 
@@ -40,10 +43,16 @@ class Handler(BaseHTTPRequestHandler):
         if path == "/vendas" and method == "GET":
             resp = ok({"pagina": 1, "tamanho": 20, "total": len(VENDAS), "itens": VENDAS})
         elif path == "/vendas" and method == "POST":
-            item = {"id": str(uuid.uuid4()), "numero": len(VENDAS) + 1, "dataHora": "2026-11-22T18:00:00", "total": 140.0, **payload}
+            item = {"id": str(uuid.uuid4()), "numero": len(VENDAS) + 1, "dataHora": datetime.now().strftime("%Y-%m-%dT%H:%M:%S"), "total": 140.0, **payload}
             VENDAS.append(item)
             dispatch_event("venda.concluida", item, corr, telemetry)
             status, resp = 201, ok(item, "Venda registrada")
+        elif path.startswith("/vendas/") and method == "GET":
+            item = next((v for v in VENDAS if str(v["id"]) == path.split("/")[2]), None)
+            if item:
+                resp = ok(item)
+            else:
+                status, resp = 404, {"sucesso": False, "mensagem": "Venda não encontrada", "erros": ["Venda não encontrada"], "dados": None}
         elif path == "/analise/faturamento":
             total = sum(v.get("total", 0.0) for v in VENDAS)
             resp = ok({"faturamentoTotal": round(total, 2), "quantidadeVendas": len(VENDAS), "ticketMedio": round(total / max(len(VENDAS), 1), 2)})

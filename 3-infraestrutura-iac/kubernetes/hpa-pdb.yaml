@@ -1,22 +1,74 @@
+# Autoescala (HPA) de 2 a 10 pods por CPU e PodDisruptionBudget para cada serviço.
+# O PDB garante pelo menos 1 pod no ar durante manutenções e trocas de nó.
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: frontend-salao-hpa
+  namespace: salao-admin
+spec:
+  scaleTargetRef: { apiVersion: apps/v1, kind: Deployment, name: frontend-salao }
+  minReplicas: 2
+  maxReplicas: 10
+  metrics:
+    - type: Resource
+      resource: { name: cpu, target: { type: Utilization, averageUtilization: 70 } }
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: ms-cadastros-hpa
+  namespace: salao-admin
+spec:
+  scaleTargetRef: { apiVersion: apps/v1, kind: Deployment, name: ms-cadastros }
+  minReplicas: 2
+  maxReplicas: 10
+  metrics:
+    - type: Resource
+      resource: { name: cpu, target: { type: Utilization, averageUtilization: 70 } }
+---
 apiVersion: autoscaling/v2
 kind: HorizontalPodAutoscaler
 metadata:
   name: ms-agendamentos-hpa
   namespace: salao-admin
 spec:
-  scaleTargetRef:
-    apiVersion: apps/v1
-    kind: Deployment
-    name: ms-agendamentos
+  scaleTargetRef: { apiVersion: apps/v1, kind: Deployment, name: ms-agendamentos }
   minReplicas: 2
   maxReplicas: 10
   metrics:
     - type: Resource
-      resource:
-        name: cpu
-        target:
-          type: Utilization
-          averageUtilization: 70
+      resource: { name: cpu, target: { type: Utilization, averageUtilization: 70 } }
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: ms-vendas-analise-hpa
+  namespace: salao-admin
+spec:
+  scaleTargetRef: { apiVersion: apps/v1, kind: Deployment, name: ms-vendas-analise }
+  minReplicas: 2
+  maxReplicas: 10
+  metrics:
+    - type: Resource
+      resource: { name: cpu, target: { type: Utilization, averageUtilization: 70 } }
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: frontend-salao-pdb
+  namespace: salao-admin
+spec:
+  minAvailable: 1
+  selector: { matchLabels: { app: frontend-salao } }
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: ms-cadastros-pdb
+  namespace: salao-admin
+spec:
+  minAvailable: 1
+  selector: { matchLabels: { app: ms-cadastros } }
 ---
 apiVersion: policy/v1
 kind: PodDisruptionBudget
@@ -25,6 +77,13 @@ metadata:
   namespace: salao-admin
 spec:
   minAvailable: 1
-  selector:
-    matchLabels:
-      app: ms-agendamentos
+  selector: { matchLabels: { app: ms-agendamentos } }
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: ms-vendas-analise-pdb
+  namespace: salao-admin
+spec:
+  minAvailable: 1
+  selector: { matchLabels: { app: ms-vendas-analise } }

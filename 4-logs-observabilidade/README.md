@@ -1,7 +1,24 @@
-# 4 — Registros de Logs, Eventos e Métricas (Validação de Observabilidade)
+# 4 — Logs, eventos e métricas
 
-Esta pasta reúne as configurações de coleta (**Prometheus** e **Loki**) e os **registros reais gerados durante a execução integrada** dos 3 microsserviços (`ms-cadastros`, `ms-agendamentos`, `ms-vendas-analise`) e da função serverless (`serverless-notificacoes`):
+Aqui ficam a configuração da coleta e os registros de uma execução de teste do sistema completo (três microsserviços e a função de notificações).
 
-- [`logs/aplicacao-execucao-real.jsonl`](./logs/aplicacao-execucao-real.jsonl): Logs estruturados em JSON com `timestamp`, `level`, `service`, `correlation_id`, `method`, `path`, `status_code` e `latency_ms` cobrindo autenticação JWT, CRUDs, agendamentos, vendas, análises e validação de erros HTTP (`401`/`404`).
-- [`logs/eventos-mensageria-serverless.jsonl`](./logs/eventos-mensageria-serverless.jsonl): Eventos assíncronos reais (`agendamento.criado`, `agendamento.cancelado`, `venda.concluida`) publicados pelos microsserviços e consumidos pela função `serverless-notificacoes` com o mesmo `correlation_id` (rastreamento ponta a ponta).
-- [`metricas/prometheus-metrics-snapshot.txt`](./metricas/prometheus-metrics-snapshot.txt): Snapshot coletado diretamente dos endpoints `/metrics` de cada serviço em execução.
+## Configuração
+
+- `prometheus/prometheus.yml`: lê o `/metrics` de cada serviço a cada 15 segundos.
+- `prometheus/alerts.yml`: dois alertas, um para serviço fora do ar por mais de 1 minuto e outro para mais de 5% de respostas 5xx.
+- `loki/loki-config.yaml`: configuração do Loki, que guarda os logs para o Grafana.
+
+## Registros da execução
+
+- `logs/aplicacao-execucao-real.jsonl`: um log em JSON por requisição, com data e hora, nível, serviço, `correlation_id`, método, rota, status e tempo de resposta. Cobre login, cadastros, agendamentos, vendas, relatórios e alguns erros esperados (401 e 404).
+- `logs/eventos-mensageria-serverless.jsonl`: eventos `agendamento.criado`, `agendamento.cancelado` e `venda.concluida` enviados pelos microsserviços e tratados pela função de notificações. Como o `correlation_id` se repete, dá para seguir uma ação do usuário do começo ao fim.
+- `metricas/prometheus-metrics-snapshot.txt`: o que os endpoints `/metrics` devolviam no momento do teste.
+
+## Como ver os logs no servidor
+
+```bash
+cd 3-infraestrutura-iac
+docker compose logs -f ms-agendamentos
+```
+
+O mesmo vale para `ms-cadastros`, `ms-vendas-analise`, `serverless-notificacoes` e `api-gateway`.

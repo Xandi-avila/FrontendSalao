@@ -1,28 +1,29 @@
+# Entrada pelo Application Load Balancer (requer o AWS Load Balancer Controller no cluster).
+# O ALB não reescreve caminhos: aqui os microsserviços recebem a rota com o prefixo /api
+# (ex.: /api/clientes). Eles aceitam a rota com ou sem o prefixo, então funcionam tanto
+# atrás do ALB quanto atrás do api-gateway Nginx do docker-compose, que remove o /api.
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: salao-admin-ingress
   namespace: salao-admin
   annotations:
-    kubernetes.io/ingress.class: alb
     alb.ingress.kubernetes.io/scheme: internet-facing
     alb.ingress.kubernetes.io/target-type: ip
+    alb.ingress.kubernetes.io/healthcheck-path: /health
 spec:
+  ingressClassName: alb
   rules:
     - http:
         paths:
-          - path: /api/auth
-            pathType: Prefix
-            backend: { service: { name: ms-cadastros, port: { number: 8001 } } }
-          - path: /api/clientes
-            pathType: Prefix
-            backend: { service: { name: ms-cadastros, port: { number: 8001 } } }
-          - path: /api/agendamentos
-            pathType: Prefix
-            backend: { service: { name: ms-agendamentos, port: { number: 8002 } } }
-          - path: /api/vendas
-            pathType: Prefix
-            backend: { service: { name: ms-vendas-analise, port: { number: 8003 } } }
-          - path: /
-            pathType: Prefix
-            backend: { service: { name: frontend-salao, port: { number: 80 } } }
+          - { path: /api/auth,         pathType: Prefix, backend: { service: { name: ms-cadastros,      port: { number: 8001 } } } }
+          - { path: /api/clientes,     pathType: Prefix, backend: { service: { name: ms-cadastros,      port: { number: 8001 } } } }
+          - { path: /api/funcionarios, pathType: Prefix, backend: { service: { name: ms-cadastros,      port: { number: 8001 } } } }
+          - { path: /api/categorias,   pathType: Prefix, backend: { service: { name: ms-cadastros,      port: { number: 8001 } } } }
+          - { path: /api/produtos,     pathType: Prefix, backend: { service: { name: ms-cadastros,      port: { number: 8001 } } } }
+          - { path: /api/servicos,     pathType: Prefix, backend: { service: { name: ms-cadastros,      port: { number: 8001 } } } }
+          - { path: /api/agenda,       pathType: Prefix, backend: { service: { name: ms-agendamentos,   port: { number: 8002 } } } }
+          - { path: /api/agendamentos, pathType: Prefix, backend: { service: { name: ms-agendamentos,   port: { number: 8002 } } } }
+          - { path: /api/vendas,       pathType: Prefix, backend: { service: { name: ms-vendas-analise, port: { number: 8003 } } } }
+          - { path: /api/analise,      pathType: Prefix, backend: { service: { name: ms-vendas-analise, port: { number: 8003 } } } }
+          - { path: /,                 pathType: Prefix, backend: { service: { name: frontend-salao,    port: { number: 80 } } } }

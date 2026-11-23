@@ -1,3 +1,6 @@
+# Deployments e Services do Salão Admin no EKS.
+# Cada serviço roda com 2 réplicas no mínimo, espalhadas entre as zonas de disponibilidade.
+# As imagens são as mesmas do docker-compose, publicadas num registro (ex.: Amazon ECR).
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -14,18 +17,27 @@ spec:
       topologySpreadConstraints:
         - maxSkew: 1
           topologyKey: topology.kubernetes.io/zone
-          whenUnsatisfiable: DoNotSchedule
+          whenUnsatisfiable: ScheduleAnyway
           labelSelector:
             matchLabels: { app: frontend-salao }
       containers:
         - name: frontend
-          image: salao-admin/frontend-salao:latest
+          image: salao-admin/frontend-salao:1.0.0
           ports: [{ containerPort: 80 }]
           readinessProbe: { httpGet: { path: /health, port: 80 }, initialDelaySeconds: 5, periodSeconds: 10 }
           livenessProbe:  { httpGet: { path: /health, port: 80 }, initialDelaySeconds: 15, periodSeconds: 20 }
           resources:
             requests: { cpu: "100m", memory: "128Mi" }
             limits:   { cpu: "300m", memory: "256Mi" }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: frontend-salao
+  namespace: salao-admin
+spec:
+  selector: { app: frontend-salao }
+  ports: [{ port: 80, targetPort: 80 }]
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -44,15 +56,31 @@ spec:
         prometheus.io/port: "8001"
         prometheus.io/path: "/metrics"
     spec:
+      topologySpreadConstraints:
+        - maxSkew: 1
+          topologyKey: topology.kubernetes.io/zone
+          whenUnsatisfiable: ScheduleAnyway
+          labelSelector:
+            matchLabels: { app: ms-cadastros }
       containers:
         - name: ms-cadastros
-          image: salao-admin/ms-cadastros:latest
+          image: salao-admin/ms-cadastros:1.0.0
           ports: [{ containerPort: 8001 }]
+          env: [{ name: PORT, value: "8001" }]
           readinessProbe: { httpGet: { path: /ready, port: 8001 }, initialDelaySeconds: 5, periodSeconds: 10 }
           livenessProbe:  { httpGet: { path: /health, port: 8001 }, initialDelaySeconds: 10, periodSeconds: 15 }
           resources:
             requests: { cpu: "150m", memory: "192Mi" }
             limits:   { cpu: "500m", memory: "512Mi" }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ms-cadastros
+  namespace: salao-admin
+spec:
+  selector: { app: ms-cadastros }
+  ports: [{ port: 8001, targetPort: 8001 }]
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -71,15 +99,31 @@ spec:
         prometheus.io/port: "8002"
         prometheus.io/path: "/metrics"
     spec:
+      topologySpreadConstraints:
+        - maxSkew: 1
+          topologyKey: topology.kubernetes.io/zone
+          whenUnsatisfiable: ScheduleAnyway
+          labelSelector:
+            matchLabels: { app: ms-agendamentos }
       containers:
         - name: ms-agendamentos
-          image: salao-admin/ms-agendamentos:latest
+          image: salao-admin/ms-agendamentos:1.0.0
           ports: [{ containerPort: 8002 }]
+          env: [{ name: PORT, value: "8002" }]
           readinessProbe: { httpGet: { path: /ready, port: 8002 }, initialDelaySeconds: 5, periodSeconds: 10 }
           livenessProbe:  { httpGet: { path: /health, port: 8002 }, initialDelaySeconds: 10, periodSeconds: 15 }
           resources:
             requests: { cpu: "150m", memory: "192Mi" }
             limits:   { cpu: "500m", memory: "512Mi" }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ms-agendamentos
+  namespace: salao-admin
+spec:
+  selector: { app: ms-agendamentos }
+  ports: [{ port: 8002, targetPort: 8002 }]
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -98,12 +142,28 @@ spec:
         prometheus.io/port: "8003"
         prometheus.io/path: "/metrics"
     spec:
+      topologySpreadConstraints:
+        - maxSkew: 1
+          topologyKey: topology.kubernetes.io/zone
+          whenUnsatisfiable: ScheduleAnyway
+          labelSelector:
+            matchLabels: { app: ms-vendas-analise }
       containers:
         - name: ms-vendas-analise
-          image: salao-admin/ms-vendas-analise:latest
+          image: salao-admin/ms-vendas-analise:1.0.0
           ports: [{ containerPort: 8003 }]
+          env: [{ name: PORT, value: "8003" }]
           readinessProbe: { httpGet: { path: /ready, port: 8003 }, initialDelaySeconds: 5, periodSeconds: 10 }
           livenessProbe:  { httpGet: { path: /health, port: 8003 }, initialDelaySeconds: 10, periodSeconds: 15 }
           resources:
             requests: { cpu: "150m", memory: "192Mi" }
             limits:   { cpu: "500m", memory: "512Mi" }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ms-vendas-analise
+  namespace: salao-admin
+spec:
+  selector: { app: ms-vendas-analise }
+  ports: [{ port: 8003, targetPort: 8003 }]
